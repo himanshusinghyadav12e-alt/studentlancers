@@ -183,3 +183,92 @@
   --gradient-preview: linear-gradient(135deg, var(--color-gradient-preview-start), var(--color-gradient-preview-end));
   --gradient-ship: linear-gradient(135deg, var(--color-gradient-ship-start), var(--color-gradient-ship-end));
 }
+
+/*
+ * Dark theme
+ *
+ * Overrides the concrete tokens (not a parallel semantic layer) so every
+ * existing component that reads var(--color-canvas), var(--color-ink),
+ * etc. flips automatically. The brand primary stays dark on dark — the
+ * Vercel convention is to keep the primary button as a near-black surface
+ * in light mode and as a near-white surface in dark mode.
+ *
+ * Activated by [data-theme="dark"] on <html> (set by the theme script
+ * before paint to avoid flash). Also activates on
+ * prefers-color-scheme: dark when no theme has been explicitly chosen.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-primary: #ededed;
+    --color-on-primary: #0a0a0a;
+
+    --color-ink: #ededed;
+    --color-body: #a1a1a1;
+    --color-mute: #707070;
+
+    --color-hairline: #2a2a2a;
+    --color-hairline-strong: #525252;
+
+    --color-canvas: #0a0a0a;
+    --color-canvas-soft: #121212;
+    --color-canvas-soft-2: #1a1a1a;
+
+    --color-link: #3291ff;
+    --color-link-deep: #5aa9ff;
+    --color-link-bg-soft: #0a2540;
+
+    --color-error: #ff6369;
+    --color-error-soft: #3a1316;
+    --color-error-deep: #ff8b8f;
+    --color-warning: #f5b042;
+    --color-warning-soft: #3a2a10;
+    --color-warning-deep: #f7c070;
+
+    --color-violet: #a48afc;
+    --color-violet-soft: #2a1d4f;
+    --color-violet-deep: #c5b3ff;
+    --color-cyan: #50e3c2;
+    --color-cyan-soft: #0e3a30;
+    --color-cyan-deep: #6fe9cc;
+
+    --color-selection-bg: #ededed;
+    --color-selection-fg: #0a0a0a;
+  }
+}
+
+[data-theme="dark"] {
+  --color-primary: #ededed;
+  --color-on-primary: #0a0a0a;
+
+  --color-ink: #ededed;
+  --color-body: #a1a1a1;
+  --color-mute: #707070;
+
+  --color-hairline: #2a2a2a;
+  --color-hairline-strong: #525252;
+
+  --color-canvas: #0a0a0a;
+  --color-canvas-soft: #121212;
+  --color-canvas-soft-2: #1a1a1a;
+
+  --color-link: #3291ff;
+  --color-link-deep: #5aa9ff;
+  --color-link-bg-soft: #0a2540;
+
+  --color-error: #ff6369;
+  --color-error-soft: #3a1316;
+  --color-error-deep: #ff8b8f;
+  --color-warning: #f5b042;
+  --color-warning-soft: #3a2a10;
+  --color-warning-deep: #f7c070;
+
+  --color-violet: #a48afc;
+  --color-violet-soft: #2a1d4f;
+  --color-violet-deep: #c5b3ff;
+  --color-cyan: #50e3c2;
+  --color-cyan-soft: #0e3a30;
+  --color-cyan-deep: #6fe9cc;
+
+  --color-selection-bg: #ededed;
+  --color-selection-fg: #0a0a0a;
+}

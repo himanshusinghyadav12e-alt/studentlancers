@@ -110,6 +110,23 @@
   letter-spacing: -0.4px;
 }
 
+.auth-pane__toggle {
+  position: absolute;
+  top: var(--space-lg);
+  right: var(--space-lg);
+  z-index: 2;
+}
+.auth-pane__toggle .theme-toggle {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.85);
+}
+.auth-pane__toggle .theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--color-on-primary);
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
 .auth-pane__copy {
   display: flex;
   flex-direction: column;

@@ -13,6 +13,8 @@
 import '../styles/tokens.css';
 import '../styles/global.css';
 import '../styles/auth.css';
+import ThemeBoot from '../components/ui/ThemeBoot.astro';
+import ThemeToggle from '../components/ui/ThemeToggle.astro';
 
 interface Props {
   title: string;
@@ -44,6 +46,7 @@ const {
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
     <title>{title}</title>
+    <ThemeBoot />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -79,6 +82,10 @@ const {
             </span>
             <span class="auth-brand__text">StudentLancers</span>
           </a>
+
+          <div class="auth-pane__toggle">
+            <ThemeToggle size="sm" />
+          </div>
 
           <div class="auth-pane__copy">
             <p class="auth-pane__eyebrow">Built for students &amp; the companies that hire them</p>
@@ -135,6 +142,11 @@ const {
         </div>
       </section>
     </main>
+
+    <script>
+      import { mountThemeToggle } from '../scripts/theme-toggle';
+      mountThemeToggle();
+    </script>
   </body>
 </html>
 
