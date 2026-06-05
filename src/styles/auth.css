@@ -10,6 +10,15 @@
  * to a slim top bar and the form takes the full viewport.
  */
 
+/* ─── Honor the hidden attribute (browser default is too weak) ─
+ * Several components below set `display: flex` on the class, which
+ * wins specificity over the user-agent's `[hidden] { display: none }`.
+ * Force the attribute to win globally inside the auth shell.
+ */
+.auth-body [hidden] {
+  display: none !important;
+}
+
 /* ─── Skip link (matches homepage) ─────────────────────────── */
 .auth-body .skip-link {
   position: absolute;
@@ -342,6 +351,7 @@
 
 /* ─── Checkbox / radio primitive ───────────────────────────── */
 .auth-check {
+  position: relative;
   display: inline-flex;
   align-items: flex-start;
   gap: var(--space-xs);
@@ -369,6 +379,19 @@
   flex-shrink: 0;
   transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
+.auth-check__box .auth-check__input {
+  /* Scope the absolutely-positioned overlay to the visible box only.
+     Without this, inset:0 would stretch the input to the nearest
+     positioned ancestor (the .auth-check row), intercepting clicks
+     on every sibling element. */
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
 .auth-check__box svg {
   width: 12px;
   height: 12px;
@@ -378,13 +401,21 @@
   transition: opacity 0.15s ease, transform 0.15s ease;
 }
 .auth-check__input {
+  /* Position is overridden below by the .auth-check__box child
+     combinator so the overlay stays scoped to the 18-px box. */
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+}
+.auth-check__box .auth-check__input {
+  /* Scope the absolutely-positioned overlay to the visible box only.
+     Without this, inset:0 would stretch the input to the nearest
+     positioned ancestor (the .auth-check row), intercepting clicks
+     on every sibling element. */
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
 }
 .auth-check__input:focus-visible + .auth-check__box {
   outline: 2px solid var(--color-link);
@@ -738,6 +769,9 @@
   flex-direction: column;
   gap: 6px;
   margin-top: 2px;
+}
+.auth-meter[hidden] {
+  display: none;
 }
 .auth-meter__bars {
   display: grid;

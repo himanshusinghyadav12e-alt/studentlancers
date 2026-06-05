@@ -293,8 +293,11 @@ function attachSubmit(form: HTMLFormElement, kind: FormContext['kind']) {
       return;
     }
 
-    setLoading(form, true);
+    // Capture the form data BEFORE disabling inputs — disabled form
+    // controls are excluded from FormData, which would drop the email
+    // value the success state echoes back to the user.
     const data = new FormData(form);
+    setLoading(form, true);
     try {
       const result = await submitForm({ form, kind }, data);
       if (!result.ok) {
