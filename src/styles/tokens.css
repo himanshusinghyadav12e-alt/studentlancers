@@ -1,0 +1,185 @@
+/*
+ * Design tokens — Vercel-inspired system
+ *
+ * Source of truth: /DESIGN.md
+ * Every value lives in CSS custom properties so components consume them
+ * via var(--token-name) and a future dark-mode pass can override the
+ * semantic layer only.
+ */
+
+:root {
+  /* ─── Colors ────────────────────────────────────────────── */
+  --color-primary: #171717;
+  --color-on-primary: #ffffff;
+
+  --color-ink: #171717;
+  --color-body: #4d4d4d;
+  --color-mute: #888888;
+
+  --color-hairline: #ebebeb;
+  --color-hairline-strong: #a1a1a1;
+
+  --color-canvas: #ffffff;
+  --color-canvas-soft: #fafafa;
+  --color-canvas-soft-2: #f5f5f5;
+
+  --color-link: #0070f3;
+  --color-link-deep: #0761d1;
+  --color-link-bg-soft: #d3e5ff;
+
+  --color-success: #0070f3;
+  --color-error: #ee0000;
+  --color-error-soft: #f7d4d6;
+  --color-error-deep: #c50000;
+  --color-warning: #f5a623;
+  --color-warning-soft: #ffefcf;
+  --color-warning-deep: #ab570a;
+
+  --color-violet: #7928ca;
+  --color-violet-soft: #d8ccf1;
+  --color-violet-deep: #4c2889;
+  --color-cyan: #50e3c2;
+  --color-cyan-soft: #aaffec;
+  --color-cyan-deep: #29bc9b;
+  --color-highlight-pink: #ff0080;
+  --color-highlight-magenta: #eb367f;
+
+  --color-gradient-develop-start: #007cf0;
+  --color-gradient-develop-end: #00dfd8;
+  --color-gradient-preview-start: #7928ca;
+  --color-gradient-preview-end: #ff0080;
+  --color-gradient-ship-start: #ff4d4d;
+  --color-gradient-ship-end: #f9cb28;
+
+  --color-selection-bg: #171717;
+  --color-selection-fg: #f2f2f2;
+
+  /* ─── Typography ────────────────────────────────────────── */
+  --font-sans: "Geist", Inter, system-ui, -apple-system, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+
+  /* Display */
+  --text-display-xl: 48px;
+  --text-display-xl-line: 48px;
+  --text-display-xl-tracking: -2.4px;
+  --text-display-xl-weight: 600;
+
+  --text-display-lg: 32px;
+  --text-display-lg-line: 40px;
+  --text-display-lg-tracking: -1.28px;
+  --text-display-lg-weight: 600;
+
+  --text-display-md: 24px;
+  --text-display-md-line: 32px;
+  --text-display-md-tracking: -0.96px;
+  --text-display-md-weight: 600;
+
+  --text-display-sm: 20px;
+  --text-display-sm-line: 28px;
+  --text-display-sm-tracking: -0.6px;
+  --text-display-sm-weight: 600;
+
+  /* Body */
+  --text-body-lg: 18px;
+  --text-body-lg-line: 28px;
+  --text-body-lg-tracking: 0px;
+  --text-body-lg-weight: 400;
+
+  --text-body-md: 16px;
+  --text-body-md-line: 24px;
+  --text-body-md-tracking: 0px;
+  --text-body-md-weight: 400;
+  --text-body-md-strong-weight: 500;
+
+  --text-body-sm: 14px;
+  --text-body-sm-line: 20px;
+  --text-body-sm-tracking: -0.28px;
+  --text-body-sm-weight: 400;
+  --text-body-sm-strong-weight: 500;
+
+  /* Caption + code */
+  --text-caption: 12px;
+  --text-caption-line: 16px;
+  --text-caption-weight: 400;
+
+  --text-caption-mono: 12px;
+  --text-caption-mono-line: 16px;
+  --text-caption-mono-weight: 400;
+
+  --text-code: 13px;
+  --text-code-line: 20px;
+  --text-code-weight: 400;
+
+  /* Buttons */
+  --text-button-md: 14px;
+  --text-button-md-line: 20px;
+  --text-button-md-weight: 500;
+
+  --text-button-lg: 16px;
+  --text-button-lg-line: 24px;
+  --text-button-lg-weight: 500;
+
+  /* ─── Spacing (4px base unit) ───────────────────────────── */
+  --space-xxs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 40px;
+  --space-3xl: 48px;
+  --space-4xl: 64px;
+  --space-5xl: 96px;
+  --space-6xl: 128px;
+  --space-section: 192px;
+
+  /* ─── Radius ────────────────────────────────────────────── */
+  --radius-none: 0px;
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill-sm: 64px;
+  --radius-pill: 100px;
+  --radius-full: 9999px;
+
+  /* ─── Shadows (stacked, never single drop) ──────────────── */
+  --shadow-level-0: none;
+
+  --shadow-level-1:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+
+  --shadow-level-2:
+    0px 1px 1px rgba(0, 0, 0, 0.02),
+    0px 2px 2px rgba(0, 0, 0, 0.04),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+
+  --shadow-level-3:
+    0px 2px 2px rgba(0, 0, 0, 0.04),
+    0px 8px 8px -8px rgba(0, 0, 0, 0.04),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+
+  --shadow-level-4:
+    0px 2px 2px rgba(0, 0, 0, 0.04),
+    0px 8px 16px -4px rgba(0, 0, 0, 0.04),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+
+  --shadow-level-5:
+    0px 1px 1px rgba(0, 0, 0, 0.02),
+    0px 8px 16px -4px rgba(0, 0, 0, 0.04),
+    0px 24px 32px -8px rgba(0, 0, 0, 0.06),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+
+  /* ─── Brand gradient (decorative, hero scale only) ──────── */
+  --gradient-brand:
+    radial-gradient(at 20% 20%, #007cf0 0%, transparent 50%),
+    radial-gradient(at 80% 0%, #7928ca 0%, transparent 50%),
+    radial-gradient(at 100% 50%, #ff0080 0%, transparent 50%),
+    radial-gradient(at 0% 100%, #00dfd8 0%, transparent 50%),
+    radial-gradient(at 50% 100%, #f9cb28 0%, transparent 50%);
+
+  --gradient-develop: linear-gradient(135deg, var(--color-gradient-develop-start), var(--color-gradient-develop-end));
+  --gradient-preview: linear-gradient(135deg, var(--color-gradient-preview-start), var(--color-gradient-preview-end));
+  --gradient-ship: linear-gradient(135deg, var(--color-gradient-ship-start), var(--color-gradient-ship-end));
+}

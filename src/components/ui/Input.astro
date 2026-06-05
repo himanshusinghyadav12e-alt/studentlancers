@@ -1,0 +1,250 @@
+---
+/**
+ * Input
+ *
+ * Single component that renders <input>, <textarea>, or <select>
+ * styled against the form-input tokens from DESIGN.md.
+ *
+ * Sizes:
+ *   - sm → 32 px tall (--geist-form-small-height)
+ *   - md → 40 px tall (default, --geist-form-height)
+ *   - lg → 48 px tall (--geist-form-large-height, 16 px label)
+ */
+export type InputSize = 'sm' | 'md' | 'lg';
+
+export interface Props {
+  /** Input kind — drives which element is rendered */
+  as?: 'input' | 'textarea' | 'select';
+  /** Size token — controls height and font-size */
+  size?: InputSize;
+  /** Visual variant */
+  variant?: 'default' | 'error' | 'success';
+  /** Native input attributes (name, id, type, value, placeholder, required...) */
+  name?: string;
+  id?: string;
+  type?: string;
+  value?: string | number;
+  placeholder?: string;
+  required?: boolean;
+  disabled?: boolean;
+  readonly?: boolean;
+  autocomplete?: string;
+  /** For textarea: number of visible rows */
+  rows?: number;
+  /** For select: list of {value, label} options */
+  options?: Array<{ value: string; label: string }>;
+  class?: string;
+}
+
+const {
+  as = 'input',
+  size = 'md',
+  variant = 'default',
+  name,
+  id,
+  type = 'text',
+  value,
+  placeholder,
+  required = false,
+  disabled = false,
+  readonly = false,
+  autocomplete,
+  rows = 4,
+  options = [],
+  class: className,
+  ...rest
+} = Astro.props as Props;
+
+const classes = [
+  'ds-input',
+  `ds-input--${as}`,
+  `ds-input--size-${size}`,
+  `ds-input--${variant}`,
+  className,
+]
+  .filter(Boolean)
+  .join(' ');
+---
+
+{as === 'input' && (
+  <input
+    class={classes}
+    name={name}
+    id={id}
+    type={type}
+    value={value}
+    placeholder={placeholder}
+    required={required}
+    disabled={disabled}
+    readonly={readonly}
+    autocomplete={autocomplete}
+    aria-invalid={variant === 'error' ? 'true' : undefined}
+    {...rest}
+  />
+)}
+
+{as === 'textarea' && (
+  <textarea
+    class={classes}
+    name={name}
+    id={id}
+    placeholder={placeholder}
+    required={required}
+    disabled={disabled}
+    readonly={readonly}
+    rows={rows}
+    aria-invalid={variant === 'error' ? 'true' : undefined}
+    {...rest}>{value ?? ''}</textarea>
+)}
+
+{as === 'select' && (
+  <span class="ds-input__select-wrap">
+    <select
+      class={classes}
+      name={name}
+      id={id}
+      required={required}
+      disabled={disabled}
+      aria-invalid={variant === 'error' ? 'true' : undefined}
+      {...rest}
+    >
+      {placeholder && <option value="" disabled selected={!value}>{placeholder}</option>}
+      {options.map((opt) => (
+        <option value={opt.value} selected={String(value) === opt.value}>{opt.label}</option>
+      ))}
+    </select>
+    <svg
+      class="ds-input__select-caret"
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M2.5 4.5L6 8L9.5 4.5"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+  </span>
+)}
+
+<style>
+  /* Shared control surface ────────────────────────────────── */
+  .ds-input {
+    --_height: 40px;
+    --_font-size: var(--text-body-sm);
+    --_font-line: var(--text-body-sm-line);
+    --_px: var(--space-sm);
+    --_radius: var(--radius-sm);
+    --_bg: var(--color-canvas);
+    --_fg: var(--color-ink);
+    --_placeholder: var(--color-mute);
+    --_border: var(--color-hairline);
+    --_shadow: none;
+
+    box-sizing: border-box;
+    display: block;
+    width: 100%;
+    height: var(--_height);
+    padding: 0 var(--_px);
+
+    background-color: var(--_bg);
+    color: var(--_fg);
+    border: 1px solid var(--_border);
+    border-radius: var(--_radius);
+    box-shadow: var(--_shadow);
+
+    font-family: var(--font-sans);
+    font-size: var(--_font-size);
+    line-height: var(--_font-line);
+    font-weight: 400;
+    letter-spacing: -0.28px;
+
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  }
+
+  .ds-input::placeholder {
+    color: var(--_placeholder);
+  }
+
+  .ds-input:hover:not(:disabled):not([readonly]) {
+    border-color: var(--color-hairline-strong);
+  }
+
+  .ds-input:focus-visible {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(23, 23, 23, 0.08);
+  }
+
+  .ds-input:disabled {
+    background-color: var(--color-canvas-soft-2);
+    color: var(--color-mute);
+    cursor: not-allowed;
+  }
+
+  /* ─── Sizes ────────────────────────────────────────────── */
+  .ds-input--size-sm {
+    --_height: 32px;
+  }
+
+  .ds-input--size-md {
+    --_height: 40px;
+  }
+
+  .ds-input--size-lg {
+    --_height: 48px;
+    --_font-size: var(--text-body-md);
+    --_font-line: var(--text-body-md-line);
+  }
+
+  /* ─── States ───────────────────────────────────────────── */
+  .ds-input--error {
+    --_border: var(--color-error);
+  }
+
+  .ds-input--error:focus-visible {
+    border-color: var(--color-error);
+    box-shadow: 0 0 0 3px rgba(238, 0, 0, 0.12);
+  }
+
+  .ds-input--success {
+    --_border: var(--color-link);
+  }
+
+  /* ─── Textarea ─────────────────────────────────────────── */
+  .ds-input--textarea {
+    --_height: auto;
+    min-height: 96px;
+    padding: var(--space-sm) var(--_px);
+    line-height: var(--text-body-md-line);
+    resize: vertical;
+  }
+
+  /* ─── Select ───────────────────────────────────────────── */
+  .ds-input__select-wrap {
+    position: relative;
+    display: block;
+  }
+
+  .ds-input--select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding-right: var(--space-xl);
+    cursor: pointer;
+  }
+
+  .ds-input__select-caret {
+    position: absolute;
+    right: var(--space-sm);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-mute);
+    pointer-events: none;
+  }
+</style>

@@ -1,0 +1,185 @@
+---
+/**
+ * Card
+ *
+ * Variants map 1:1 to the card primitives in DESIGN.md:
+ *   - marketing            → 3-up feature card, white, 8-px radius, L3
+ *   - marketing-large      → callout card, 12-px radius, L4
+ *   - soft                 → canvas-soft, 8-px radius
+ *   - template             → 16:9 thumbnail card, denser 16-px padding
+ *   - pricing              → pricing tier, 12-px radius, L4
+ *   - pricing-featured     → polarity-flipped Pro tier
+ *
+ * Slots: header, media, default (body), footer.
+ */
+export type CardVariant =
+  | 'marketing'
+  | 'marketing-large'
+  | 'soft'
+  | 'template'
+  | 'pricing'
+  | 'pricing-featured';
+
+export interface Props {
+  variant?: CardVariant;
+  /** Override the surface background (e.g. for a gradient brand card) */
+  background?: string;
+  /** Add a 1-px hairline border even when variant doesn't include one */
+  bordered?: boolean;
+  /** Make the entire card clickable */
+  href?: string;
+  class?: string;
+}
+
+const {
+  variant = 'marketing',
+  background,
+  bordered = false,
+  href,
+  class: className,
+} = Astro.props as Props;
+
+const classes = [
+  'ds-card',
+  `ds-card--${variant}`,
+  bordered ? 'ds-card--bordered' : null,
+  href ? 'ds-card--linked' : null,
+  className,
+]
+  .filter(Boolean)
+  .join(' ');
+
+const styleAttr = background ? `--ds-card-bg:${background};` : undefined;
+const Tag = href ? 'a' : 'div';
+---
+
+<Tag class={classes} href={href} style={styleAttr}>
+  <div class="ds-card__header"><slot name="header" /></div>
+  <div class="ds-card__media"><slot name="media" /></div>
+  <div class="ds-card__body"><slot /></div>
+  <div class="ds-card__footer"><slot name="footer" /></div>
+</Tag>
+
+<style>
+  .ds-card {
+    --_bg: var(--color-canvas);
+    --_fg: var(--color-ink);
+    --_radius: var(--radius-md);
+    --_padding: var(--space-lg);
+    --_shadow: var(--shadow-level-2);
+    --_border: transparent;
+    --_display: flex;
+    --_direction: column;
+    --_gap: var(--space-md);
+
+    display: var(--_display);
+    flex-direction: var(--_direction);
+    gap: var(--_gap);
+
+    box-sizing: border-box;
+    background-color: var(--_bg);
+    color: var(--_fg);
+    border: 1px solid var(--_border);
+    border-radius: var(--_radius);
+    padding: var(--_padding);
+    box-shadow: var(--_shadow);
+
+    text-decoration: none;
+    overflow: hidden;
+  }
+
+  .ds-card--linked {
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+
+  .ds-card--linked:hover {
+    --_shadow: var(--shadow-level-3);
+    transform: translateY(-1px);
+  }
+
+  .ds-card--bordered {
+    --_border: var(--color-hairline);
+    --_shadow: none;
+  }
+
+  .ds-card__header,
+  .ds-card__media,
+  .ds-card__body,
+  .ds-card__footer {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  .ds-card__header:empty,
+  .ds-card__media:empty,
+  .ds-card__footer:empty {
+    display: none;
+  }
+
+  .ds-card__media {
+    margin: calc(var(--_padding) * -1);
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--_border);
+  }
+
+  /* ─── Variant: marketing (3-up feature) ─────────────────── */
+  .ds-card--marketing {
+    --_bg: var(--color-canvas);
+    --_fg: var(--color-ink);
+    --_radius: var(--radius-md);
+    --_padding: var(--space-lg);
+    --_shadow: var(--shadow-level-3);
+  }
+
+  /* ─── Variant: marketing-large ─────────────────────────── */
+  .ds-card--marketing-large {
+    --_radius: var(--radius-lg);
+    --_padding: var(--space-xl);
+    --_shadow: var(--shadow-level-4);
+  }
+
+  /* ─── Variant: soft (canvas-soft surface) ──────────────── */
+  .ds-card--soft {
+    --_bg: var(--color-canvas-soft);
+    --_fg: var(--color-ink);
+    --_radius: var(--radius-md);
+    --_padding: var(--space-lg);
+    --_shadow: var(--shadow-level-2);
+    --_border: var(--color-hairline);
+  }
+
+  /* ─── Variant: template (denser 16-px padding) ─────────── */
+  .ds-card--template {
+    --_bg: var(--color-canvas);
+    --_fg: var(--color-ink);
+    --_radius: var(--radius-md);
+    --_padding: var(--space-md);
+    --_shadow: var(--shadow-level-2);
+    --_border: var(--color-hairline);
+    --_gap: var(--space-sm);
+  }
+
+  /* ─── Variant: pricing ─────────────────────────────────── */
+  .ds-card--pricing {
+    --_bg: var(--color-canvas);
+    --_fg: var(--color-ink);
+    --_radius: var(--radius-lg);
+    --_padding: var(--space-xl);
+    --_shadow: var(--shadow-level-4);
+    --_border: var(--color-hairline);
+    --_gap: var(--space-md);
+  }
+
+  /* ─── Variant: pricing-featured (polarity-flipped) ─────── */
+  .ds-card--pricing-featured {
+    --_bg: var(--color-primary);
+    --_fg: var(--color-on-primary);
+    --_radius: var(--radius-lg);
+    --_padding: var(--space-xl);
+    --_shadow: var(--shadow-level-5);
+    --_border: transparent;
+    --_gap: var(--space-md);
+  }
+</style>

@@ -1,0 +1,96 @@
+---
+/**
+ * Field — label + hint + error wrapper
+ *
+ * Pairs with Input/Textarea/Select to compose a complete form row.
+ * The visual contract is taken from form-input primitives in
+ * DESIGN.md (body-sm 14 px, hairline border, 6-px radius).
+ */
+export interface Props {
+  /** Visible field label */
+  label: string;
+  /** Slot name to bind the label to the input via for/id */
+  for?: string;
+  /** Optional hint copy rendered under the control */
+  hint?: string;
+  /** Error message — switches the field into the error state */
+  error?: string;
+  /** Visually hide the label while keeping it for screen readers */
+  hideLabel?: boolean;
+  /** Stack label on top (default) or beside the control */
+  layout?: 'stack' | 'inline';
+  /** Forwarded class */
+  class?: string;
+}
+
+const {
+  label,
+  for: htmlFor,
+  hint,
+  error,
+  hideLabel = false,
+  layout = 'stack',
+  class: className,
+} = Astro.props as Props;
+
+const classes = [
+  'ds-field',
+  `ds-field--${layout}`,
+  error ? 'ds-field--error' : null,
+  className,
+]
+  .filter(Boolean)
+  .join(' ');
+---
+
+<div class={classes} data-layout={layout}>
+  <label class="ds-field__label" for={htmlFor} hidden={hideLabel}>
+    {label}
+  </label>
+  <div class="ds-field__control">
+    <slot />
+  </div>
+  {hint && !error && <p class="ds-field__hint">{hint}</p>}
+  {error && <p class="ds-field__error" role="alert">{error}</p>}
+</div>
+
+<style>
+  .ds-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    font-family: var(--font-sans);
+  }
+
+  .ds-field--inline {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-md);
+  }
+
+  .ds-field--inline .ds-field__control {
+    flex: 1;
+  }
+
+  .ds-field__label {
+    font-size: var(--text-body-sm);
+    line-height: var(--text-body-sm-line);
+    font-weight: var(--text-body-sm-strong-weight);
+    color: var(--color-ink);
+    letter-spacing: -0.28px;
+  }
+
+  .ds-field__hint {
+    margin: 0;
+    font-size: var(--text-caption);
+    line-height: var(--text-caption-line);
+    color: var(--color-mute);
+  }
+
+  .ds-field__error {
+    margin: 0;
+    font-size: var(--text-caption);
+    line-height: var(--text-caption-line);
+    color: var(--color-error);
+  }
+</style>

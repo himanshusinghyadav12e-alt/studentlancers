@@ -1,0 +1,261 @@
+---
+/**
+ * Button
+ *
+ * Variants replicate the Vercel system from DESIGN.md:
+ *   - primary / secondary  → marketing 100-px pill (large)
+ *   - primary-sm / secondary-sm → 6-px-radius button for nav, pricing
+ *   - ghost / tab          → transparent / nav-link ghost
+ *   - danger               → error-state destructive
+ *
+ * Sizes (md | lg) layer on top of the base token set so callers can
+ * mix-and-match without forking the component.
+ */
+export interface Props {
+  /** Visual treatment */
+  variant?:
+    | 'primary'
+    | 'secondary'
+    | 'primary-sm'
+    | 'secondary-sm'
+    | 'ghost'
+    | 'tab'
+    | 'danger';
+  /** Marketing lg scale or compact md scale */
+  size?: 'md' | 'lg';
+  /** Optional href — renders an <a> styled as a button */
+  href?: string;
+  /** Forwarded to the underlying element */
+  type?: 'button' | 'submit' | 'reset';
+  disabled?: boolean;
+  /** Optional leading icon slot */
+  iconLeading?: boolean;
+  /** Optional trailing icon slot */
+  iconTrailing?: boolean;
+  /** Accessible label override when only an icon is shown */
+  ariaLabel?: string;
+  class?: string;
+}
+
+const {
+  variant = 'primary',
+  size = 'lg',
+  href,
+  type = 'button',
+  disabled = false,
+  iconLeading = false,
+  iconTrailing = false,
+  ariaLabel,
+  class: className,
+  ...rest
+} = Astro.props as Props;
+
+const classes = ['ds-btn', `ds-btn--${variant}`, `ds-btn--size-${size}`, className]
+  .filter(Boolean)
+  .join(' ');
+
+const Tag = href ? 'a' : 'button';
+---
+
+<Tag
+  class={classes}
+  href={href}
+  type={!href ? type : undefined}
+  disabled={!href ? disabled : undefined}
+  aria-disabled={disabled || undefined}
+  aria-label={ariaLabel}
+  {...rest}
+>
+  {iconLeading && <span class="ds-btn__icon ds-btn__icon--leading"><slot name="icon-leading" /></span>}
+  <span class="ds-btn__label"><slot /></span>
+  {iconTrailing && <span class="ds-btn__icon ds-btn__icon--trailing"><slot name="icon-trailing" /></span>}
+</Tag>
+
+<style>
+  .ds-btn {
+    --_bg: var(--color-canvas);
+    --_fg: var(--color-ink);
+    --_border: transparent;
+    --_radius: var(--radius-sm);
+    --_px: var(--space-sm);
+    --_py: 0px;
+    --_height: 40px;
+    --_font-size: var(--text-button-md);
+    --_font-line: var(--text-button-md-line);
+    --_font-weight: var(--text-button-md-weight);
+    --_shadow: none;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs);
+
+    box-sizing: border-box;
+    height: var(--_height);
+    padding: var(--_py) var(--_px);
+
+    background-color: var(--_bg);
+    color: var(--_fg);
+    border: 1px solid var(--_border);
+    border-radius: var(--_radius);
+    box-shadow: var(--_shadow);
+
+    font-family: var(--font-sans);
+    font-size: var(--_font-size);
+    line-height: var(--_font-line);
+    font-weight: var(--_font-weight);
+    letter-spacing: 0;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+  }
+
+  .ds-btn:disabled,
+  .ds-btn[aria-disabled='true'] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .ds-btn:focus-visible {
+    outline: 2px solid var(--color-link);
+    outline-offset: 2px;
+  }
+
+  .ds-btn__label {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .ds-btn__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ds-btn__icon :global(svg) {
+    width: 1em;
+    height: 1em;
+  }
+
+  /* ─── Marketing scale: 100-px pill ──────────────────────── */
+  .ds-btn--primary,
+  .ds-btn--secondary {
+    --_radius: var(--radius-pill);
+  }
+
+  .ds-btn--size-lg.ds-btn--primary,
+  .ds-btn--size-lg.ds-btn--secondary {
+    --_height: 48px;
+    --_px: var(--space-md);
+  }
+
+  .ds-btn--size-md.ds-btn--primary,
+  .ds-btn--size-md.ds-btn--secondary {
+    --_height: 40px;
+    --_px: var(--space-sm);
+  }
+
+  /* ─── Primary: ink background, white text ───────────────── */
+  .ds-btn--primary,
+  .ds-btn--primary-sm {
+    --_bg: var(--color-primary);
+    --_fg: var(--color-on-primary);
+  }
+
+  .ds-btn--primary:hover:not(:disabled) {
+    background-color: #2a2a2a;
+  }
+
+  .ds-btn--primary:active:not(:disabled) {
+    background-color: #000000;
+  }
+
+  /* ─── Secondary: white pill, ink text ───────────────────── */
+  .ds-btn--secondary,
+  .ds-btn--secondary-sm {
+    --_bg: var(--color-canvas);
+    --_fg: var(--color-ink);
+    --_shadow: var(--shadow-level-2);
+  }
+
+  .ds-btn--secondary:hover:not(:disabled),
+  .ds-btn--secondary-sm:hover:not(:disabled) {
+    background-color: var(--color-canvas-soft);
+  }
+
+  /* ─── Nav / in-app scale: 6-px radius ───────────────────── */
+  .ds-btn--primary-sm,
+  .ds-btn--secondary-sm {
+    --_radius: var(--radius-sm);
+    --_height: 32px;
+    --_px: var(--space-sm);
+  }
+
+  /* ─── Ghost (transparent) ───────────────────────────────── */
+  .ds-btn--ghost {
+    --_bg: transparent;
+    --_fg: var(--color-ink);
+  }
+
+  .ds-btn--ghost:hover:not(:disabled) {
+    background-color: var(--color-canvas-soft);
+  }
+
+  .ds-btn--size-lg.ds-btn--ghost {
+    --_height: 48px;
+    --_px: var(--space-md);
+    --_radius: var(--radius-pill);
+  }
+
+  .ds-btn--size-md.ds-btn--ghost {
+    --_height: 40px;
+    --_px: var(--space-sm);
+    --_radius: var(--radius-pill-sm);
+  }
+
+  /* ─── Tab ghost pill (centred row tab) ──────────────────── */
+  .ds-btn--tab {
+    --_bg: var(--color-canvas);
+    --_fg: var(--color-ink);
+    --_border: var(--color-hairline);
+    --_radius: var(--radius-pill-sm);
+    --_height: 36px;
+    --_px: var(--space-md);
+    font-size: var(--text-body-sm);
+    line-height: var(--text-body-sm-line);
+    font-weight: var(--text-body-sm-weight);
+  }
+
+  .ds-btn--tab:hover:not(:disabled) {
+    background-color: var(--color-canvas-soft-2);
+  }
+
+  .ds-btn--tab[aria-pressed='true'] {
+    --_bg: var(--color-primary);
+    --_fg: var(--color-on-primary);
+    --_border: transparent;
+  }
+
+  /* ─── Danger ────────────────────────────────────────────── */
+  .ds-btn--danger {
+    --_bg: var(--color-error);
+    --_fg: var(--color-on-primary);
+    --_radius: var(--radius-pill);
+  }
+
+  .ds-btn--size-lg.ds-btn--danger {
+    --_height: 48px;
+    --_px: var(--space-md);
+  }
+
+  .ds-btn--size-md.ds-btn--danger {
+    --_height: 40px;
+    --_px: var(--space-sm);
+  }
+
+  .ds-btn--danger:hover:not(:disabled) {
+    background-color: var(--color-error-deep);
+  }
+</style>

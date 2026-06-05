@@ -1,0 +1,141 @@
+---
+/**
+ * Badge
+ *
+ * Inline metadata pill. Default is badge-secondary (canvas-soft
+ * surface, body text, full radius) per DESIGN.md. Semantic variants
+ * reuse the brand's soft+deep palette pairs (error-soft, link-bg-soft,
+ * violet-soft, etc.) so status never requires a fresh accent.
+ */
+export type BadgeVariant =
+  | 'secondary'
+  | 'success'
+  | 'error'
+  | 'warning'
+  | 'violet'
+  | 'cyan'
+  | 'pink';
+
+export interface Props {
+  variant?: BadgeVariant;
+  /** Render a leading dot (good for "Live" / "Beta" status) */
+  dot?: boolean;
+  /** Render with the mono caption face for technical eyebrows */
+  mono?: boolean;
+  /** Reverse the palette (e.g. for a pill on a dark surface) */
+  inverted?: boolean;
+  class?: string;
+}
+
+const {
+  variant = 'secondary',
+  dot = false,
+  mono = false,
+  inverted = false,
+  class: className,
+} = Astro.props as Props;
+
+const classes = [
+  'ds-badge',
+  `ds-badge--${variant}`,
+  mono ? 'ds-badge--mono' : null,
+  inverted ? 'ds-badge--inverted' : null,
+  className,
+]
+  .filter(Boolean)
+  .join(' ');
+---
+
+<span class={classes}>
+  {dot && <span class="ds-badge__dot" aria-hidden="true" />}
+  <slot />
+</span>
+
+<style>
+  .ds-badge {
+    --_bg: var(--color-canvas-soft);
+    --_fg: var(--color-body);
+    --_dot: var(--color-mute);
+
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    box-sizing: border-box;
+
+    background-color: var(--_bg);
+    color: var(--_fg);
+    padding: 0 var(--space-xs);
+    height: 22px;
+
+    font-family: var(--font-sans);
+    font-size: var(--text-caption);
+    line-height: var(--text-caption-line);
+    font-weight: var(--text-caption-weight);
+
+    border-radius: var(--radius-full);
+    white-space: nowrap;
+  }
+
+  .ds-badge--mono {
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .ds-badge__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: var(--radius-full);
+    background-color: var(--_dot);
+  }
+
+  /* ─── Variants ─────────────────────────────────────────── */
+  .ds-badge--secondary {
+    --_bg: var(--color-canvas-soft);
+    --_fg: var(--color-body);
+    --_dot: var(--color-mute);
+  }
+
+  .ds-badge--success {
+    --_bg: var(--color-link-bg-soft);
+    --_fg: var(--color-link-deep);
+    --_dot: var(--color-link);
+  }
+
+  .ds-badge--error {
+    --_bg: var(--color-error-soft);
+    --_fg: var(--color-error-deep);
+    --_dot: var(--color-error);
+  }
+
+  .ds-badge--warning {
+    --_bg: var(--color-warning-soft);
+    --_fg: var(--color-warning-deep);
+    --_dot: var(--color-warning);
+  }
+
+  .ds-badge--violet {
+    --_bg: var(--color-violet-soft);
+    --_fg: var(--color-violet-deep);
+    --_dot: var(--color-violet);
+  }
+
+  .ds-badge--cyan {
+    --_bg: var(--color-cyan-soft);
+    --_fg: var(--color-cyan-deep);
+    --_dot: var(--color-cyan);
+  }
+
+  .ds-badge--pink {
+    --_bg: #ffe5f1;
+    --_fg: #ad0c5d;
+    --_dot: var(--color-highlight-magenta);
+  }
+
+  /* Inverted: render on a dark surface */
+  .ds-badge--inverted {
+    --_bg: rgba(255, 255, 255, 0.1);
+    --_fg: var(--color-on-primary);
+    --_dot: var(--color-on-primary);
+  }
+</style>
