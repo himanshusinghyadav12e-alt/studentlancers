@@ -1,0 +1,572 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Button from '../../../components/ui/Button.astro';
+import Input from '../../../components/ui/Input.astro';
+import Field from '../../../components/ui/Field.astro';
+import ThemeToggle from '../../../components/ui/ThemeToggle.astro';
+
+/**
+ * /jobs/[id]/apply
+ *
+ * Application flow for a specific brief. The brief content is looked
+ * up by the `id` route param from a small static catalog — until the
+ * real API is wired, this gives every URL a meaningful page.
+ *
+ * The form captures:
+ *   - Cover letter (required, 80+ chars)
+ *   - Proposed rate (USD/hr or fixed, depending on brief budget_type)
+ *   - Proposed timeline (free text)
+ *   - Portfolio link (URL)
+ *
+ * On submit, the success state shows the application id and a
+ * realistic timeline ("Most companies respond within 2 business
+ * days" — not a fabricated number specific to this brief).
+ */
+
+export function getStaticPaths() {
+  return [
+    { params: { id: 'brand-designer-webflow' } },
+    { params: { id: 'data-viz-dashboard' } },
+    { params: { id: 'marketing-copy-launch' } },
+  ];
+}
+
+const { id } = Astro.params as { id: string };
+
+interface Brief {
+  title: string;
+  company: string;
+  category: string;
+  summary: string;
+  budget: { type: 'hourly' | 'fixed'; amount: number };
+  duration: string;
+  hours: string;
+  skills: string[];
+  description: string;
+}
+
+const BRIEFS: Record<string, Brief> = {
+  'brand-designer-webflow': {
+    title: 'Brand designer for a 4-page Webflow site',
+    company: 'Linear Labs',
+    category: 'Design',
+    summary:
+      'Translate our existing Figma system into a polished Webflow site. Two-week engagement, fixed price.',
+    budget: { type: 'fixed', amount: 1200 },
+    duration: '1–2 weeks',
+    hours: '10–20 hrs / week',
+    skills: ['Figma', 'Webflow', 'CSS', 'Brand design'],
+    description:
+      'We have an approved Figma file for our marketing site (4 pages: home, product, pricing, contact). We are looking for a designer who can take ownership of the Webflow build end-to-end: setting up the design system in Webflow, translating the Figma to responsive Webflow components, and tightening the final QA pass.\n\nYou will work directly with our marketing lead. We will provide brand assets, copy, and a 30-minute kickoff. We expect ~10–20 hours per week over 1–2 weeks.',
+  },
+  'data-viz-dashboard': {
+    title: 'Data viz dashboard for a research dataset',
+    company: 'Atlas Research',
+    category: 'Data',
+    summary: 'Build an interactive dashboard over a public education dataset. ~3 week engagement.',
+    budget: { type: 'hourly', amount: 45 },
+    duration: '2–4 weeks',
+    hours: '10–20 hrs / week',
+    skills: ['Python', 'Streamlit', 'Pandas', 'Data visualization'],
+    description:
+      'Atlas Research is publishing a dataset on college outcomes and we need an interactive dashboard so readers can slice it by state, major, and year. We have a CSV, a list of questions we want answered, and a Streamlit deploy target. You will own the build, the chart design, and a short README.',
+  },
+  'marketing-copy-launch': {
+    title: 'Marketing copy for a product launch',
+    company: 'Plaid',
+    category: 'Writing',
+    summary: 'Three launch emails, a landing page, and a press release. ~1 week.',
+    budget: { type: 'fixed', amount: 900 },
+    duration: '1 week',
+    hours: '5–10 hrs / week',
+    skills: ['Copywriting', 'Email', 'B2B SaaS'],
+    description:
+      'We are launching a new product next month and need sharp, conversion-focused copy across three surfaces: a launch email sequence (3 emails), the landing page hero + sub, and a press release. Voice: confident, plain-spoken, a little dry. References will be provided.',
+  },
+};
+
+const brief = BRIEFS[id];
+
+const fallback: Brief = {
+  title: 'Brief ' + id,
+  company: 'A company on StudentLancers',
+  category: 'Project',
+  summary:
+    'The full brief content is loaded from the API once you click through from a listing. You can still apply — your application will be sent to the company as soon as they finish posting.',
+  budget: { type: 'fixed', amount: 0 },
+  duration: '—',
+  hours: '—',
+  skills: [],
+  description: 'Full description will appear here once the brief is fully loaded.',
+};
+
+const view = brief ?? fallback;
+const budgetLabel =
+  view.budget.type === 'fixed'
+    ? `$${view.budget.amount.toLocaleString()} fixed`
+    : `$${view.budget.amount}/hr`;
+---
+
+<Layout title={`Apply · ${view.title}`} description={`Apply to ${view.title}.`}>
+  <a class="skip-link" href="#apply-main">Skip to content</a>
+
+  <header class="post-top" data-post-top>
+    <div class="ds-container post-top__inner">
+      <a href="/" class="nav__brand" aria-label="StudentLancers home">
+        <span class="nav__logo" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <rect x="0.5" y="0.5" width="21" height="21" rx="5.5" fill="var(--color-primary)" />
+            <path d="M6 7.5L11 4.5L16 7.5V14.5L11 17.5L6 14.5V7.5Z" stroke="white" stroke-width="1.4" stroke-linejoin="round" />
+            <path d="M11 4.5V11M11 11L16 7.5M11 11L6 7.5M11 11V17.5" stroke="white" stroke-width="1.4" stroke-linejoin="round" />
+          </svg>
+        </span>
+        <span class="nav__brand-text">StudentLancers</span>
+      </a>
+      <nav class="post-top__nav" aria-label="Quick links">
+        <a class="post-top__link" href="/student/dashboard">Dashboard</a>
+        <a class="post-top__link" href="#">Browse briefs</a>
+      </nav>
+      <div class="post-top__right">
+        <ThemeToggle size="md" />
+        <Button variant="secondary-sm" size="md" href="/student/dashboard">Save & exit</Button>
+      </div>
+    </div>
+  </header>
+
+  <main id="apply-main" class="post-page">
+    <div class="ds-container post-page__inner">
+      <header class="post-page__head">
+        <span class="post-page__eyebrow">
+          <a href="#" style="color: inherit; text-decoration: underline; text-underline-offset: 3px;">← Back to brief</a>
+        </span>
+        <h1 class="post-page__title">Apply to {view.title}</h1>
+        <p class="post-page__lead">
+          Tell the company why you are a good fit. Most students spend 5–10
+          minutes on this — a tight cover letter beats a long one.
+        </p>
+      </header>
+
+      <div class="post-grid">
+        <form
+          class="post-form"
+          novalidate
+          aria-describedby="apply-alert"
+          data-apply-form
+        >
+          <div
+            id="apply-alert"
+            class="auth-alert"
+            role="alert"
+            data-form-alert
+            hidden
+          >
+            <svg class="auth-alert__icon" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+              <circle cx="9" cy="9" r="7.5" stroke="currentColor" stroke-width="1.4" />
+              <path d="M9 5.5v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+              <circle cx="9" cy="12.4" r="0.9" fill="currentColor" />
+            </svg>
+            <div class="auth-alert__body">
+              <p class="auth-alert__title" data-form-alert-title>Please review the form.</p>
+              <p class="auth-alert__msg" data-form-alert-msg>Some required fields are missing.</p>
+            </div>
+          </div>
+
+          <section class="post-section" aria-labelledby="apply-letter">
+            <header class="post-section__head">
+              <span class="post-section__num">01</span>
+              <div>
+                <h2 id="apply-letter" class="post-section__title">Your pitch</h2>
+                <p class="post-section__sub">Cover letter, proposed rate, and timeline.</p>
+              </div>
+            </header>
+
+            <Field
+              label="Cover letter"
+              for="apply-cover"
+              hint="Two or three short paragraphs. Mention one relevant project."
+            >
+              <textarea
+                id="apply-cover"
+                name="cover"
+                class="ds-input ds-input--textarea ds-input--size-lg ds-input--default"
+                rows="8"
+                placeholder={`Hi ${view.company.split(' ')[0]} team — I'd love to take this on. The most relevant project I shipped was…`}
+                minlength="80"
+                maxlength="2000"
+                required
+                data-field="cover"
+              ></textarea>
+            </Field>
+
+            <div class="post-grid-2">
+              <Field
+                label={view.budget.type === 'hourly' ? 'Your hourly rate (USD)' : 'Your fixed price (USD)'}
+                for="apply-rate"
+                hint={view.budget.type === 'hourly' ? `Posted budget: $${view.budget.amount}/hr` : `Posted budget: $${view.budget.amount.toLocaleString()}`}
+              >
+                <Input
+                  type="number"
+                  id="apply-rate"
+                  name="rate"
+                  size="lg"
+                  min="5"
+                  step="1"
+                  placeholder={view.budget.type === 'hourly' ? 'e.g. 35' : 'e.g. 1100'}
+                  required
+                  data-field="rate"
+                />
+              </Field>
+              <Field label="Proposed timeline" for="apply-timeline" hint="Free text. e.g. '2 weeks' or 'Sprints of 5 days'">
+                <Input
+                  type="text"
+                  id="apply-timeline"
+                  name="timeline"
+                  size="lg"
+                  placeholder="e.g. 2 weeks"
+                  maxlength="60"
+                  required
+                  data-field="timeline"
+                />
+              </Field>
+            </div>
+
+            <Field label="Portfolio link" for="apply-portfolio" hint="GitHub, Behance, a personal site — anywhere we can see your work.">
+              <Input
+                type="url"
+                id="apply-portfolio"
+                name="portfolio"
+                size="lg"
+                placeholder="https://…"
+                required
+                data-field="portfolio"
+              />
+            </Field>
+          </section>
+
+          <footer class="post-form__foot">
+            <p class="post-form__draft">Your application is sent only after you click Submit.</p>
+            <div class="post-form__actions">
+              <Button variant="ghost" size="md" href={`/jobs/${id}`}>Cancel</Button>
+              <Button variant="primary" size="md" type="submit" data-submit>
+                <span class="auth-submit__spinner" aria-hidden="true"></span>
+                <span data-submit-label>Send application</span>
+              </Button>
+            </div>
+          </footer>
+        </form>
+
+        <aside class="post-summary" aria-label="Brief details">
+          <div class="dash-card" data-summary>
+            <div class="dash-card__head">
+              <h2 class="dash-card__title">{view.title}</h2>
+              <span class="dash-pill">{view.category}</span>
+            </div>
+            <div class="dash-card__body">
+              <p style="margin: 0; color: var(--color-body); font-size: var(--text-body-sm);">
+                {view.summary}
+              </p>
+              <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                <span class="dash-pill">{budgetLabel}</span>
+                <span class="dash-pill">{view.duration}</span>
+                <span class="dash-pill">{view.hours}</span>
+              </div>
+              {view.skills.length > 0 && (
+                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                  {view.skills.map((s) => (
+                    <span class="dash-pill dash-pill--cyan" style="text-transform: none; letter-spacing: 0;">{s}</span>
+                  ))}
+                </div>
+              )}
+              <div style="font-size: var(--text-caption); color: var(--color-mute);">
+                Posted by {view.company}
+              </div>
+            </div>
+          </div>
+
+          <div class="dash-card" style="margin-top: var(--space-md);">
+            <div class="dash-card__head">
+              <h2 class="dash-card__title">What happens next</h2>
+            </div>
+            <div class="dash-card__body" style="font-size: var(--text-body-sm); color: var(--color-body);">
+              <ol style="margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px;">
+                <li>Your application goes to the company for review.</li>
+                <li>If they shortlist you, you'll get an invite to a short intro call.</li>
+                <li>Approved applicants receive a contract and the engagement begins.</li>
+              </ol>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <div
+    class="post-success"
+    data-success-state
+    hidden
+    role="status"
+    aria-live="polite"
+  >
+    <div class="ds-container post-success__inner">
+      <div class="post-success__card">
+        <span class="auth-success__icon" aria-hidden="true">
+          <svg viewBox="0 0 28 28" fill="none">
+            <path d="M6 14.5l5 5L22 8.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </span>
+        <h2 class="auth-success__title">Application sent</h2>
+        <p class="auth-success__body">
+          Application <code class="post-success__id" data-success-id>—</code> for
+          <strong data-success-brief>{view.title}</strong> is in the company's inbox.
+          You'll get an email when they respond — most companies reply within
+          two business days.
+        </p>
+        <div class="post-success__actions">
+          <Button variant="primary" size="md" href="/student/dashboard">Back to dashboard</Button>
+          <Button variant="secondary" size="md" href="#">Browse more briefs</Button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    import { mountApplyForm } from '../../../scripts/apply-form';
+    mountApplyForm();
+  </script>
+</Layout>
+
+<style>
+  .skip-link {
+    position: absolute;
+    top: -40px;
+    left: 16px;
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-body-sm);
+    z-index: 100;
+    transition: top 0.15s ease;
+  }
+  .skip-link:focus {
+    top: 16px;
+  }
+
+  .post-top {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: color-mix(in srgb, var(--color-canvas) 86%, transparent);
+    backdrop-filter: saturate(180%) blur(12px);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid var(--color-hairline);
+  }
+  .post-top__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-lg);
+    height: 64px;
+  }
+  .post-top__nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+  .post-top__link {
+    display: inline-flex;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-full);
+    color: var(--color-body);
+    font-size: var(--text-body-sm);
+    text-decoration: none;
+    transition: color 0.15s ease, background-color 0.15s ease;
+  }
+  .post-top__link:hover {
+    color: var(--color-ink);
+    background: var(--color-canvas-soft);
+  }
+  .post-top__right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+  @media (max-width: 700px) {
+    .post-top__nav {
+      display: none;
+    }
+  }
+
+  .post-page {
+    padding-block: var(--space-3xl) var(--space-5xl);
+  }
+  .post-page__inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xl);
+  }
+  .post-page__head {
+    max-width: 720px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+  .post-page__eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--color-mute);
+  }
+  .post-page__title {
+    font-size: clamp(28px, 4vw, var(--text-display-lg));
+    line-height: var(--text-display-lg-line);
+    font-weight: var(--text-display-lg-weight);
+    letter-spacing: var(--text-display-lg-tracking);
+    color: var(--color-ink);
+    margin: 0;
+  }
+  .post-page__lead {
+    font-size: var(--text-body-md);
+    line-height: var(--text-body-md-line);
+    color: var(--color-body);
+    margin: 0;
+  }
+
+  .post-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: var(--space-2xl);
+    align-items: start;
+  }
+  @media (max-width: 1000px) {
+    .post-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .post-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xl);
+  }
+  .post-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    padding: var(--space-xl);
+    background: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-level-1);
+  }
+  .post-section__head {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-md);
+    padding-bottom: var(--space-md);
+    border-bottom: 1px solid var(--color-hairline);
+  }
+  .post-section__num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    background: var(--color-canvas-soft);
+    border: 1px solid var(--color-hairline);
+    color: var(--color-ink);
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    font-weight: var(--text-body-sm-strong-weight);
+    flex-shrink: 0;
+  }
+  .post-section__title {
+    font-size: var(--text-display-sm);
+    line-height: var(--text-display-sm-line);
+    font-weight: var(--text-display-sm-weight);
+    letter-spacing: var(--text-display-sm-tracking);
+    color: var(--color-ink);
+    margin: 0 0 2px;
+  }
+  .post-section__sub {
+    font-size: var(--text-body-sm);
+    line-height: var(--text-body-sm-line);
+    color: var(--color-body);
+    margin: 0;
+  }
+  .post-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+  }
+  @media (max-width: 600px) {
+    .post-grid-2 {
+      grid-template-columns: 1fr;
+    }
+  }
+  .post-form__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+  }
+  .post-form__draft {
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: var(--color-mute);
+    margin: 0;
+  }
+  .post-form__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    flex-wrap: wrap;
+  }
+  .post-summary {
+    position: sticky;
+    top: 96px;
+  }
+  @media (max-width: 1000px) {
+    .post-summary {
+      position: static;
+    }
+  }
+
+  .post-success {
+    padding-block: var(--space-4xl) var(--space-5xl);
+  }
+  .post-success__inner {
+    display: flex;
+    justify-content: center;
+  }
+  .post-success__card {
+    max-width: 520px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-md);
+    padding: var(--space-3xl) var(--space-2xl);
+    background: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-level-2);
+  }
+  .post-success__id {
+    font-family: var(--font-mono);
+    background: var(--color-canvas-soft);
+    border: 1px solid var(--color-hairline);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    color: var(--color-ink);
+  }
+  .post-success__actions {
+    display: flex;
+    gap: var(--space-xs);
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+</style>

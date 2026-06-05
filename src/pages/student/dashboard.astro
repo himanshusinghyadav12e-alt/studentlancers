@@ -1,0 +1,171 @@
+---
+import DashboardLayout, { type NavItem } from '../../layouts/DashboardLayout.astro';
+import Button from '../../components/ui/Button.astro';
+import Badge from '../../components/ui/Badge.astro';
+
+/**
+ * /student/dashboard
+ *
+ * The student side of the marketplace. Until the user is signed in
+ * and has activity, every list and stat shows an explicit empty
+ * state — never a fabricated number or placeholder review.
+ *
+ * Real data wiring is a one-prop replacement once the API lands.
+ */
+
+const studentNav: NavItem[] = [
+  { href: '/student/dashboard', label: 'Overview', icon: 'home', current: true },
+  { href: '#', label: 'Find work', icon: 'brief' },
+  { href: '#', label: 'My applications', icon: 'inbox' },
+  { href: '#', label: 'Earnings', icon: 'wallet' },
+  { href: '#', label: 'Reviews', icon: 'reviews' },
+  { href: '#', label: 'Profile', icon: 'profile' },
+  { href: '#', label: 'Settings', icon: 'settings' },
+];
+
+/*
+ * TODO(api): these placeholders should resolve from the session.
+ * Until then, we render the empty state explicitly so users are
+ * never shown fake activity counts.
+ */
+const studentName = 'Your name';
+const greeting = 'Welcome back';
+---
+
+<DashboardLayout
+  title="Dashboard · StudentLancers"
+  description="Your StudentLancers student dashboard."
+  name={studentName}
+  role="Student"
+  nav={studentNav}
+>
+  <header class="dash-page-head">
+    <div class="dash-page-head__copy">
+      <span class="dash-page-head__eyebrow">{greeting}</span>
+      <h1 class="dash-page-head__title">Find briefs that match your skills.</h1>
+      <p class="dash-page-head__lead">
+        Pick up where you left off — or browse open briefs by major, skill, and
+        weekly hours. You can apply with a single click once your profile is set.
+      </p>
+    </div>
+    <div class="dash-page-head__actions">
+      <Button variant="primary" size="md" href="#">Browse briefs</Button>
+      <Button variant="secondary" size="md" href="#">Edit profile</Button>
+    </div>
+  </header>
+
+  <section aria-label="At a glance">
+    <div class="dash-stats">
+      <div class="dash-stat">
+        <span class="dash-stat__label">Active applications</span>
+        <span class="dash-stat__value dash-stat__value--placeholder">—</span>
+        <span class="dash-stat__hint">Updates as you apply</span>
+      </div>
+      <div class="dash-stat">
+        <span class="dash-stat__label">Open invites</span>
+        <span class="dash-stat__value dash-stat__value--placeholder">—</span>
+        <span class="dash-stat__hint">Companies can reach out directly</span>
+      </div>
+      <div class="dash-stat">
+        <span class="dash-stat__label">Earnings (30d)</span>
+        <span class="dash-stat__value dash-stat__value--placeholder">$0.00</span>
+        <span class="dash-stat__hint">Available after first payout</span>
+      </div>
+      <div class="dash-stat">
+        <span class="dash-stat__label">Profile completeness</span>
+        <span class="dash-stat__value">3 of 5</span>
+        <span class="dash-stat__hint">Add 2 more sections to be searchable</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="dash-row" aria-label="Applications and recommendations">
+    <div class="dash-card">
+      <div class="dash-card__head">
+        <h2 class="dash-card__title">Recent applications</h2>
+        <Badge mono variant="secondary">Empty</Badge>
+      </div>
+      <div class="dash-card__body">
+        <div class="dash-empty">
+          <span class="dash-empty__icon" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M3 9l2-4h14l2 4v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+              <path d="M3 9h4l1 2h8l1-2h4" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+            </svg>
+          </span>
+          <h3 class="dash-empty__title">No applications yet</h3>
+          <p class="dash-empty__body">
+            When you apply to a brief it will show up here with its current status —
+            in review, invited to interview, or hired.
+          </p>
+          <Button variant="secondary" size="md" href="#">Find your first brief</Button>
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-card">
+      <div class="dash-card__head">
+        <h2 class="dash-card__title">Up next</h2>
+        <Badge mono variant="cyan">Profile</Badge>
+      </div>
+      <div class="dash-card__body">
+        <p style="margin: 0; color: var(--color-body); font-size: var(--text-body-sm);">
+          A complete profile ranks higher in matching. Add at least:
+        </p>
+        <ul class="dash-list" role="list">
+          <li class="dash-list__item">
+            <span class="dash-list-avatar" data-color="link" aria-hidden="true">+</span>
+            <div class="dash-list__main">
+              <span class="dash-list__title">Portfolio link</span>
+              <span class="dash-list__sub">GitHub, Behance, or a personal site</span>
+            </div>
+            <span class="dash-pill dash-pill--warning">Add</span>
+          </li>
+          <li class="dash-list__item">
+            <span class="dash-list-avatar" data-color="violet" aria-hidden="true">+</span>
+            <div class="dash-list__main">
+              <span class="dash-list__title">Skills (pick 3+)</span>
+              <span class="dash-list__sub">Tags power the matching engine</span>
+            </div>
+            <span class="dash-pill dash-pill--warning">Add</span>
+          </li>
+          <li class="dash-list__item">
+            <span class="dash-list-avatar" data-color="cyan" aria-hidden="true">✓</span>
+            <div class="dash-list__main">
+              <span class="dash-list__title">Verify your .edu</span>
+              <span class="dash-list__sub">Confirmed via the link we sent to your email</span>
+            </div>
+            <span class="dash-pill dash-pill--success">Done</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="dash-card dash-card--inverted" aria-label="How payments work">
+    <div class="dash-card__head">
+      <h2 class="dash-card__title">How payouts work</h2>
+      <Badge mono variant="success" dot>Escrow</Badge>
+    </div>
+    <div class="dash-card__body dash-payout-grid">
+      <div>
+        <span class="dash-pill dash-pill--cyan" style="background: rgba(80,227,194,0.12); color: #6fe9cc; border-color: rgba(80,227,194,0.25);">01 · Funded</span>
+        <p style="margin: 8px 0 0; color: rgba(255,255,255,0.78); font-size: var(--text-body-sm);">
+          The company funds the brief when the contract is signed. Money sits in escrow, not in your account or theirs.
+        </p>
+      </div>
+      <div>
+        <span class="dash-pill dash-pill--warning" style="background: rgba(245,176,66,0.12); color: #f7c070; border-color: rgba(245,176,66,0.25);">02 · Shipped</span>
+        <p style="margin: 8px 0 0; color: rgba(255,255,255,0.78); font-size: var(--text-body-sm);">
+          You submit the work. The company reviews it. If they have changes, the milestone stays open.
+        </p>
+      </div>
+      <div>
+        <span class="dash-pill dash-pill--success" style="background: rgba(50,145,255,0.12); color: #5aa9ff; border-color: rgba(50,145,255,0.25);">03 · Paid</span>
+        <p style="margin: 8px 0 0; color: rgba(255,255,255,0.78); font-size: var(--text-body-sm);">
+          On approval, escrow releases to your payout method — Stripe Connect in supported regions.
+        </p>
+      </div>
+    </div>
+  </section>
+</DashboardLayout>

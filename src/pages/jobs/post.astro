@@ -1,0 +1,717 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Button from '../../components/ui/Button.astro';
+import Input from '../../components/ui/Input.astro';
+import Field from '../../components/ui/Field.astro';
+import ThemeToggle from '../../components/ui/ThemeToggle.astro';
+
+/**
+ * /jobs/post
+ *
+ * Multi-section form for posting a brief. Sections:
+ *   1. Basics — title, category, summary
+ *   2. Scope — budget type, amount, duration, hours/week
+ *   3. Skills — tag input (add/remove)
+ *   4. Details — full description (textarea)
+ *   5. Review — read-only summary + publish
+ *
+ * On submit, the form:
+ *   - validates every required field client-side
+ *   - persists the draft to localStorage on every change (autosave)
+ *   - clears the draft on successful publish
+ *   - shows a success state with a generated brief id
+ *
+ * No real network calls. The submit handler simulates a 700ms request
+ * and returns a fake brief id; replace with the real API later.
+ */
+---
+
+<Layout title="Post a brief · StudentLancers" description="Post a paid brief and start receiving ranked student proposals.">
+  <a class="skip-link" href="#post-main">Skip to content</a>
+
+  <header class="post-top" data-post-top>
+    <div class="ds-container post-top__inner">
+      <a href="/" class="nav__brand" aria-label="StudentLancers home">
+        <span class="nav__logo" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <rect x="0.5" y="0.5" width="21" height="21" rx="5.5" fill="var(--color-primary)" />
+            <path d="M6 7.5L11 4.5L16 7.5V14.5L11 17.5L6 14.5V7.5Z" stroke="white" stroke-width="1.4" stroke-linejoin="round" />
+            <path d="M11 4.5V11M11 11L16 7.5M11 11L6 7.5M11 11V17.5" stroke="white" stroke-width="1.4" stroke-linejoin="round" />
+          </svg>
+        </span>
+        <span class="nav__brand-text">StudentLancers</span>
+      </a>
+      <nav class="post-top__nav" aria-label="Quick links">
+        <a class="post-top__link" href="/company/dashboard">Dashboard</a>
+        <a class="post-top__link" href="#">Briefs</a>
+        <a class="post-top__link" href="#">Applicants</a>
+      </nav>
+      <div class="post-top__right">
+        <ThemeToggle size="md" />
+        <Button variant="secondary-sm" size="md" href="/company/dashboard">Save & exit</Button>
+      </div>
+    </div>
+  </header>
+
+  <main id="post-main" class="post-page">
+    <div class="ds-container post-page__inner">
+      <header class="post-page__head">
+        <span class="post-page__eyebrow">New brief</span>
+        <h1 class="post-page__title">Post a brief</h1>
+        <p class="post-page__lead">
+          Describe the work, set a budget, and pick the skills you need. Most
+          briefs go live in under five minutes.
+        </p>
+      </header>
+
+      <div class="post-grid">
+        <form
+          class="post-form"
+          novalidate
+          aria-describedby="post-alert"
+          data-post-form
+        >
+          <div
+            id="post-alert"
+            class="auth-alert"
+            role="alert"
+            data-form-alert
+            hidden
+          >
+            <svg class="auth-alert__icon" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+              <circle cx="9" cy="9" r="7.5" stroke="currentColor" stroke-width="1.4" />
+              <path d="M9 5.5v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+              <circle cx="9" cy="12.4" r="0.9" fill="currentColor" />
+            </svg>
+            <div class="auth-alert__body">
+              <p class="auth-alert__title" data-form-alert-title>Please review the form.</p>
+              <p class="auth-alert__msg" data-form-alert-msg>Some required fields are missing.</p>
+            </div>
+          </div>
+
+          {/* ── 1. Basics ──────────────────────────────────── */}
+          <section class="post-section" aria-labelledby="post-basics">
+            <header class="post-section__head">
+              <span class="post-section__num">01</span>
+              <div>
+                <h2 id="post-basics" class="post-section__title">Basics</h2>
+                <p class="post-section__sub">Help students understand the work at a glance.</p>
+              </div>
+            </header>
+
+            <Field label="Brief title" for="post-title" hint="A short, specific name. 4–80 characters.">
+              <Input
+                type="text"
+                id="post-title"
+                name="title"
+                size="lg"
+                placeholder="e.g. Brand designer for a 4-page Webflow site"
+                maxlength="80"
+                minlength="4"
+                required
+                data-field="title"
+              />
+            </Field>
+
+            <Field label="Category" for="post-category">
+              <span class="auth-input-wrap">
+                <select
+                  id="post-category"
+                  name="category"
+                  class="ds-input ds-input--input ds-input--size-lg ds-input--default ds-input--select"
+                  required
+                  data-field="category"
+                >
+                  <option value="" disabled selected>Pick a category</option>
+                  <option value="design">Design</option>
+                  <option value="engineering">Engineering</option>
+                  <option value="marketing">Marketing</option>
+                  <option value="writing">Writing</option>
+                  <option value="research">Research</option>
+                  <option value="data">Data</option>
+                  <option value="video">Video</option>
+                  <option value="tutoring">Tutoring</option>
+                </select>
+                <svg class="ds-input__select-caret" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
+            </Field>
+
+            <Field label="Summary" for="post-summary" hint="One or two sentences. This appears in the listing.">
+              <textarea
+                id="post-summary"
+                name="summary"
+                class="ds-input ds-input--textarea ds-input--size-lg ds-input--default"
+                rows="3"
+                placeholder="A brand designer to translate our existing Figma into a polished Webflow site. Two-week engagement."
+                maxlength="280"
+                required
+                data-field="summary"
+              ></textarea>
+            </Field>
+          </section>
+
+          {/* ── 2. Scope ───────────────────────────────────── */}
+          <section class="post-section" aria-labelledby="post-scope">
+            <header class="post-section__head">
+              <span class="post-section__num">02</span>
+              <div>
+                <h2 id="post-scope" class="post-section__title">Scope</h2>
+                <p class="post-section__sub">How long, how much, and how many hours per week.</p>
+              </div>
+            </header>
+
+            <fieldset class="post-radio-group" data-budget-type>
+              <legend class="post-radio-group__legend">Budget type</legend>
+              <div class="post-radio-group__row">
+                <label class="auth-choice" data-choice>
+                  <input type="radio" class="auth-choice__input" name="budget_type" value="fixed" checked data-field="budget_type" />
+                  <span class="auth-choice__body">
+                    <span class="auth-choice__title">
+                      <span class="auth-choice__dot" aria-hidden="true"></span>
+                      Fixed price
+                    </span>
+                    <span class="auth-choice__desc">One payment on approval</span>
+                  </span>
+                </label>
+                <label class="auth-choice" data-choice>
+                  <input type="radio" class="auth-choice__input" name="budget_type" value="hourly" data-field="budget_type" />
+                  <span class="auth-choice__body">
+                    <span class="auth-choice__title">
+                      <span class="auth-choice__dot" aria-hidden="true"></span>
+                      Hourly
+                    </span>
+                    <span class="auth-choice__desc">Pay for hours tracked in-app</span>
+                  </span>
+                </label>
+              </div>
+            </fieldset>
+
+            <div class="post-grid-2">
+              <Field label="Amount (USD)" for="post-budget">
+                <Input
+                  type="number"
+                  id="post-budget"
+                  name="budget"
+                  size="lg"
+                  placeholder="e.g. 1200"
+                  min="20"
+                  step="1"
+                  required
+                  data-field="budget"
+                />
+              </Field>
+              <Field label="Duration" for="post-duration">
+                <span class="auth-input-wrap">
+                  <select
+                    id="post-duration"
+                    name="duration"
+                    class="ds-input ds-input--input ds-input--size-lg ds-input--default ds-input--select"
+                    required
+                    data-field="duration"
+                  >
+                    <option value="" disabled selected>Pick a length</option>
+                    <option value="1week">Less than 1 week</option>
+                    <option value="2weeks">1–2 weeks</option>
+                    <option value="1month">2–4 weeks</option>
+                    <option value="3months">1–3 months</option>
+                    <option value="ongoing">Ongoing</option>
+                  </select>
+                  <svg class="ds-input__select-caret" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                    <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </span>
+              </Field>
+            </div>
+
+            <Field label="Hours per week" for="post-hours">
+              <span class="auth-input-wrap">
+                <select
+                  id="post-hours"
+                  name="hours"
+                  class="ds-input ds-input--input ds-input--size-lg ds-input--default ds-input--select"
+                  required
+                  data-field="hours"
+                >
+                  <option value="" disabled selected>Pick a load</option>
+                  <option value="1-5">1–5 hrs / week</option>
+                  <option value="5-10">5–10 hrs / week</option>
+                  <option value="10-20">10–20 hrs / week</option>
+                  <option value="20+">20+ hrs / week</option>
+                </select>
+                <svg class="ds-input__select-caret" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
+            </Field>
+          </section>
+
+          {/* ── 3. Skills ──────────────────────────────────── */}
+          <section class="post-section" aria-labelledby="post-skills">
+            <header class="post-section__head">
+              <span class="post-section__num">03</span>
+              <div>
+                <h2 id="post-skills" class="post-section__title">Skills</h2>
+                <p class="post-section__sub">Add 3–8 tags. Press Enter to add. Click a tag to remove.</p>
+              </div>
+            </header>
+
+            <div class="post-tags" data-tags data-field="skills">
+              <ul class="post-tags__list" data-tags-list role="list" aria-label="Selected skills"></ul>
+              <input
+                type="text"
+                id="post-skill-input"
+                class="post-tags__input"
+                placeholder="e.g. Figma, Webflow, CSS"
+                aria-label="Add a skill"
+                maxlength="32"
+                data-tags-input
+              />
+            </div>
+          </section>
+
+          {/* ── 4. Details ─────────────────────────────────── */}
+          <section class="post-section" aria-labelledby="post-details">
+            <header class="post-section__head">
+              <span class="post-section__num">04</span>
+              <div>
+                <h2 id="post-details" class="post-section__title">Details</h2>
+                <p class="post-section__sub">The full brief. What is in scope, what is not, and any references.</p>
+              </div>
+            </header>
+
+            <Field label="Description" for="post-description" hint="Markdown is fine. Aim for 200+ characters.">
+              <textarea
+                id="post-description"
+                name="description"
+                class="ds-input ds-input--textarea ds-input--size-lg ds-input--default"
+                rows="8"
+                placeholder="## What we're building&#10;&#10;…"
+                minlength="200"
+                required
+                data-field="description"
+              ></textarea>
+            </Field>
+
+            <Field label="Portfolio or reference links" for="post-links" hint="Optional. Paste one link per line.">
+              <textarea
+                id="post-links"
+                name="links"
+                class="ds-input ds-input--textarea ds-input--size-lg ds-input--default"
+                rows="3"
+                placeholder="https://figma.com/…&#10;https://example.com/…"
+                data-field="links"
+              ></textarea>
+            </Field>
+          </section>
+
+          {/* ── Footer actions ─────────────────────────────── */}
+          <footer class="post-form__foot">
+            <p class="post-form__draft" data-draft-status>Draft auto-saves as you type.</p>
+            <div class="post-form__actions">
+              <Button variant="ghost" size="md" type="button" data-clear-draft>Clear draft</Button>
+              <Button variant="primary" size="md" type="submit" data-submit>
+                <span class="auth-submit__spinner" aria-hidden="true"></span>
+                <span data-submit-label>Publish brief</span>
+              </Button>
+            </div>
+          </footer>
+        </form>
+
+        <aside class="post-summary" aria-label="Brief summary">
+          <div class="dash-card" data-summary>
+            <div class="dash-card__head">
+              <h2 class="dash-card__title">Live preview</h2>
+              <span class="dash-pill" data-summary-status>Empty</span>
+            </div>
+            <div class="dash-card__body" data-summary-body>
+              <p style="margin: 0; color: var(--color-body); font-size: var(--text-body-sm);">
+                As you fill out the form, your brief will appear here so you can
+                see exactly what students will see.
+              </p>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  {/* ── Success state (hidden until publish) ─────────────── */}
+  <div
+    class="post-success"
+    data-success-state
+    hidden
+    role="status"
+    aria-live="polite"
+  >
+    <div class="ds-container post-success__inner">
+      <div class="post-success__card">
+        <span class="auth-success__icon" aria-hidden="true">
+          <svg viewBox="0 0 28 28" fill="none">
+            <path d="M6 14.5l5 5L22 8.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </span>
+        <h2 class="auth-success__title">Your brief is live</h2>
+        <p class="auth-success__body">
+          Brief <code class="post-success__id" data-success-id>—</code> has been
+          published. Students can apply right away and you'll see ranked
+          applicants in your dashboard.
+        </p>
+        <div class="post-success__actions">
+          <Button variant="primary" size="md" href="/company/dashboard">View applicants</Button>
+          <Button variant="secondary" size="md" href="/jobs/post">Post another</Button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    import { mountPostForm } from '../../scripts/post-form';
+    mountPostForm();
+  </script>
+</Layout>
+
+<style>
+  .skip-link {
+    position: absolute;
+    top: -40px;
+    left: 16px;
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-body-sm);
+    z-index: 100;
+    transition: top 0.15s ease;
+  }
+  .skip-link:focus {
+    top: 16px;
+  }
+
+  /* Top nav (re-uses the design-system nav brand) */
+  .post-top {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: color-mix(in srgb, var(--color-canvas) 86%, transparent);
+    backdrop-filter: saturate(180%) blur(12px);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid var(--color-hairline);
+  }
+  .post-top__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-lg);
+    height: 64px;
+  }
+  .post-top__nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+  .post-top__link {
+    display: inline-flex;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-full);
+    color: var(--color-body);
+    font-size: var(--text-body-sm);
+    text-decoration: none;
+    transition: color 0.15s ease, background-color 0.15s ease;
+  }
+  .post-top__link:hover {
+    color: var(--color-ink);
+    background: var(--color-canvas-soft);
+  }
+  .post-top__right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+  @media (max-width: 700px) {
+    .post-top__nav {
+      display: none;
+    }
+  }
+
+  /* Page */
+  .post-page {
+    padding-block: var(--space-3xl) var(--space-5xl);
+  }
+  .post-page__inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xl);
+  }
+  .post-page__head {
+    max-width: 720px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+  .post-page__eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--color-mute);
+  }
+  .post-page__title {
+    font-size: clamp(28px, 4vw, var(--text-display-lg));
+    line-height: var(--text-display-lg-line);
+    font-weight: var(--text-display-lg-weight);
+    letter-spacing: var(--text-display-lg-tracking);
+    color: var(--color-ink);
+    margin: 0;
+  }
+  .post-page__lead {
+    font-size: var(--text-body-md);
+    line-height: var(--text-body-md-line);
+    color: var(--color-body);
+    margin: 0;
+  }
+
+  /* Two-column form + summary */
+  .post-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: var(--space-2xl);
+    align-items: start;
+  }
+  @media (max-width: 1000px) {
+    .post-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .post-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xl);
+  }
+
+  .post-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    padding: var(--space-xl);
+    background: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-level-1);
+  }
+  .post-section__head {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-md);
+    padding-bottom: var(--space-md);
+    border-bottom: 1px solid var(--color-hairline);
+  }
+  .post-section__num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    background: var(--color-canvas-soft);
+    border: 1px solid var(--color-hairline);
+    color: var(--color-ink);
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    font-weight: var(--text-body-sm-strong-weight);
+    flex-shrink: 0;
+  }
+  .post-section__title {
+    font-size: var(--text-display-sm);
+    line-height: var(--text-display-sm-line);
+    font-weight: var(--text-display-sm-weight);
+    letter-spacing: var(--text-display-sm-tracking);
+    color: var(--color-ink);
+    margin: 0 0 2px;
+  }
+  .post-section__sub {
+    font-size: var(--text-body-sm);
+    line-height: var(--text-body-sm-line);
+    color: var(--color-body);
+    margin: 0;
+  }
+
+  .post-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+  }
+  @media (max-width: 600px) {
+    .post-grid-2 {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .post-radio-group {
+    border: 0;
+    padding: 0;
+    margin: 0;
+  }
+  .post-radio-group__legend {
+    font-size: var(--text-body-sm);
+    line-height: var(--text-body-sm-line);
+    font-weight: var(--text-body-sm-strong-weight);
+    color: var(--color-ink);
+    letter-spacing: -0.28px;
+    margin-bottom: var(--space-xs);
+    padding: 0;
+  }
+  .post-radio-group__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-sm);
+  }
+  @media (max-width: 500px) {
+    .post-radio-group__row {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Tag input */
+  .post-tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: 8px 10px;
+    background: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-sm);
+    min-height: 48px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .post-tags:focus-within {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(23, 23, 23, 0.08);
+  }
+  .post-tags__list {
+    list-style: none;
+    display: contents;
+  }
+  .post-tags__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px 4px 10px;
+    background: var(--color-canvas-soft);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-full);
+    color: var(--color-ink);
+    font-size: var(--text-body-sm);
+    animation: tag-in 0.18s ease;
+  }
+  .post-tags__item button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: var(--radius-full);
+    background: transparent;
+    color: var(--color-mute);
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+  .post-tags__item button:hover {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+  }
+  .post-tags__item button:focus-visible {
+    outline: 2px solid var(--color-link);
+    outline-offset: 1px;
+  }
+  .post-tags__input {
+    flex: 1;
+    min-width: 100px;
+    height: 32px;
+    border: 0;
+    background: transparent;
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    line-height: var(--text-body-sm-line);
+    padding: 0 4px;
+  }
+  .post-tags__input:focus {
+    outline: none;
+  }
+  @keyframes tag-in {
+    from { opacity: 0; transform: scale(0.85); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  /* Footer */
+  .post-form__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+  }
+  .post-form__draft {
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: var(--color-mute);
+    margin: 0;
+  }
+  .post-form__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    flex-wrap: wrap;
+  }
+
+  /* Live preview / summary */
+  .post-summary {
+    position: sticky;
+    top: 96px;
+  }
+  @media (max-width: 1000px) {
+    .post-summary {
+      position: static;
+    }
+  }
+
+  /* Success state */
+  .post-success {
+    padding-block: var(--space-4xl) var(--space-5xl);
+  }
+  .post-success__inner {
+    display: flex;
+    justify-content: center;
+  }
+  .post-success__card {
+    max-width: 520px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-md);
+    padding: var(--space-3xl) var(--space-2xl);
+    background: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-level-2);
+  }
+  .post-success__id {
+    font-family: var(--font-mono);
+    background: var(--color-canvas-soft);
+    border: 1px solid var(--color-hairline);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    color: var(--color-ink);
+  }
+  .post-success__actions {
+    display: flex;
+    gap: var(--space-xs);
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+</style>

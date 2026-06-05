@@ -1,0 +1,158 @@
+---
+import DashboardLayout, { type NavItem } from '../../layouts/DashboardLayout.astro';
+import Button from '../../components/ui/Button.astro';
+import Badge from '../../components/ui/Badge.astro';
+
+/**
+ * /company/dashboard
+ *
+ * The company side of the marketplace. Mirrors the student dashboard
+ * structure — same primitives, no fake metrics. Lists are empty by
+ * default and render explicit empty states with the primary CTA
+ * ("Post a brief" / "Browse applicants").
+ */
+
+const companyNav: NavItem[] = [
+  { href: '/company/dashboard', label: 'Overview', icon: 'home', current: true },
+  { href: '/jobs/post', label: 'Post a brief', icon: 'brief' },
+  { href: '#', label: 'Applicants', icon: 'inbox' },
+  { href: '#', label: 'Active hires', icon: 'gigs' },
+  { href: '#', label: 'Billing', icon: 'wallet' },
+  { href: '#', label: 'Company profile', icon: 'profile' },
+  { href: '#', label: 'Settings', icon: 'settings' },
+];
+
+const companyName = 'Your company';
+---
+
+<DashboardLayout
+  title="Dashboard · StudentLancers"
+  description="Your StudentLancers company dashboard."
+  name={companyName}
+  role="Company"
+  nav={companyNav}
+>
+  <header class="dash-page-head">
+    <div class="dash-page-head__copy">
+      <span class="dash-page-head__eyebrow">{`Welcome back, ${companyName}`}</span>
+      <h1 class="dash-page-head__title">Hire the next student on your team.</h1>
+      <p class="dash-page-head__lead">
+        Post a brief in under five minutes, review ranked applicants, and start
+        a paid engagement with escrow on day one.
+      </p>
+    </div>
+    <div class="dash-page-head__actions">
+      <Button variant="primary" size="md" href="/jobs/post">Post a brief →</Button>
+      <Button variant="secondary" size="md" href="#">Browse talent</Button>
+    </div>
+  </header>
+
+  <section aria-label="At a glance">
+    <div class="dash-stats">
+      <div class="dash-stat">
+        <span class="dash-stat__label">Open briefs</span>
+        <span class="dash-stat__value dash-stat__value--placeholder">—</span>
+        <span class="dash-stat__hint">Updates as you post</span>
+      </div>
+      <div class="dash-stat">
+        <span class="dash-stat__label">Applicants to review</span>
+        <span class="dash-stat__value dash-stat__value--placeholder">—</span>
+        <span class="dash-stat__hint">Ranked proposals in your inbox</span>
+      </div>
+      <div class="dash-stat">
+        <span class="dash-stat__label">Active hires</span>
+        <span class="dash-stat__value dash-stat__value--placeholder">—</span>
+        <span class="dash-stat__hint">Currently in progress</span>
+      </div>
+      <div class="dash-stat">
+        <span class="dash-stat__label">Escrow funded</span>
+        <span class="dash-stat__value dash-stat__value--placeholder">$0.00</span>
+        <span class="dash-stat__hint">Released on approval</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="dash-row" aria-label="Briefs and applicants">
+    <div class="dash-card">
+      <div class="dash-card__head">
+        <h2 class="dash-card__title">Your briefs</h2>
+        <Badge mono variant="secondary">Empty</Badge>
+      </div>
+      <div class="dash-card__body">
+        <div class="dash-empty">
+          <span class="dash-empty__icon" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <rect x="4" y="5" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.5" />
+              <path d="M8 3h8v4H8z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+              <path d="M4 11h16" stroke="currentColor" stroke-width="1.5" />
+            </svg>
+          </span>
+          <h3 class="dash-empty__title">No briefs yet</h3>
+          <p class="dash-empty__body">
+            Post a brief to start receiving ranked proposals. Most briefs get
+            their first applicant within a few hours.
+          </p>
+          <Button variant="primary" size="md" href="/jobs/post">Post your first brief →</Button>
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-card">
+      <div class="dash-card__head">
+        <h2 class="dash-card__title">Top picks for you</h2>
+        <Badge mono variant="violet">Preview</Badge>
+      </div>
+      <div class="dash-card__body">
+        <p style="margin: 0; color: var(--color-body); font-size: var(--text-body-sm);">
+          Once you post a brief, ranked applicants will appear here with their
+          school, year, portfolio, and proposed rate. Until then, the system has
+          nothing to rank.
+        </p>
+        <ul class="dash-list" role="list" style="opacity: 0.55;">
+          <li class="dash-list__item">
+            <span class="dash-list-avatar" data-color="ink" aria-hidden="true">·</span>
+            <div class="dash-list__main">
+              <span class="dash-list__title">Awaiting your first brief</span>
+              <span class="dash-list__sub">Post one to see ranked matches</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="dash-card" aria-label="Get started checklist">
+    <div class="dash-card__head">
+      <h2 class="dash-card__title">Get your company set up</h2>
+      <Badge mono variant="cyan">Onboarding</Badge>
+    </div>
+    <div class="dash-card__body">
+      <ul class="dash-list" role="list">
+        <li class="dash-list__item">
+          <span class="dash-list-avatar" data-color="link" aria-hidden="true">1</span>
+          <div class="dash-list__main">
+            <span class="dash-list__title">Verify your work email</span>
+            <span class="dash-list__sub">Required before posting or messaging students</span>
+          </div>
+          <span class="dash-pill dash-pill--warning">Verify</span>
+        </li>
+        <li class="dash-list__item">
+          <span class="dash-list-avatar" data-color="violet" aria-hidden="true">2</span>
+          <div class="dash-list__main">
+            <span class="dash-list__title">Add billing details</span>
+            <span class="dash-list__sub">A card on file funds escrow when a brief is matched</span>
+          </div>
+          <span class="dash-pill dash-pill--warning">Add</span>
+        </li>
+        <li class="dash-list__item">
+          <span class="dash-list-avatar" data-color="cyan" aria-hidden="true">3</span>
+          <div class="dash-list__main">
+            <span class="dash-list__title">Post your first brief</span>
+            <span class="dash-list__sub">Takes about five minutes — title, budget, skills</span>
+          </div>
+          <Button variant="secondary" size="sm" href="/jobs/post">Start</Button>
+        </li>
+      </ul>
+    </div>
+  </section>
+</DashboardLayout>

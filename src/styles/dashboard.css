@@ -1,0 +1,644 @@
+/*
+ * dashboard.css
+ *
+ * Styles for /student/dashboard, /company/dashboard, and any future
+ * dashboard routes that share DashboardLayout.
+ *
+ * Token-driven only. Layout structure:
+ *   - Sticky top nav (brand · role pill · theme toggle · avatar)
+ *   - Side rail (collapses to horizontal scroll on tablet and to
+ *     a top-of-content block on mobile)
+ *   - Main content area
+ *
+ * Reusable dashboard primitives (cards, list items, empty states,
+ * status pills) live here too.
+ */
+
+/* ─── Body + skip link ──────────────────────────────────────── */
+.dash-body {
+  background: var(--color-canvas-soft);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+}
+.dash-body .skip-link {
+  position: absolute;
+  top: -40px;
+  left: 16px;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-body-sm);
+  z-index: 100;
+  transition: top 0.15s ease;
+}
+.dash-body .skip-link:focus {
+  top: 16px;
+}
+
+/* ─── Top nav ───────────────────────────────────────────────── */
+.dash-top {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: color-mix(in srgb, var(--color-canvas) 86%, transparent);
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.dash-top[data-scrolled] {
+  border-bottom-color: var(--color-hairline);
+}
+.dash-top__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  height: 64px;
+}
+.dash-top__center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+.dash-top__right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.dash-role-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  background: var(--color-canvas-soft);
+  border: 1px solid var(--color-hairline);
+  color: var(--color-body);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+.dash-role-pill::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-link);
+}
+.dash-role-pill[data-role="company"]::before {
+  background: var(--color-violet);
+}
+
+.dash-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: var(--color-canvas-soft-2);
+  border: 1px solid var(--color-hairline);
+  color: var(--color-ink);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.dash-avatar:hover {
+  border-color: var(--color-hairline-strong);
+  background: var(--color-canvas);
+}
+.dash-avatar:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: 2px;
+}
+.dash-avatar__initials {
+  font-size: var(--text-caption);
+  font-weight: var(--text-body-sm-strong-weight);
+  letter-spacing: 0.04em;
+}
+
+/* ─── Shell layout ─────────────────────────────────────────── */
+.dash-shell {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  min-height: calc(100vh - 64px);
+}
+@media (max-width: 900px) {
+  .dash-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ─── Side rail ────────────────────────────────────────────── */
+.dash-rail {
+  position: sticky;
+  top: 64px;
+  align-self: start;
+  height: calc(100vh - 64px);
+  border-right: 1px solid var(--color-hairline);
+  background: var(--color-canvas);
+  padding: var(--space-lg) var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  overflow-y: auto;
+}
+.dash-rail__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  list-style: none;
+}
+.dash-rail__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  color: var(--color-body);
+  text-decoration: none;
+  font-size: var(--text-body-sm);
+  line-height: var(--text-body-sm-line);
+  font-weight: var(--text-body-sm-strong-weight);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.dash-rail__item:hover {
+  background: var(--color-canvas-soft);
+  color: var(--color-ink);
+}
+.dash-rail__item.is-current {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+.dash-rail__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+.dash-rail__foot {
+  margin-top: auto;
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-hairline);
+}
+.dash-rail__signout {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--text-body-sm);
+  color: var(--color-mute);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+.dash-rail__signout:hover {
+  color: var(--color-ink);
+}
+
+@media (max-width: 900px) {
+  .dash-rail {
+    position: static;
+    height: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--color-hairline);
+    padding: var(--space-sm) var(--space-lg);
+    flex-direction: row;
+    overflow-x: auto;
+    /* Allow the rail to be narrower than its overflowing children so
+       the page itself does not overflow on mobile. */
+    min-width: 0;
+    max-width: 100%;
+  }
+  .dash-rail__nav {
+    flex-direction: row;
+    flex-wrap: nowrap;
+  }
+  .dash-rail__item {
+    flex-shrink: 0;
+  }
+  .dash-rail__label {
+    white-space: nowrap;
+  }
+  .dash-rail__foot {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+    flex-shrink: 0;
+  }
+}
+
+/* Hide the role pill on narrow screens — the side rail already labels
+   the page as the student/company dashboard, and the pill crowds the
+   top nav at 360px. */
+@media (max-width: 600px) {
+  .dash-top__center {
+    display: none;
+  }
+  .dash-top__inner {
+    gap: var(--space-sm);
+  }
+  .dash-top__right {
+    gap: 6px;
+  }
+}
+
+/* Three-up grid for the "How payouts work" section on the student
+   dashboard. Collapses to a single column on narrow viewports. */
+.dash-payout-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-md);
+}
+@media (max-width: 800px) {
+  .dash-payout-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ─── Main content area ────────────────────────────────────── */
+.dash-main__inner {
+  padding-block: var(--space-2xl) var(--space-4xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xl);
+}
+
+/* ─── Page header (greeting + primary action) ──────────────── */
+.dash-page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  flex-wrap: wrap;
+}
+.dash-page-head__copy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  max-width: 640px;
+}
+.dash-page-head__eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-mute);
+}
+.dash-page-head__title {
+  font-size: var(--text-display-md);
+  line-height: var(--text-display-md-line);
+  font-weight: var(--text-display-md-weight);
+  letter-spacing: var(--text-display-md-tracking);
+  color: var(--color-ink);
+  margin: 0;
+}
+.dash-page-head__lead {
+  font-size: var(--text-body-md);
+  line-height: var(--text-body-md-line);
+  color: var(--color-body);
+  margin: 0;
+}
+.dash-page-head__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+/* ─── Card primitives ──────────────────────────────────────── */
+.dash-card {
+  background: var(--color-canvas);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  box-shadow: var(--shadow-level-1);
+}
+.dash-card--soft {
+  background: var(--color-canvas-soft);
+}
+.dash-card--inverted {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border-color: transparent;
+}
+.dash-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+.dash-card__title {
+  font-size: var(--text-body-md-strong);
+  font-weight: var(--text-body-md-strong-weight);
+  color: var(--color-ink);
+  margin: 0;
+}
+.dash-card--inverted .dash-card__title {
+  color: var(--color-on-primary);
+}
+.dash-card__hint {
+  font-size: var(--text-caption);
+  color: var(--color-mute);
+}
+.dash-card--inverted .dash-card__hint {
+  color: rgba(255, 255, 255, 0.65);
+}
+.dash-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+.dash-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+/* ─── Stat grid ────────────────────────────────────────────── */
+.dash-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-md);
+}
+@media (max-width: 1100px) {
+  .dash-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 500px) {
+  .dash-stats {
+    grid-template-columns: 1fr;
+  }
+}
+.dash-stat {
+  background: var(--color-canvas);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: var(--shadow-level-1);
+}
+.dash-stat__label {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-mute);
+}
+.dash-stat__value {
+  font-size: var(--text-display-md);
+  line-height: var(--text-display-md-line);
+  font-weight: var(--text-display-md-weight);
+  letter-spacing: var(--text-display-md-tracking);
+  color: var(--color-ink);
+}
+.dash-stat__value--placeholder {
+  color: var(--color-mute);
+  font-size: var(--text-body-md);
+  font-weight: var(--text-body-md-weight);
+  letter-spacing: 0;
+}
+.dash-stat__hint {
+  font-size: var(--text-caption);
+  color: var(--color-mute);
+}
+
+/* ─── Section row (recent + side panel) ───────────────────── */
+.dash-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--space-lg);
+  align-items: start;
+}
+@media (max-width: 1100px) {
+  .dash-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─── List rows ────────────────────────────────────────────── */
+.dash-list {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.dash-list__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--color-hairline);
+}
+.dash-list__item:last-child {
+  border-bottom: 0;
+}
+.dash-list__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dash-list__title {
+  font-size: var(--text-body-md);
+  font-weight: var(--text-body-md-strong-weight);
+  color: var(--color-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dash-list__sub {
+  font-size: var(--text-caption);
+  color: var(--color-mute);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+.dash-list__sub-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: var(--radius-full);
+  background: var(--color-hairline-strong);
+}
+.dash-list__side {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+.dash-list__amount {
+  font-family: var(--font-mono);
+  font-size: var(--text-body-sm);
+  color: var(--color-ink);
+  background: var(--color-canvas-soft);
+  border: 1px solid var(--color-hairline);
+  padding: 4px 8px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+
+/* ─── Status pill ──────────────────────────────────────────── */
+.dash-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-radius: var(--radius-full);
+  background: var(--color-canvas-soft);
+  color: var(--color-body);
+  border: 1px solid var(--color-hairline);
+  white-space: nowrap;
+}
+.dash-pill::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: currentColor;
+  opacity: 0.8;
+}
+.dash-pill--success {
+  background: var(--color-link-bg-soft);
+  color: var(--color-link-deep);
+  border-color: color-mix(in srgb, var(--color-link) 18%, transparent);
+}
+.dash-pill--warning {
+  background: var(--color-warning-soft);
+  color: var(--color-warning-deep);
+  border-color: color-mix(in srgb, var(--color-warning) 22%, transparent);
+}
+.dash-pill--violet {
+  background: var(--color-violet-soft);
+  color: var(--color-violet-deep);
+  border-color: color-mix(in srgb, var(--color-violet) 22%, transparent);
+}
+.dash-pill--cyan {
+  background: var(--color-cyan-soft);
+  color: var(--color-cyan-deep);
+  border-color: color-mix(in srgb, var(--color-cyan) 22%, transparent);
+}
+
+/* ─── Avatar (list avatar) ─────────────────────────────────── */
+.dash-list-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-caption);
+  font-weight: var(--text-body-sm-strong-weight);
+  flex-shrink: 0;
+}
+.dash-list-avatar[data-color="violet"] { background: var(--color-violet); }
+.dash-list-avatar[data-color="cyan"] { background: var(--color-cyan-deep); }
+.dash-list-avatar[data-color="pink"] { background: var(--color-highlight-magenta); }
+.dash-list-avatar[data-color="link"] { background: var(--color-link); }
+.dash-list-avatar[data-color="ink"] { background: var(--color-ink); }
+
+/* ─── Empty state ──────────────────────────────────────────── */
+.dash-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-sm);
+  padding: var(--space-2xl) var(--space-lg);
+  color: var(--color-body);
+}
+.dash-empty__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-full);
+  background: var(--color-canvas-soft);
+  color: var(--color-mute);
+  border: 1px solid var(--color-hairline);
+}
+.dash-empty__title {
+  font-size: var(--text-body-md);
+  font-weight: var(--text-body-md-strong-weight);
+  color: var(--color-ink);
+  margin: 0;
+}
+.dash-empty__body {
+  font-size: var(--text-body-sm);
+  color: var(--color-body);
+  margin: 0;
+  max-width: 360px;
+}
+
+/* ─── Filter row ───────────────────────────────────────────── */
+.dash-filters {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+.dash-filters__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  background: var(--color-canvas);
+  border: 1px solid var(--color-hairline);
+  color: var(--color-body);
+  font-size: var(--text-body-sm);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.dash-filters__chip:hover {
+  background: var(--color-canvas-soft);
+  color: var(--color-ink);
+}
+.dash-filters__chip[aria-pressed="true"] {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border-color: var(--color-primary);
+}
+
+/* ─── Two-up (e.g. form + summary) ────────────────────────── */
+.dash-two-up {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--space-lg);
+  align-items: start;
+}
+@media (max-width: 1100px) {
+  .dash-two-up {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─── Reduced motion ───────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .dash-top,
+  .dash-rail__item,
+  .dash-filters__chip {
+    transition: none;
+  }
+}
