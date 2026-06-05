@@ -1,11 +1,1580 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
+import Button from '../components/ui/Button.astro';
+import Card from '../components/ui/Card.astro';
+import Badge from '../components/ui/Badge.astro';
+import Input from '../components/ui/Input.astro';
+import Field from '../components/ui/Field.astro';
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+/* ─── Section data ─────────────────────────────────────────── */
+const trustedLogos = [
+  'Stanford',
+  'MIT',
+  'Y Combinator',
+  'Berkeley',
+  'Notion',
+  'Linear',
+  'Vercel',
+  'Stripe',
+];
+
+const features = [
+  {
+    eyebrow: '01 — Match',
+    title: 'Smart talent matching.',
+    body: 'Our ranking engine surfaces the right students for your brief in minutes, not days. Filter by major, skill, availability, and rate.',
+  },
+  {
+    eyebrow: '02 — Collaborate',
+    title: 'Built-in project tools.',
+    body: 'Briefs, milestones, file sharing, and time tracking live in the same workspace. No more chasing context across five apps.',
+  },
+  {
+    eyebrow: '03 — Pay',
+    title: 'Escrow that protects both sides.',
+    body: 'Funds are held securely until work is approved. Students get paid on a predictable schedule; companies get a money-back guarantee.',
+  },
+];
+
+const steps = [
+  {
+    n: '01',
+    title: 'Post your brief.',
+    body: 'Describe the work, set a budget, and pick the skills you need. It takes under five minutes.',
+  },
+  {
+    n: '02',
+    title: 'Review applicants.',
+    body: 'Receive ranked proposals from vetted students within hours. Compare portfolios and rates side-by-side.',
+  },
+  {
+    n: '03',
+    title: 'Collaborate & ship.',
+    body: 'Work together in a shared workspace with milestones, messaging, and file delivery baked in.',
+  },
+  {
+    n: '04',
+    title: 'Pay with confidence.',
+    body: 'Approve deliverables, release escrow, and leave a review. Both sides walk away with a paper trail.',
+  },
+];
+
+const benefits = [
+  {
+    title: 'For students',
+    items: [
+      'Build a portfolio that pays.',
+      'Get matched with real companies.',
+      'Set your own rates and hours.',
+      'Get paid through secure escrow.',
+    ],
+  },
+  {
+    title: 'For companies',
+    items: [
+      'Access affordable, vetted talent.',
+      'Hire in hours, not weeks.',
+      'Pay only for approved work.',
+      'Find specialists across 40+ majors.',
+    ],
+  },
+];
+
+const testimonials = [
+  {
+    quote:
+      'I shipped my first paid design sprint in week two. By finals I had more portfolio work than my entire major had given me.',
+    name: 'Maya Chen',
+    role: 'B.S. Design · UC San Diego',
+  },
+  {
+    quote:
+      'StudentLancers is the only place we hire for landing-page work. The talent is sharper than agencies we have used, and a fraction of the cost.',
+    name: 'Daniel Park',
+    role: 'Founder · Linear Labs',
+  },
+  {
+    quote:
+      'The escrow flow made me comfortable hiring a student for a $4k build. The result was better than three prior agency engagements.',
+    name: 'Priya Anand',
+    role: 'Head of Product · Plaid',
+  },
+];
+
+const faqs = [
+  {
+    q: 'Who can sign up as a freelancer?',
+    a: 'Any student currently enrolled in an accredited college or university, with a verified .edu email. We support undergrad, grad, and PhD students across every major.',
+  },
+  {
+    q: 'How does pricing work?',
+    a: 'Students set their own hourly or project rate. Companies can post a fixed budget and let students bid, or invite specific students at a set rate. StudentLancers takes a flat 8% platform fee on completed work.',
+  },
+  {
+    q: 'What kinds of work are posted?',
+    a: 'Design, engineering, marketing, research, writing, data analysis, video, translation, and tutoring are the most common. If a college student can do it, it belongs here.',
+  },
+  {
+    q: 'How are students vetted?',
+    a: 'Every student verifies their enrollment, links a portfolio or GitHub, and completes a skill check on the categories they apply for. Companies leave ratings after every engagement.',
+  },
+  {
+    q: 'Is payment secure?',
+    a: 'Yes. Funds are held in escrow from the moment a project starts. They are released to the student only when the company approves the deliverable. Disputes are mediated by our support team.',
+  },
+];
 ---
 
 <Layout>
-	<Welcome />
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  {/* ─── 1. Navbar ───────────────────────────────────────── */}
+  <header class="nav" data-nav>
+    <div class="ds-container nav__inner">
+      <a href="/" class="nav__brand" aria-label="StudentLancers home">
+        <span class="nav__logo" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <rect x="0.5" y="0.5" width="21" height="21" rx="5.5" fill="var(--color-primary)" />
+            <path
+              d="M6 7.5L11 4.5L16 7.5V14.5L11 17.5L6 14.5V7.5Z"
+              stroke="white"
+              stroke-width="1.4"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M11 4.5V11M11 11L16 7.5M11 11L6 7.5M11 11V17.5"
+              stroke="white"
+              stroke-width="1.4"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </span>
+        <span class="nav__brand-text">StudentLancers</span>
+      </a>
+
+      <nav class="nav__links" aria-label="Primary">
+        <a class="nav__link" href="#features">Features</a>
+        <a class="nav__link" href="#how">How it works</a>
+        <a class="nav__link" href="#testimonials">Customers</a>
+        <a class="nav__link" href="#faq">Pricing</a>
+        <a class="nav__link" href="#faq">FAQ</a>
+      </nav>
+
+      <div class="nav__cta">
+        <Button variant="primary-sm" size="md" href="#cta">Sign up</Button>
+        <Button variant="secondary-sm" size="md" href="#cta">Log in</Button>
+      </div>
+
+      <button
+        class="nav__burger"
+        type="button"
+        aria-label="Open menu"
+        aria-expanded="false"
+        data-nav-burger
+      >
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+
+    <div class="nav__mobile" data-nav-mobile hidden>
+      <a class="nav__link nav__link--mobile" href="#features">Features</a>
+      <a class="nav__link nav__link--mobile" href="#how">How it works</a>
+      <a class="nav__link nav__link--mobile" href="#testimonials">Customers</a>
+      <a class="nav__link nav__link--mobile" href="#faq">Pricing</a>
+      <a class="nav__link nav__link--mobile" href="#faq">FAQ</a>
+      <div class="nav__mobile-cta">
+        <Button variant="primary-sm" size="md" href="#cta">Sign up</Button>
+        <Button variant="secondary-sm" size="md" href="#cta">Log in</Button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    {/* ─── 2. Hero ─────────────────────────────────────────── */}
+    <section class="hero">
+      <div class="hero__mesh" aria-hidden="true"></div>
+      <div class="ds-container hero__inner">
+        <div class="hero__eyebrow">
+          <Badge variant="success" dot mono>Now hiring · Spring cohort</Badge>
+        </div>
+
+        <h1 class="hero__title">
+          Hire college talent.<br />
+          Earn while you learn.
+        </h1>
+
+        <p class="hero__lead">
+          The marketplace where students land real paid work and companies hire
+          affordable, ambitious talent. Briefs in minutes, escrow on day one,
+          payouts that actually arrive.
+        </p>
+
+        <div class="hero__cta">
+          <Button variant="primary" size="lg" href="#cta">Hire a student →</Button>
+          <Button variant="secondary" size="lg" href="#cta">Start freelancing</Button>
+        </div>
+
+        <ul class="hero__meta" role="list">
+          <li><span>12,400+</span> vetted students</li>
+          <li><span>$4.2M</span> paid out in 2025</li>
+          <li><span>4.9 / 5</span> average rating</li>
+        </ul>
+
+        <div class="hero__preview" aria-hidden="true">
+          <div class="hero__window">
+            <div class="hero__window-bar">
+              <span class="hero__dot"></span>
+              <span class="hero__dot"></span>
+              <span class="hero__dot"></span>
+              <span class="hero__window-tab">studentlancers.com / brief / 482</span>
+            </div>
+            <div class="hero__window-body">
+              <div class="hero__brief">
+                <div class="hero__brief-row">
+                  <span class="hero__brief-label">Role</span>
+                  <span class="hero__brief-value">Brand designer · part-time</span>
+                </div>
+                <div class="hero__brief-row">
+                  <span class="hero__brief-label">Budget</span>
+                  <span class="hero__brief-value">$1,200 fixed</span>
+                </div>
+                <div class="hero__brief-row">
+                  <span class="hero__brief-label">Stack</span>
+                  <span class="hero__brief-value">Figma · Webflow</span>
+                </div>
+                <div class="hero__brief-row">
+                  <span class="hero__brief-label">Applicants</span>
+                  <span class="hero__brief-value hero__brief-pulse">14 in the last hour</span>
+                </div>
+              </div>
+              <div class="hero__applicants">
+                <div class="hero__applicant">
+                  <span class="hero__avatar" data-color="violet">AM</span>
+                  <div>
+                    <strong>Aria M.</strong>
+                    <em>RISD · BFA Graphic Design</em>
+                  </div>
+                  <span class="hero__rate">$32/hr</span>
+                </div>
+                <div class="hero__applicant">
+                  <span class="hero__avatar" data-color="cyan">JT</span>
+                  <div>
+                    <strong>Jordan T.</strong>
+                    <em>CMU · BFA Design</em>
+                  </div>
+                  <span class="hero__rate">$28/hr</span>
+                </div>
+                <div class="hero__applicant">
+                  <span class="hero__avatar" data-color="pink">SP</span>
+                  <div>
+                    <strong>Sana P.</strong>
+                    <em>NYU · IDM</em>
+                  </div>
+                  <span class="hero__rate">$30/hr</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {/* ─── 3. Trusted By ──────────────────────────────────── */}
+    <section class="trust" aria-label="Trusted by">
+      <div class="ds-container trust__inner">
+        <p class="trust__eyebrow">Trusted by teams hiring at</p>
+        <ul class="trust__row" role="list">
+          {trustedLogos.map((name) => (
+            <li class="trust__logo">{name}</li>
+          ))}
+        </ul>
+      </div>
+    </section>
+
+    {/* ─── 4. Features ────────────────────────────────────── */}
+    <section class="features" id="features">
+      <div class="ds-container features__inner">
+        <div class="features__head">
+          <Badge mono variant="secondary">Features</Badge>
+          <h2 class="features__title">A hiring surface that takes the work out of the work.</h2>
+          <p class="features__lead">
+            Everything you need to brief, match, collaborate, and pay — without
+            the spreadsheet, the chase, or the awkward Venmo request.
+          </p>
+        </div>
+
+        <div class="features__grid">
+          {features.map((f) => (
+            <Card variant="marketing">
+              <span slot="header" class="card-eyebrow">{f.eyebrow}</span>
+              <h3 class="card-title">{f.title}</h3>
+              <p class="card-body">{f.body}</p>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    {/* ─── 5. How It Works ────────────────────────────────── */}
+    <section class="how" id="how">
+      <div class="ds-container how__inner">
+        <div class="how__head">
+          <Badge mono variant="secondary" inverted>How it works</Badge>
+          <h2 class="how__title">From brief to paid in four steps.</h2>
+          <p class="how__lead">
+            No more chasing DMs, negotiating rates over email, or wondering
+            when the invoice clears. The flow is the same on both sides.
+          </p>
+        </div>
+
+        <ol class="how__steps" role="list">
+          {steps.map((s) => (
+            <li class="how__step">
+              <span class="how__num">{s.n}</span>
+              <h3 class="how__step-title">{s.title}</h3>
+              <p class="how__step-body">{s.body}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+
+    {/* ─── 6. Benefits ────────────────────────────────────── */}
+    <section class="benefits" id="benefits">
+      <div class="ds-container benefits__inner">
+        <div class="benefits__head">
+          <Badge mono variant="violet">Built for both sides</Badge>
+          <h2 class="benefits__title">Whether you are hiring or freelancing.</h2>
+        </div>
+
+        <div class="benefits__grid">
+          {benefits.map((b, i) => (
+            <Card variant={i === 0 ? 'marketing-large' : 'soft'}>
+              <span slot="header" class="card-eyebrow">{b.title}</span>
+              <ul class="benefits__list" role="list">
+                {b.items.map((item) => (
+                  <li class="benefits__item">
+                    <span class="benefits__check" aria-hidden="true">
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <path d="M2.5 7.5L5.5 10.5L11.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                    </span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <div slot="footer">
+                <Button
+                  variant={i === 0 ? 'secondary' : 'primary'}
+                  size="md"
+                  href="#cta"
+                >
+                  {i === 0 ? 'Start freelancing →' : 'Post a brief →'}
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    {/* ─── 7. Testimonials ────────────────────────────────── */}
+    <section class="testimonials" id="testimonials">
+      <div class="ds-container testimonials__inner">
+        <div class="testimonials__head">
+          <Badge mono variant="secondary">Testimonials</Badge>
+          <h2 class="testimonials__title">Loved by students and the teams that hire them.</h2>
+        </div>
+
+        <div class="testimonials__grid">
+          {testimonials.map((t) => (
+            <Card variant="marketing">
+              <svg
+                class="testimonials__quote"
+                width="22"
+                height="16"
+                viewBox="0 0 22 16"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M0 16V9.143C0 6.476 0.667 4.19 2 2.286 3.333 0.762 5.467 0 8.4 0V3.429C6.8 3.429 5.667 3.905 5 4.857 4.333 5.81 4 7.048 4 8.571H8V16H0ZM12 16V9.143C12 6.476 12.667 4.19 14 2.286 15.333 0.762 17.467 0 20.4 0V3.429C18.8 3.429 17.667 3.905 17 4.857 16.333 5.81 16 7.048 16 8.571H20V16H12Z"
+                  fill="currentColor"
+                />
+              </svg>
+              <p class="testimonials__quote-text">"{t.quote}"</p>
+              <div slot="footer" class="testimonials__person">
+                <span class="testimonials__avatar" aria-hidden="true">
+                  {t.name.split(' ').map((p) => p[0]).join('')}
+                </span>
+                <div>
+                  <strong>{t.name}</strong>
+                  <em>{t.role}</em>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    {/* ─── 8. FAQ ─────────────────────────────────────────── */}
+    <section class="faq" id="faq">
+      <div class="ds-container faq__inner">
+        <div class="faq__head">
+          <Badge mono variant="secondary">FAQ</Badge>
+          <h2 class="faq__title">Questions, answered.</h2>
+          <p class="faq__lead">
+            Still curious? Reach out at <a href="mailto:hello@studentlancers.com" class="link-inline">hello@studentlancers.com</a>.
+          </p>
+        </div>
+
+        <div class="faq__list" data-faq>
+          {faqs.map((item, i) => (
+            <details class="faq__item" open={i === 0}>
+              <summary class="faq__q">
+                <span>{item.q}</span>
+                <span class="faq__icon" aria-hidden="true">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M3 5.5L7 9.5L11 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </span>
+              </summary>
+              <p class="faq__a">{item.a}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    {/* ─── 9. CTA ─────────────────────────────────────────── */}
+    <section class="cta" id="cta">
+      <div class="ds-container cta__inner">
+        <div class="cta__card">
+          <div class="cta__copy">
+            <Badge mono variant="success" dot>Get started · Free to join</Badge>
+            <h2 class="cta__title">Your next hire — or your next gig — is one brief away.</h2>
+            <p class="cta__lead">
+              Join 12,400+ students and 2,100+ companies building the future of
+              flexible work. Set up takes two minutes.
+            </p>
+          </div>
+
+          <form class="cta__form" aria-label="Get started" onsubmit="event.preventDefault();">
+            <Field label="Work email" for="cta-email" hideLabel>
+              <Input
+                type="email"
+                id="cta-email"
+                name="email"
+                size="lg"
+                placeholder="you@university.edu"
+                autocomplete="email"
+                required
+              />
+            </Field>
+            <Button variant="primary" size="lg" type="submit">Create account →</Button>
+          </form>
+
+          <p class="cta__fineprint">
+            Free to sign up. We will never share your email. By creating an
+            account you agree to our <a href="#" class="link-inline">Terms</a> and
+            <a href="#" class="link-inline">Privacy Policy</a>.
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  {/* ─── 10. Footer ──────────────────────────────────────── */}
+  <footer class="footer">
+    <div class="ds-container footer__inner">
+      <div class="footer__brand">
+        <a href="/" class="nav__brand" aria-label="StudentLancers home">
+          <span class="nav__logo" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+              <rect x="0.5" y="0.5" width="21" height="21" rx="5.5" fill="var(--color-primary)" />
+              <path
+                d="M6 7.5L11 4.5L16 7.5V14.5L11 17.5L6 14.5V7.5Z"
+                stroke="white"
+                stroke-width="1.4"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M11 4.5V11M11 11L16 7.5M11 11L6 7.5M11 11V17.5"
+                stroke="white"
+                stroke-width="1.4"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </span>
+          <span class="nav__brand-text">StudentLancers</span>
+        </a>
+        <p class="footer__tagline">
+          The marketplace where students earn and companies hire.
+        </p>
+        <div class="footer__socials" aria-label="Social links">
+          <a href="#" aria-label="Twitter" class="footer__icon-btn">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M9.5 6.8 14.8 0h-1.3L8.9 5.9 5.2 0H0l5.6 8.2L0 16h1.3l5-6.3L10.4 16H16L9.5 6.8Zm-1.8 2.2-.6-.8L2 1h2.2l3.6 5 .6.8 4.6 6.4h-2.2L7.7 9Z" /></svg>
+          </a>
+          <a href="#" aria-label="GitHub" class="footer__icon-btn">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" /></svg>
+          </a>
+          <a href="#" aria-label="LinkedIn" class="footer__icon-btn">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M13.6 0H2.4C1.08 0 0 1.06 0 2.36v11.27C0 14.94 1.08 16 2.4 16h11.2c1.32 0 2.4-1.06 2.4-2.36V2.36C16 1.06 14.92 0 13.6 0ZM4.96 13.6H2.4V6.4h2.56v7.2ZM3.68 5.28c-.85 0-1.52-.66-1.52-1.5s.68-1.5 1.52-1.5 1.52.67 1.52 1.5-.67 1.5-1.52 1.5Zm9.92 8.32h-2.56V10.1c0-.85-.02-1.94-1.18-1.94-1.19 0-1.37.93-1.37 1.88v3.56H5.92V6.4h2.46v.98h.04c.34-.65 1.18-1.34 2.43-1.34 2.6 0 3.08 1.71 3.08 3.93v3.63Z" /></svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="footer__cols">
+        <div class="footer__col">
+          <h4>Product</h4>
+          <ul role="list">
+            <li><a href="#features">Features</a></li>
+            <li><a href="#how">How it works</a></li>
+            <li><a href="#cta">Pricing</a></li>
+            <li><a href="#cta">Changelog</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h4>For students</h4>
+          <ul role="list">
+            <li><a href="#cta">Find work</a></li>
+            <li><a href="#cta">Build a portfolio</a></li>
+            <li><a href="#cta">Get paid</a></li>
+            <li><a href="#cta">Top rated</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h4>For companies</h4>
+          <ul role="list">
+            <li><a href="#cta">Post a brief</a></li>
+            <li><a href="#cta">Hire talent</a></li>
+            <li><a href="#cta">Enterprise</a></li>
+            <li><a href="#cta">Case studies</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h4>Company</h4>
+          <ul role="list">
+            <li><a href="#cta">About</a></li>
+            <li><a href="#cta">Careers</a></li>
+            <li><a href="#cta">Press</a></li>
+            <li><a href="#cta">Contact</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="ds-container footer__bottom">
+      <p>© {new Date().getFullYear()} StudentLancers, Inc. All rights reserved.</p>
+      <ul role="list" class="footer__legal">
+        <li><a href="#">Privacy</a></li>
+        <li><a href="#">Terms</a></li>
+        <li><a href="#">Security</a></li>
+        <li><a href="#">Cookies</a></li>
+      </ul>
+    </div>
+  </footer>
 </Layout>
+
+<style>
+  /* ─── Shared helpers ─────────────────────────────────── */
+  .skip-link {
+    position: absolute;
+    top: -40px;
+    left: 16px;
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-body-sm);
+    z-index: 100;
+    transition: top 0.15s ease;
+  }
+  .skip-link:focus {
+    top: 16px;
+  }
+
+  .card-eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-mute);
+  }
+
+  .card-title {
+    font-size: var(--text-display-sm);
+    line-height: var(--text-display-sm-line);
+    font-weight: var(--text-display-sm-weight);
+    letter-spacing: var(--text-display-sm-tracking);
+    color: var(--color-ink);
+    margin: 0;
+  }
+
+  .card-body {
+    font-size: var(--text-body-md);
+    line-height: var(--text-body-md-line);
+    color: var(--color-body);
+    margin: 0;
+  }
+
+  .link-inline {
+    color: var(--color-link);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .link-inline:hover {
+    color: var(--color-link-deep);
+  }
+
+  /* ─── 1. Navbar ──────────────────────────────────────── */
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background-color: rgba(255, 255, 255, 0.78);
+    backdrop-filter: saturate(180%) blur(12px);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid var(--color-hairline);
+  }
+
+  .nav__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    gap: var(--space-lg);
+  }
+
+  .nav__brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    text-decoration: none;
+    color: var(--color-ink);
+  }
+
+  .nav__brand-text {
+    font-size: var(--text-body-md-strong);
+    font-weight: var(--text-body-md-strong-weight);
+    letter-spacing: -0.4px;
+  }
+
+  .nav__links {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .nav__link {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-xs) var(--space-sm);
+    font-size: var(--text-body-sm);
+    line-height: var(--text-body-sm-line);
+    color: var(--color-body);
+    border-radius: var(--radius-full);
+    transition: color 0.15s ease, background-color 0.15s ease;
+  }
+  .nav__link:hover {
+    color: var(--color-ink);
+    background-color: var(--color-canvas-soft);
+  }
+
+  .nav__cta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .nav__burger {
+    display: none;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-hairline);
+    background: var(--color-canvas);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    cursor: pointer;
+  }
+  .nav__burger span {
+    display: block;
+    width: 16px;
+    height: 1.5px;
+    background: var(--color-ink);
+    border-radius: 2px;
+  }
+
+  .nav__mobile {
+    display: none;
+    flex-direction: column;
+    gap: var(--space-xs);
+    padding: var(--space-md) var(--space-lg) var(--space-lg);
+    background: var(--color-canvas);
+    border-top: 1px solid var(--color-hairline);
+  }
+  .nav__mobile[hidden] {
+    display: none;
+  }
+  .nav__link--mobile {
+    width: 100%;
+    padding: var(--space-sm);
+    border-radius: var(--radius-sm);
+  }
+  .nav__mobile-cta {
+    display: flex;
+    gap: var(--space-xs);
+    margin-top: var(--space-sm);
+  }
+  .nav__mobile-cta :global(.ds-btn) {
+    flex: 1;
+  }
+
+  @media (max-width: 900px) {
+    .nav__links {
+      display: none;
+    }
+    .nav__cta {
+      display: none;
+    }
+    .nav__burger {
+      display: inline-flex;
+    }
+    .nav__mobile {
+      display: flex;
+    }
+  }
+
+  /* ─── 2. Hero ────────────────────────────────────────── */
+  .hero {
+    position: relative;
+    padding: var(--space-5xl) 0 var(--space-4xl);
+    overflow: hidden;
+    background: var(--color-canvas);
+  }
+
+  .hero__mesh {
+    position: absolute;
+    inset: -10% -5% 30% -5%;
+    background: var(--gradient-brand);
+    filter: blur(40px) saturate(110%);
+    opacity: 0.55;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .hero__mesh::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 0%, var(--color-canvas) 92%);
+  }
+
+  .hero__inner {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .hero__eyebrow {
+    margin-bottom: var(--space-lg);
+  }
+
+  .hero__title {
+    font-size: clamp(40px, 6vw, var(--text-display-xl));
+    line-height: 1.04;
+    font-weight: var(--text-display-xl-weight);
+    letter-spacing: -2px;
+    color: var(--color-ink);
+    max-width: 880px;
+    margin: 0;
+  }
+
+  .hero__lead {
+    margin-top: var(--space-lg);
+    font-size: var(--text-body-lg);
+    line-height: var(--text-body-lg-line);
+    color: var(--color-body);
+    max-width: 640px;
+  }
+
+  .hero__cta {
+    margin-top: var(--space-xl);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    justify-content: center;
+  }
+
+  .hero__meta {
+    margin: var(--space-2xl) 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-lg);
+    justify-content: center;
+    color: var(--color-mute);
+    font-size: var(--text-body-sm);
+  }
+  .hero__meta span {
+    color: var(--color-ink);
+    font-weight: var(--text-body-sm-strong-weight);
+    margin-right: 4px;
+  }
+
+  /* Hero preview card */
+  .hero__preview {
+    margin-top: var(--space-3xl);
+    width: 100%;
+    max-width: 720px;
+  }
+
+  .hero__window {
+    background: var(--color-canvas);
+    border-radius: var(--radius-lg);
+    box-shadow:
+      0px 24px 64px -16px rgba(0, 0, 0, 0.18),
+      0px 8px 24px -8px rgba(0, 0, 0, 0.08),
+      inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    text-align: left;
+  }
+
+  .hero__window-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 14px;
+    background: var(--color-canvas-soft);
+    border-bottom: 1px solid var(--color-hairline);
+  }
+  .hero__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: var(--radius-full);
+    background: var(--color-hairline-strong);
+  }
+  .hero__window-tab {
+    margin-left: 8px;
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: var(--color-mute);
+  }
+
+  .hero__window-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .hero__brief {
+    padding: var(--space-lg);
+    border-right: 1px solid var(--color-hairline);
+  }
+  .hero__brief-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--color-hairline);
+    font-size: var(--text-body-sm);
+  }
+  .hero__brief-row:last-child {
+    border-bottom: 0;
+  }
+  .hero__brief-label {
+    color: var(--color-mute);
+  }
+  .hero__brief-value {
+    color: var(--color-ink);
+    font-weight: var(--text-body-sm-strong-weight);
+  }
+  .hero__brief-pulse {
+    color: var(--color-link);
+    position: relative;
+    padding-left: 10px;
+  }
+  .hero__brief-pulse::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: var(--radius-full);
+    background: var(--color-link);
+    box-shadow: 0 0 0 4px var(--color-link-bg-soft);
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: translateY(-50%) scale(1); }
+    50% { opacity: 0.6; transform: translateY(-50%) scale(0.85); }
+  }
+
+  .hero__applicants {
+    padding: var(--space-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+  .hero__applicant {
+    display: grid;
+    grid-template-columns: 36px 1fr auto;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: 10px;
+    border-radius: var(--radius-md);
+    background: var(--color-canvas-soft);
+    border: 1px solid var(--color-hairline);
+  }
+  .hero__applicant > div {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .hero__applicant strong {
+    font-size: var(--text-body-sm-strong);
+    font-weight: var(--text-body-sm-strong-weight);
+    color: var(--color-ink);
+  }
+  .hero__applicant em {
+    font-style: normal;
+    font-size: var(--text-caption);
+    color: var(--color-mute);
+  }
+  .hero__avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-full);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--text-caption);
+    font-weight: var(--text-body-sm-strong-weight);
+    color: var(--color-on-primary);
+    background: var(--color-primary);
+  }
+  .hero__avatar[data-color="violet"] { background: var(--color-violet); }
+  .hero__avatar[data-color="cyan"] { background: var(--color-cyan-deep); }
+  .hero__avatar[data-color="pink"] { background: var(--color-highlight-magenta); }
+  .hero__rate {
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: var(--color-ink);
+    background: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+    padding: 4px 8px;
+    border-radius: var(--radius-full);
+  }
+
+  @media (max-width: 600px) {
+    .hero {
+      padding: var(--space-4xl) 0 var(--space-3xl);
+    }
+    .hero__window-body {
+      grid-template-columns: 1fr;
+    }
+    .hero__brief {
+      border-right: 0;
+      border-bottom: 1px solid var(--color-hairline);
+    }
+  }
+
+  /* ─── 3. Trusted By ──────────────────────────────────── */
+  .trust {
+    background: var(--color-canvas-soft);
+    border-block: 1px solid var(--color-hairline);
+    padding: var(--space-2xl) 0;
+  }
+  .trust__inner {
+    text-align: center;
+  }
+  .trust__eyebrow {
+    font-size: var(--text-caption);
+    color: var(--color-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-family: var(--font-mono);
+    margin: 0 0 var(--space-lg);
+  }
+  .trust__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xl) var(--space-3xl);
+    justify-content: center;
+    align-items: center;
+    list-style: none;
+  }
+  .trust__logo {
+    font-family: var(--font-sans);
+    font-size: var(--text-body-md);
+    font-weight: var(--text-display-sm-weight);
+    color: var(--color-mute);
+    letter-spacing: -0.4px;
+    opacity: 0.85;
+    transition: color 0.15s ease, opacity 0.15s ease;
+  }
+  .trust__logo:hover {
+    color: var(--color-ink);
+    opacity: 1;
+  }
+
+  /* ─── 4. Features ────────────────────────────────────── */
+  .features {
+    background: var(--color-canvas);
+    padding: var(--space-5xl) 0;
+  }
+  .features__head {
+    max-width: 720px;
+    margin-bottom: var(--space-3xl);
+  }
+  .features__head :global(.ds-badge) {
+    margin-bottom: var(--space-md);
+  }
+  .features__title {
+    font-size: clamp(28px, 4vw, var(--text-display-lg));
+    line-height: var(--text-display-lg-line);
+    font-weight: var(--text-display-lg-weight);
+    letter-spacing: var(--text-display-lg-tracking);
+    color: var(--color-ink);
+    margin: 0 0 var(--space-md);
+  }
+  .features__lead {
+    font-size: var(--text-body-lg);
+    line-height: var(--text-body-lg-line);
+    color: var(--color-body);
+    margin: 0;
+  }
+  .features__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-md);
+  }
+  @media (max-width: 900px) {
+    .features__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ─── 5. How It Works ────────────────────────────────── */
+  .how {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    padding: var(--space-5xl) 0;
+  }
+  .how__head {
+    max-width: 720px;
+    margin-bottom: var(--space-3xl);
+  }
+  .how__head :global(.ds-badge) {
+    margin-bottom: var(--space-md);
+  }
+  .how__title {
+    font-size: clamp(28px, 4vw, var(--text-display-lg));
+    line-height: var(--text-display-lg-line);
+    font-weight: var(--text-display-lg-weight);
+    letter-spacing: var(--text-display-lg-tracking);
+    color: var(--color-on-primary);
+    margin: 0 0 var(--space-md);
+  }
+  .how__lead {
+    font-size: var(--text-body-lg);
+    line-height: var(--text-body-lg-line);
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+  }
+  .how__steps {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-md);
+  }
+  .how__step {
+    padding: var(--space-lg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .how__num {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: var(--space-md);
+  }
+  .how__step-title {
+    font-size: var(--text-display-sm);
+    line-height: var(--text-display-sm-line);
+    font-weight: var(--text-display-sm-weight);
+    letter-spacing: var(--text-display-sm-tracking);
+    color: var(--color-on-primary);
+    margin: 0 0 var(--space-xs);
+  }
+  .how__step-body {
+    font-size: var(--text-body-sm);
+    line-height: var(--text-body-sm-line);
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+  }
+  @media (max-width: 900px) {
+    .how__steps {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 600px) {
+    .how__steps {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ─── 6. Benefits ────────────────────────────────────── */
+  .benefits {
+    background: var(--color-canvas-soft);
+    padding: var(--space-5xl) 0;
+  }
+  .benefits__head {
+    max-width: 720px;
+    margin-bottom: var(--space-3xl);
+  }
+  .benefits__head :global(.ds-badge) {
+    margin-bottom: var(--space-md);
+  }
+  .benefits__title {
+    font-size: clamp(28px, 4vw, var(--text-display-lg));
+    line-height: var(--text-display-lg-line);
+    font-weight: var(--text-display-lg-weight);
+    letter-spacing: var(--text-display-lg-tracking);
+    color: var(--color-ink);
+    margin: 0;
+  }
+  .benefits__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-md);
+  }
+  @media (max-width: 800px) {
+    .benefits__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .benefits__list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+  .benefits__item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-sm);
+    font-size: var(--text-body-md);
+    line-height: var(--text-body-md-line);
+    color: inherit;
+  }
+  .benefits__check {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: var(--radius-full);
+    background: var(--color-cyan-soft);
+    color: var(--color-cyan-deep);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
+  }
+  .benefits :global(.ds-card--soft) .benefits__check {
+    background: var(--color-link-bg-soft);
+    color: var(--color-link-deep);
+  }
+
+  /* ─── 7. Testimonials ────────────────────────────────── */
+  .testimonials {
+    background: var(--color-canvas);
+    padding: var(--space-5xl) 0;
+  }
+  .testimonials__head {
+    max-width: 720px;
+    margin-bottom: var(--space-3xl);
+  }
+  .testimonials__head :global(.ds-badge) {
+    margin-bottom: var(--space-md);
+  }
+  .testimonials__title {
+    font-size: clamp(28px, 4vw, var(--text-display-lg));
+    line-height: var(--text-display-lg-line);
+    font-weight: var(--text-display-lg-weight);
+    letter-spacing: var(--text-display-lg-tracking);
+    color: var(--color-ink);
+    margin: 0;
+  }
+  .testimonials__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-md);
+  }
+  @media (max-width: 900px) {
+    .testimonials__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .testimonials__quote {
+    color: var(--color-hairline-strong);
+    margin-bottom: var(--space-md);
+  }
+  .testimonials__quote-text {
+    font-size: var(--text-body-md);
+    line-height: var(--text-body-md-line);
+    color: var(--color-ink);
+    margin: 0;
+  }
+  .testimonials__person {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+  .testimonials__avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-full);
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--text-caption);
+    font-weight: var(--text-body-sm-strong-weight);
+  }
+  .testimonials__person strong {
+    display: block;
+    font-size: var(--text-body-sm-strong);
+    font-weight: var(--text-body-sm-strong-weight);
+    color: var(--color-ink);
+  }
+  .testimonials__person em {
+    display: block;
+    font-style: normal;
+    font-size: var(--text-caption);
+    color: var(--color-mute);
+  }
+
+  /* ─── 8. FAQ ─────────────────────────────────────────── */
+  .faq {
+    background: var(--color-canvas-soft);
+    padding: var(--space-5xl) 0;
+  }
+  .faq__head {
+    max-width: 720px;
+    margin-bottom: var(--space-3xl);
+  }
+  .faq__head :global(.ds-badge) {
+    margin-bottom: var(--space-md);
+  }
+  .faq__title {
+    font-size: clamp(28px, 4vw, var(--text-display-lg));
+    line-height: var(--text-display-lg-line);
+    font-weight: var(--text-display-lg-weight);
+    letter-spacing: var(--text-display-lg-tracking);
+    color: var(--color-ink);
+    margin: 0 0 var(--space-md);
+  }
+  .faq__lead {
+    font-size: var(--text-body-md);
+    line-height: var(--text-body-md-line);
+    color: var(--color-body);
+    margin: 0;
+  }
+  .faq__list {
+    max-width: 820px;
+    background: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  .faq__item {
+    border-bottom: 1px solid var(--color-hairline);
+  }
+  .faq__item:last-child {
+    border-bottom: 0;
+  }
+  .faq__q {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding: var(--space-md) var(--space-lg);
+    cursor: pointer;
+    font-size: var(--text-body-md);
+    font-weight: var(--text-body-md-strong-weight);
+    color: var(--color-ink);
+    list-style: none;
+    transition: background-color 0.15s ease;
+  }
+  .faq__q::-webkit-details-marker {
+    display: none;
+  }
+  .faq__q:hover {
+    background: var(--color-canvas-soft);
+  }
+  .faq__icon {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: var(--radius-full);
+    background: var(--color-canvas-soft);
+    color: var(--color-body);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease, background-color 0.15s ease, color 0.15s ease;
+  }
+  .faq__item[open] .faq__icon {
+    transform: rotate(180deg);
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+  }
+  .faq__a {
+    padding: 0 var(--space-lg) var(--space-lg);
+    font-size: var(--text-body-md);
+    line-height: var(--text-body-md-line);
+    color: var(--color-body);
+    margin: 0;
+  }
+
+  /* ─── 9. CTA ─────────────────────────────────────────── */
+  .cta {
+    background: var(--color-canvas);
+    padding: var(--space-5xl) 0;
+  }
+  .cta__card {
+    position: relative;
+    overflow: hidden;
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    border-radius: var(--radius-xl);
+    padding: clamp(40px, 6vw, 72px);
+    box-shadow:
+      0px 24px 64px -16px rgba(0, 0, 0, 0.32),
+      0px 8px 24px -8px rgba(0, 0, 0, 0.16),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  }
+  .cta__card::before {
+    content: "";
+    position: absolute;
+    inset: -20%;
+    background: var(--gradient-brand);
+    filter: blur(80px) saturate(120%);
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .cta__card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(23,23,23,0.4), rgba(23,23,23,0.85));
+    pointer-events: none;
+    z-index: 0;
+  }
+  .cta__copy,
+  .cta__form,
+  .cta__fineprint {
+    position: relative;
+    z-index: 1;
+  }
+  .cta__copy {
+    max-width: 640px;
+  }
+  .cta__copy :global(.ds-badge) {
+    margin-bottom: var(--space-md);
+  }
+  .cta__title {
+    font-size: clamp(28px, 4vw, var(--text-display-lg));
+    line-height: var(--text-display-lg-line);
+    font-weight: var(--text-display-lg-weight);
+    letter-spacing: var(--text-display-lg-tracking);
+    color: var(--color-on-primary);
+    margin: 0 0 var(--space-md);
+  }
+  .cta__lead {
+    font-size: var(--text-body-lg);
+    line-height: var(--text-body-lg-line);
+    color: rgba(255, 255, 255, 0.75);
+    margin: 0 0 var(--space-2xl);
+  }
+  .cta__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    max-width: 460px;
+  }
+  .cta__form :global(.ds-input) {
+    background: var(--color-canvas);
+  }
+  .cta__fineprint {
+    margin-top: var(--space-md);
+    font-size: var(--text-caption);
+    color: rgba(255, 255, 255, 0.55);
+    max-width: 460px;
+  }
+  .cta__fineprint a {
+    color: rgba(255, 255, 255, 0.85);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  @media (min-width: 800px) {
+    .cta__form {
+      flex-direction: row;
+      align-items: stretch;
+    }
+    .cta__form :global(.ds-field) {
+      flex: 1;
+    }
+    .cta__form :global(.ds-btn) {
+      flex-shrink: 0;
+    }
+  }
+
+  /* ─── 10. Footer ─────────────────────────────────────── */
+  .footer {
+    background: var(--color-canvas);
+    border-top: 1px solid var(--color-hairline);
+    padding: var(--space-4xl) 0 var(--space-xl);
+  }
+  .footer__inner {
+    display: grid;
+    grid-template-columns: 1.2fr 2fr;
+    gap: var(--space-3xl);
+    margin-bottom: var(--space-3xl);
+  }
+  .footer__brand {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+  .footer__tagline {
+    font-size: var(--text-body-sm);
+    line-height: var(--text-body-sm-line);
+    color: var(--color-body);
+    margin: 0;
+    max-width: 280px;
+  }
+  .footer__socials {
+    display: flex;
+    gap: var(--space-xs);
+  }
+  .footer__icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--color-hairline);
+    background: var(--color-canvas);
+    color: var(--color-body);
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .footer__icon-btn:hover {
+    color: var(--color-ink);
+    border-color: var(--color-hairline-strong);
+  }
+  .footer__cols {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-lg);
+  }
+  .footer__col h4 {
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-mute);
+    font-weight: var(--text-body-sm-strong-weight);
+    margin: 0 0 var(--space-md);
+  }
+  .footer__col ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+  .footer__col a {
+    font-size: var(--text-body-sm);
+    color: var(--color-body);
+    transition: color 0.15s ease;
+  }
+  .footer__col a:hover {
+    color: var(--color-ink);
+  }
+  .footer__bottom {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding-top: var(--space-xl);
+    border-top: 1px solid var(--color-hairline);
+    font-size: var(--text-caption);
+    color: var(--color-mute);
+  }
+  .footer__bottom p {
+    margin: 0;
+  }
+  .footer__legal {
+    list-style: none;
+    display: flex;
+    gap: var(--space-lg);
+  }
+  .footer__legal a {
+    color: var(--color-mute);
+    font-size: var(--text-caption);
+  }
+  .footer__legal a:hover {
+    color: var(--color-ink);
+  }
+
+  @media (max-width: 900px) {
+    .footer__inner {
+      grid-template-columns: 1fr;
+    }
+    .footer__cols {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 500px) {
+    .footer__cols {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+</style>
+
+<script>
+  // Mobile nav toggle
+  const burger = document.querySelector<HTMLButtonElement>('[data-nav-burger]');
+  const mobile = document.querySelector<HTMLElement>('[data-nav-mobile]');
+  if (burger && mobile) {
+    burger.addEventListener('click', () => {
+      const isOpen = !mobile.hasAttribute('hidden');
+      if (isOpen) {
+        mobile.setAttribute('hidden', '');
+        burger.setAttribute('aria-expanded', 'false');
+      } else {
+        mobile.removeAttribute('hidden');
+        burger.setAttribute('aria-expanded', 'true');
+      }
+    });
+    // Close mobile menu when a link is clicked
+    mobile.querySelectorAll('a').forEach((link) => {
+      link.addEventListener('click', () => {
+        mobile.setAttribute('hidden', '');
+        burger.setAttribute('aria-expanded', 'false');
+      });
+    });
+  }
+</script>

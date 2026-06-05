@@ -12,16 +12,8 @@
  *
  * Slots: header, media, default (body), footer.
  */
-export type CardVariant =
-  | 'marketing'
-  | 'marketing-large'
-  | 'soft'
-  | 'template'
-  | 'pricing'
-  | 'pricing-featured';
-
 export interface Props {
-  variant?: CardVariant;
+  variant?: 'marketing' | 'marketing-large' | 'soft' | 'template' | 'pricing' | 'pricing-featured';
   /** Override the surface background (e.g. for a gradient brand card) */
   background?: string;
   /** Add a 1-px hairline border even when variant doesn't include one */

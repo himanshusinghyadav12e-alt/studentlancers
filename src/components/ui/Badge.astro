@@ -7,17 +7,8 @@
  * reuse the brand's soft+deep palette pairs (error-soft, link-bg-soft,
  * violet-soft, etc.) so status never requires a fresh accent.
  */
-export type BadgeVariant =
-  | 'secondary'
-  | 'success'
-  | 'error'
-  | 'warning'
-  | 'violet'
-  | 'cyan'
-  | 'pink';
-
 export interface Props {
-  variant?: BadgeVariant;
+  variant?: 'secondary' | 'success' | 'error' | 'warning' | 'violet' | 'cyan' | 'pink';
   /** Render a leading dot (good for "Live" / "Beta" status) */
   dot?: boolean;
   /** Render with the mono caption face for technical eyebrows */
