@@ -23,16 +23,37 @@ const features = [
     eyebrow: '01 — Match',
     title: 'Smart talent matching.',
     body: 'Our ranking engine surfaces the right students for your brief in minutes, not days. Filter by major, skill, availability, and rate.',
+    icon: 'match',
   },
   {
     eyebrow: '02 — Collaborate',
     title: 'Built-in project tools.',
     body: 'Briefs, milestones, file sharing, and time tracking live in the same workspace. No more chasing context across five apps.',
+    icon: 'collab',
   },
   {
     eyebrow: '03 — Pay',
     title: 'Escrow that protects both sides.',
     body: 'Funds are held securely until work is approved. Students get paid on a predictable schedule; companies get a money-back guarantee.',
+    icon: 'pay',
+  },
+  {
+    eyebrow: '04 — Verify',
+    title: 'Enrollment & skill checks.',
+    body: 'Every student confirms their .edu, links a portfolio, and passes skill checks. Companies leave ratings after every engagement.',
+    icon: 'verify',
+  },
+  {
+    eyebrow: '05 — Track',
+    title: 'Hours, milestones, and timesheets.',
+    body: 'Track time per task, hit milestones, and unlock payouts. No more reconstructing hours from screenshots and DMs.',
+    icon: 'track',
+  },
+  {
+    eyebrow: '06 — Support',
+    title: 'Real humans when things go sideways.',
+    body: 'Disputes, scope changes, missed deadlines. Our support team mediates in under 4 hours during business days.',
+    icon: 'support',
   },
 ];
 
@@ -62,21 +83,29 @@ const steps = [
 const benefits = [
   {
     title: 'For students',
+    summary: 'Build a real portfolio, get paid on schedule, and graduate with a rolodex of companies that already know your work.',
     items: [
       'Build a portfolio that pays.',
       'Get matched with real companies.',
       'Set your own rates and hours.',
       'Get paid through secure escrow.',
+      'Receive reviews that travel with you.',
     ],
+    stat: { value: '$2,400', label: 'avg. earnings per active student · 2025' },
+    cta: 'Start freelancing',
   },
   {
     title: 'For companies',
+    summary: 'Tap a vetted pool of ambitious, affordable talent across every major — without spinning up a recruiting pipeline.',
     items: [
       'Access affordable, vetted talent.',
       'Hire in hours, not weeks.',
       'Pay only for approved work.',
       'Find specialists across 40+ majors.',
+      'Cancel or extend engagements anytime.',
     ],
+    stat: { value: '6 hrs', label: 'median time from brief to first proposal' },
+    cta: 'Post a brief',
   },
 ];
 
@@ -86,43 +115,61 @@ const testimonials = [
       'I shipped my first paid design sprint in week two. By finals I had more portfolio work than my entire major had given me.',
     name: 'Maya Chen',
     role: 'B.S. Design · UC San Diego',
+    rating: 5,
+    company: 'Student',
   },
   {
     quote:
       'StudentLancers is the only place we hire for landing-page work. The talent is sharper than agencies we have used, and a fraction of the cost.',
     name: 'Daniel Park',
     role: 'Founder · Linear Labs',
+    rating: 5,
+    company: 'Linear Labs',
   },
   {
     quote:
       'The escrow flow made me comfortable hiring a student for a $4k build. The result was better than three prior agency engagements.',
     name: 'Priya Anand',
     role: 'Head of Product · Plaid',
+    rating: 5,
+    company: 'Plaid',
   },
 ];
 
 const faqs = [
   {
+    cat: 'Getting started',
     q: 'Who can sign up as a freelancer?',
     a: 'Any student currently enrolled in an accredited college or university, with a verified .edu email. We support undergrad, grad, and PhD students across every major.',
   },
   {
+    cat: 'Pricing',
     q: 'How does pricing work?',
     a: 'Students set their own hourly or project rate. Companies can post a fixed budget and let students bid, or invite specific students at a set rate. StudentLancers takes a flat 8% platform fee on completed work.',
   },
   {
+    cat: 'Work',
     q: 'What kinds of work are posted?',
     a: 'Design, engineering, marketing, research, writing, data analysis, video, translation, and tutoring are the most common. If a college student can do it, it belongs here.',
   },
   {
+    cat: 'Trust',
     q: 'How are students vetted?',
     a: 'Every student verifies their enrollment, links a portfolio or GitHub, and completes a skill check on the categories they apply for. Companies leave ratings after every engagement.',
   },
   {
+    cat: 'Payments',
     q: 'Is payment secure?',
     a: 'Yes. Funds are held in escrow from the moment a project starts. They are released to the student only when the company approves the deliverable. Disputes are mediated by our support team.',
   },
+  {
+    cat: 'Trust',
+    q: 'What happens if a project goes off the rails?',
+    a: 'Our support team mediates disputes in under 4 hours during business days. If a student disappears or a deliverable is off-brief, escrow can be refunded in full. Both sides walk away with a paper trail.',
+  },
 ];
+
+const faqCategories = Array.from(new Set(faqs.map((f) => f.cat)));
 ---
 
 <Layout>
@@ -294,7 +341,7 @@ const faqs = [
     {/* ─── 4. Features ────────────────────────────────────── */}
     <section class="features" id="features">
       <div class="ds-container features__inner">
-        <div class="features__head">
+        <div class="features__head reveal">
           <Badge mono variant="secondary">Features</Badge>
           <h2 class="features__title">A hiring surface that takes the work out of the work.</h2>
           <p class="features__lead">
@@ -305,8 +352,46 @@ const faqs = [
 
         <div class="features__grid">
           {features.map((f) => (
-            <Card variant="marketing">
+            <Card variant="marketing" class="feature-card reveal">
               <span slot="header" class="card-eyebrow">{f.eyebrow}</span>
+              <div class="feature-card__icon" data-icon={f.icon} aria-hidden="true">
+                {f.icon === 'match' && (
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.4" />
+                    <path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+                  </svg>
+                )}
+                {f.icon === 'collab' && (
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <rect x="2.5" y="3.5" width="15" height="11" rx="2" stroke="currentColor" stroke-width="1.4" />
+                    <path d="M7 17.5h6M10 14.5v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+                  </svg>
+                )}
+                {f.icon === 'pay' && (
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <rect x="2.5" y="5.5" width="15" height="10" rx="2" stroke="currentColor" stroke-width="1.4" />
+                    <path d="M2.5 9.5h15" stroke="currentColor" stroke-width="1.4" />
+                    <path d="M5.5 13h3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+                  </svg>
+                )}
+                {f.icon === 'verify' && (
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M10 2L17 5v5c0 4-3 7-7 8-4-1-7-4-7-8V5l7-3Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" />
+                    <path d="M7 10.5L9 12.5L13 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                )}
+                {f.icon === 'track' && (
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.4" />
+                    <path d="M10 5.5V10l3 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                )}
+                {f.icon === 'support' && (
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M3 9a7 7 0 0 1 14 0v3a2 2 0 0 1-2 2h-1v-5h3M3 9v3a2 2 0 0 0 2 2h1v-5H3" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" />
+                  </svg>
+                )}
+              </div>
               <h3 class="card-title">{f.title}</h3>
               <p class="card-body">{f.body}</p>
             </Card>
@@ -318,7 +403,7 @@ const faqs = [
     {/* ─── 5. How It Works ────────────────────────────────── */}
     <section class="how" id="how">
       <div class="ds-container how__inner">
-        <div class="how__head">
+        <div class="how__head reveal">
           <Badge mono variant="secondary" inverted>How it works</Badge>
           <h2 class="how__title">From brief to paid in four steps.</h2>
           <p class="how__lead">
@@ -328,11 +413,44 @@ const faqs = [
         </div>
 
         <ol class="how__steps" role="list">
-          {steps.map((s) => (
-            <li class="how__step">
-              <span class="how__num">{s.n}</span>
+          {steps.map((s, i) => (
+            <li class="how__step reveal">
+              <div class="how__step-head">
+                <span class="how__num">{s.n}</span>
+                <span class="how__icon" aria-hidden="true">
+                  {i === 0 && (
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                      <path d="M3 4.5h12M3 9h12M3 13.5h8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+                    </svg>
+                  )}
+                  {i === 1 && (
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                      <path d="M3 14V7l6-4 6 4v7l-6 3-6-3Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" />
+                      <path d="M6.5 10.5L8 12l3.5-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  )}
+                  {i === 2 && (
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                      <path d="M2.5 9l4 4 9-9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  )}
+                  {i === 3 && (
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                      <rect x="2.5" y="5" width="13" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4" />
+                      <path d="M2.5 8.5h13" stroke="currentColor" stroke-width="1.4" />
+                    </svg>
+                  )}
+                </span>
+              </div>
               <h3 class="how__step-title">{s.title}</h3>
               <p class="how__step-body">{s.body}</p>
+              {i < steps.length - 1 && (
+                <span class="how__connector" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M5 4l4 4-4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </span>
+              )}
             </li>
           ))}
         </ol>
@@ -342,15 +460,20 @@ const faqs = [
     {/* ─── 6. Benefits ────────────────────────────────────── */}
     <section class="benefits" id="benefits">
       <div class="ds-container benefits__inner">
-        <div class="benefits__head">
+        <div class="benefits__head reveal">
           <Badge mono variant="violet">Built for both sides</Badge>
           <h2 class="benefits__title">Whether you are hiring or freelancing.</h2>
+          <p class="benefits__lead">
+            One platform, two sides of the same deal. Pick the one that fits
+            you — and switch any time.
+          </p>
         </div>
 
         <div class="benefits__grid">
           {benefits.map((b, i) => (
-            <Card variant={i === 0 ? 'marketing-large' : 'soft'}>
+            <Card variant={i === 0 ? 'marketing-large' : 'soft'} class="benefit-card reveal">
               <span slot="header" class="card-eyebrow">{b.title}</span>
+              <p class="benefit-card__summary">{b.summary}</p>
               <ul class="benefits__list" role="list">
                 {b.items.map((item) => (
                   <li class="benefits__item">
@@ -363,13 +486,17 @@ const faqs = [
                   </li>
                 ))}
               </ul>
+              <div class="benefit-card__stat" aria-label={`${b.stat.label}: ${b.stat.value}`}>
+                <span class="benefit-card__stat-value">{b.stat.value}</span>
+                <span class="benefit-card__stat-label">{b.stat.label}</span>
+              </div>
               <div slot="footer">
                 <Button
                   variant={i === 0 ? 'secondary' : 'primary'}
                   size="md"
                   href="#cta"
                 >
-                  {i === 0 ? 'Start freelancing →' : 'Post a brief →'}
+                  {b.cta} →
                 </Button>
               </div>
             </Card>
@@ -381,36 +508,51 @@ const faqs = [
     {/* ─── 7. Testimonials ────────────────────────────────── */}
     <section class="testimonials" id="testimonials">
       <div class="ds-container testimonials__inner">
-        <div class="testimonials__head">
+        <div class="testimonials__head reveal">
           <Badge mono variant="secondary">Testimonials</Badge>
           <h2 class="testimonials__title">Loved by students and the teams that hire them.</h2>
+          <p class="testimonials__lead">
+            4.9 / 5 from 2,300+ reviews. Here's what a few of them had to say.
+          </p>
         </div>
 
         <div class="testimonials__grid">
           {testimonials.map((t) => (
-            <Card variant="marketing">
-              <svg
-                class="testimonials__quote"
-                width="22"
-                height="16"
-                viewBox="0 0 22 16"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M0 16V9.143C0 6.476 0.667 4.19 2 2.286 3.333 0.762 5.467 0 8.4 0V3.429C6.8 3.429 5.667 3.905 5 4.857 4.333 5.81 4 7.048 4 8.571H8V16H0ZM12 16V9.143C12 6.476 12.667 4.19 14 2.286 15.333 0.762 17.467 0 20.4 0V3.429C18.8 3.429 17.667 3.905 17 4.857 16.333 5.81 16 7.048 16 8.571H20V16H12Z"
-                  fill="currentColor"
-                />
-              </svg>
-              <p class="testimonials__quote-text">"{t.quote}"</p>
-              <div slot="footer" class="testimonials__person">
-                <span class="testimonials__avatar" aria-hidden="true">
+            <Card variant="marketing" class="testimonial-card reveal">
+              <div class="testimonial-card__top">
+                <span class="testimonial-card__rating" aria-label={`${t.rating} out of 5 stars`}>
+                  {Array.from({ length: t.rating }).map(() => (
+                    <svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor" aria-hidden="true">
+                      <path d="M6.5 0.5L8 4.5h4l-3.2 2.4 1.2 4L6.5 8.5 3 10.9l1.2-4L1 4.5h4l1.5-4Z" />
+                    </svg>
+                  ))}
+                </span>
+                <svg
+                  class="testimonial-card__quote"
+                  width="22"
+                  height="16"
+                  viewBox="0 0 22 16"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M0 16V9.143C0 6.476 0.667 4.19 2 2.286 3.333 0.762 5.467 0 8.4 0V3.429C6.8 3.429 5.667 3.905 5 4.857 4.333 5.81 4 7.048 4 8.571H8V16H0ZM12 16V9.143C12 6.476 12.667 4.19 14 2.286 15.333 0.762 17.467 0 20.4 0V3.429C18.8 3.429 17.667 3.905 17 4.857 16.333 5.81 16 7.048 16 8.571H20V16H12Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </div>
+              <p class="testimonial-card__quote-text">"{t.quote}"</p>
+              <div slot="footer" class="testimonial-card__person">
+                <span class="testimonial-card__avatar" aria-hidden="true">
                   {t.name.split(' ').map((p) => p[0]).join('')}
                 </span>
-                <div>
+                <div class="testimonial-card__person-info">
                   <strong>{t.name}</strong>
                   <em>{t.role}</em>
                 </div>
+                {t.company !== 'Student' && (
+                  <span class="testimonial-card__company">{t.company}</span>
+                )}
               </div>
             </Card>
           ))}
@@ -421,7 +563,7 @@ const faqs = [
     {/* ─── 8. FAQ ─────────────────────────────────────────── */}
     <section class="faq" id="faq">
       <div class="ds-container faq__inner">
-        <div class="faq__head">
+        <div class="faq__head reveal">
           <Badge mono variant="secondary">FAQ</Badge>
           <h2 class="faq__title">Questions, answered.</h2>
           <p class="faq__lead">
@@ -429,20 +571,38 @@ const faqs = [
           </p>
         </div>
 
-        <div class="faq__list" data-faq>
-          {faqs.map((item, i) => (
-            <details class="faq__item" open={i === 0}>
-              <summary class="faq__q">
-                <span>{item.q}</span>
-                <span class="faq__icon" aria-hidden="true">
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path d="M3 5.5L7 9.5L11 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                </span>
-              </summary>
-              <p class="faq__a">{item.a}</p>
-            </details>
-          ))}
+        <div class="faq__layout">
+          <nav class="faq__nav" aria-label="FAQ categories">
+            <ul role="list">
+              <li><button type="button" class="faq__tab is-active" data-faq-cat="all">All <span>{faqs.length}</span></button></li>
+              {faqCategories.map((c) => (
+                <li>
+                  <button type="button" class="faq__tab" data-faq-cat={c}>
+                    {c} <span>{faqs.filter((f) => f.cat === c).length}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          <div class="faq__list" data-faq>
+            {faqs.map((item, i) => (
+              <details class="faq__item" open={i === 0} data-faq-cat={item.cat}>
+                <summary class="faq__q">
+                  <span class="faq__q-text">
+                    <span class="faq__q-cat">{item.cat}</span>
+                    <span class="faq__q-title">{item.q}</span>
+                  </span>
+                  <span class="faq__icon" aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <path d="M3 5.5L7 9.5L11 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </span>
+                </summary>
+                <p class="faq__a">{item.a}</p>
+              </details>
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -450,36 +610,64 @@ const faqs = [
     {/* ─── 9. CTA ─────────────────────────────────────────── */}
     <section class="cta" id="cta">
       <div class="ds-container cta__inner">
-        <div class="cta__card">
+        <div class="cta__card reveal">
+          <div class="cta__card-glow" aria-hidden="true"></div>
+
           <div class="cta__copy">
             <Badge mono variant="success" dot>Get started · Free to join</Badge>
             <h2 class="cta__title">Your next hire — or your next gig — is one brief away.</h2>
             <p class="cta__lead">
               Join 12,400+ students and 2,100+ companies building the future of
-              flexible work. Set up takes two minutes.
+              flexible work. Set up takes two minutes. No card required.
             </p>
+
+            <ul class="cta__bullets" role="list">
+              <li>
+                <span class="cta__bullet-dot" aria-hidden="true"></span>
+                Free to join, no commitment
+              </li>
+              <li>
+                <span class="cta__bullet-dot" aria-hidden="true"></span>
+                First brief matched in under 6 hours
+              </li>
+              <li>
+                <span class="cta__bullet-dot" aria-hidden="true"></span>
+                Escrow protection on day one
+              </li>
+            </ul>
           </div>
 
-          <form class="cta__form" aria-label="Get started" onsubmit="event.preventDefault();">
-            <Field label="Work email" for="cta-email" hideLabel>
-              <Input
-                type="email"
-                id="cta-email"
-                name="email"
-                size="lg"
-                placeholder="you@university.edu"
-                autocomplete="email"
-                required
-              />
-            </Field>
-            <Button variant="primary" size="lg" type="submit">Create account →</Button>
-          </form>
+          <div class="cta__action">
+            <form class="cta__form" aria-label="Get started" onsubmit="event.preventDefault();">
+              <Field label="Work email" for="cta-email" hideLabel>
+                <Input
+                  type="email"
+                  id="cta-email"
+                  name="email"
+                  size="lg"
+                  placeholder="you@university.edu"
+                  autocomplete="email"
+                  required
+                />
+              </Field>
+              <Button variant="primary" size="lg" type="submit">Create account →</Button>
+            </form>
 
-          <p class="cta__fineprint">
-            Free to sign up. We will never share your email. By creating an
-            account you agree to our <a href="#" class="link-inline">Terms</a> and
-            <a href="#" class="link-inline">Privacy Policy</a>.
-          </p>
+            <p class="cta__fineprint">
+              Free to sign up. We will never share your email. By creating an
+              account you agree to our <a href="#" class="link-inline">Terms</a> and
+              <a href="#" class="link-inline">Privacy Policy</a>.
+            </p>
+
+            <div class="cta__divider" role="separator">
+              <span>or</span>
+            </div>
+
+            <div class="cta__alt">
+              <Button variant="secondary" size="md" href="#how">See how it works</Button>
+              <Button variant="ghost" size="md" href="#cta">Talk to sales</Button>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -626,6 +814,34 @@ const faqs = [
   }
   .link-inline:hover {
     color: var(--color-link-deep);
+  }
+
+  /* ─── Animations: scroll-reveal + hover polish ─────────── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+    will-change: opacity, transform;
+  }
+  .reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+    .hero__mesh,
+    .cta__card-glow {
+      animation: none !important;
+    }
+  }
+
+  @keyframes float-slow {
+    0%, 100% { transform: translate3d(0, 0, 0); }
+    50% { transform: translate3d(0, -4px, 0); }
   }
 
   /* ─── 1. Navbar ──────────────────────────────────────── */
@@ -1054,11 +1270,39 @@ const faqs = [
     grid-template-columns: repeat(3, 1fr);
     gap: var(--space-md);
   }
-  @media (max-width: 900px) {
+  @media (max-width: 1100px) {
+    .features__grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 700px) {
     .features__grid {
       grid-template-columns: 1fr;
     }
   }
+
+  .feature-card :global(.ds-card__body) {
+    gap: var(--space-md);
+  }
+  .feature-card__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    background: var(--color-canvas-soft);
+    color: var(--color-ink);
+    border: 1px solid var(--color-hairline);
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+  }
+  .feature-card:hover .feature-card__icon {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    border-color: var(--color-primary);
+    transform: rotate(-4deg) scale(1.05);
+  }
+  .feature-card[data-icon] :global(.ds-card) { /* placeholder so future per-icon theming can hook in */ }
 
   /* ─── 5. How It Works ────────────────────────────────── */
   .how {
@@ -1092,19 +1336,43 @@ const faqs = [
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: var(--space-md);
+    position: relative;
   }
   .how__step {
+    position: relative;
     padding: var(--space-lg);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-md);
     background: rgba(255, 255, 255, 0.04);
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  }
+  .how__step:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.18);
+    transform: translateY(-2px);
+  }
+  .how__step-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-md);
   }
   .how__num {
     display: inline-block;
     font-family: var(--font-mono);
     font-size: var(--text-caption);
     color: rgba(255, 255, 255, 0.5);
-    margin-bottom: var(--space-md);
+  }
+  .how__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--color-cyan);
+    border: 1px solid rgba(255, 255, 255, 0.08);
   }
   .how__step-title {
     font-size: var(--text-display-sm);
@@ -1120,9 +1388,24 @@ const faqs = [
     color: rgba(255, 255, 255, 0.7);
     margin: 0;
   }
-  @media (max-width: 900px) {
+  .how__connector {
+    position: absolute;
+    top: var(--space-lg);
+    right: calc(var(--space-md) * -1 + 8px);
+    width: calc(var(--space-md) - 8px);
+    height: 32px;
+    color: rgba(255, 255, 255, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+  @media (max-width: 1100px) {
     .how__steps {
       grid-template-columns: repeat(2, 1fr);
+    }
+    .how__connector {
+      display: none;
     }
   }
   @media (max-width: 600px) {
@@ -1149,6 +1432,12 @@ const faqs = [
     font-weight: var(--text-display-lg-weight);
     letter-spacing: var(--text-display-lg-tracking);
     color: var(--color-ink);
+    margin: 0 0 var(--space-md);
+  }
+  .benefits__lead {
+    font-size: var(--text-body-lg);
+    line-height: var(--text-body-lg-line);
+    color: var(--color-body);
     margin: 0;
   }
   .benefits__grid {
@@ -1174,6 +1463,10 @@ const faqs = [
     font-size: var(--text-body-md);
     line-height: var(--text-body-md-line);
     color: inherit;
+    transition: transform 0.15s ease;
+  }
+  .benefits__item:hover {
+    transform: translateX(2px);
   }
   .benefits__check {
     flex-shrink: 0;
@@ -1186,10 +1479,59 @@ const faqs = [
     align-items: center;
     justify-content: center;
     margin-top: 1px;
+    transition: transform 0.2s ease;
+  }
+  .benefits__item:hover .benefits__check {
+    transform: scale(1.1);
   }
   .benefits :global(.ds-card--soft) .benefits__check {
     background: var(--color-link-bg-soft);
     color: var(--color-link-deep);
+  }
+
+  .benefit-card :global(.ds-card__body) {
+    gap: var(--space-md);
+  }
+  .benefit-card__summary {
+    font-size: var(--text-body-md);
+    line-height: var(--text-body-md-line);
+    color: var(--color-body);
+    margin: 0;
+  }
+  .benefit-card :global(.ds-card--soft) .benefit-card__summary {
+    color: var(--color-body);
+  }
+  .benefit-card__stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    background: var(--color-canvas-soft-2);
+    border: 1px solid var(--color-hairline);
+    margin-top: var(--space-xs);
+  }
+  .benefits :global(.ds-card--marketing-large) .benefit-card__stat {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  .benefit-card__stat-value {
+    font-family: var(--font-sans);
+    font-size: var(--text-display-sm);
+    line-height: var(--text-display-sm-line);
+    font-weight: var(--text-display-sm-weight);
+    letter-spacing: var(--text-display-sm-tracking);
+    color: var(--color-ink);
+  }
+  .benefits :global(.ds-card--marketing-large) .benefit-card__stat-value {
+    color: var(--color-on-primary);
+  }
+  .benefit-card__stat-label {
+    font-size: var(--text-caption);
+    color: var(--color-mute);
+  }
+  .benefits :global(.ds-card--marketing-large) .benefit-card__stat-label {
+    color: rgba(255, 255, 255, 0.6);
   }
 
   /* ─── 7. Testimonials ────────────────────────────────── */
@@ -1210,6 +1552,12 @@ const faqs = [
     font-weight: var(--text-display-lg-weight);
     letter-spacing: var(--text-display-lg-tracking);
     color: var(--color-ink);
+    margin: 0 0 var(--space-md);
+  }
+  .testimonials__lead {
+    font-size: var(--text-body-lg);
+    line-height: var(--text-body-lg-line);
+    color: var(--color-body);
     margin: 0;
   }
   .testimonials__grid {
@@ -1226,18 +1574,36 @@ const faqs = [
     color: var(--color-hairline-strong);
     margin-bottom: var(--space-md);
   }
-  .testimonials__quote-text {
+  .testimonial-card :global(.ds-card__body) {
+    gap: var(--space-sm);
+  }
+  .testimonial-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .testimonial-card__rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    color: var(--color-warning);
+  }
+  .testimonial-card__quote {
+    color: var(--color-hairline-strong);
+  }
+  .testimonial-card__quote-text {
     font-size: var(--text-body-md);
     line-height: var(--text-body-md-line);
     color: var(--color-ink);
     margin: 0;
   }
-  .testimonials__person {
+  .testimonial-card__person {
     display: flex;
     align-items: center;
     gap: var(--space-sm);
+    flex-wrap: wrap;
   }
-  .testimonials__avatar {
+  .testimonial-card__avatar {
     width: 36px;
     height: 36px;
     border-radius: var(--radius-full);
@@ -1248,18 +1614,32 @@ const faqs = [
     justify-content: center;
     font-size: var(--text-caption);
     font-weight: var(--text-body-sm-strong-weight);
+    flex-shrink: 0;
   }
-  .testimonials__person strong {
+  .testimonial-card__person-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .testimonial-card__person-info strong {
     display: block;
     font-size: var(--text-body-sm-strong);
     font-weight: var(--text-body-sm-strong-weight);
     color: var(--color-ink);
   }
-  .testimonials__person em {
+  .testimonial-card__person-info em {
     display: block;
     font-style: normal;
     font-size: var(--text-caption);
     color: var(--color-mute);
+  }
+  .testimonial-card__company {
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: var(--color-body);
+    padding: 4px 8px;
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-full);
+    background: var(--color-canvas-soft);
   }
 
   /* ─── 8. FAQ ─────────────────────────────────────────── */
@@ -1288,8 +1668,61 @@ const faqs = [
     color: var(--color-body);
     margin: 0;
   }
+  .faq__layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: var(--space-2xl);
+    align-items: start;
+  }
+  .faq__nav {
+    position: sticky;
+    top: 80px;
+  }
+  .faq__nav ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .faq__tab {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-body);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    line-height: var(--text-body-sm-line);
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+  .faq__tab span {
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: var(--color-mute);
+    background: var(--color-canvas-soft);
+    padding: 2px 6px;
+    border-radius: var(--radius-full);
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+  .faq__tab:hover {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+  }
+  .faq__tab.is-active {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+  }
+  .faq__tab.is-active span {
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--color-on-primary);
+  }
+
   .faq__list {
-    max-width: 820px;
     background: var(--color-canvas);
     border: 1px solid var(--color-hairline);
     border-radius: var(--radius-lg);
@@ -1301,6 +1734,9 @@ const faqs = [
   .faq__item:last-child {
     border-bottom: 0;
   }
+  .faq__item.is-hidden {
+    display: none;
+  }
   .faq__q {
     display: flex;
     align-items: center;
@@ -1308,8 +1744,6 @@ const faqs = [
     gap: var(--space-md);
     padding: var(--space-md) var(--space-lg);
     cursor: pointer;
-    font-size: var(--text-body-md);
-    font-weight: var(--text-body-md-strong-weight);
     color: var(--color-ink);
     list-style: none;
     transition: background-color 0.15s ease;
@@ -1319,6 +1753,24 @@ const faqs = [
   }
   .faq__q:hover {
     background: var(--color-canvas-soft);
+  }
+  .faq__q-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .faq__q-cat {
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-mute);
+  }
+  .faq__q-title {
+    font-size: var(--text-body-md);
+    font-weight: var(--text-body-md-strong-weight);
+    color: var(--color-ink);
   }
   .faq__icon {
     flex-shrink: 0;
@@ -1330,7 +1782,7 @@ const faqs = [
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.2s ease, background-color 0.15s ease, color 0.15s ease;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.15s ease, color 0.15s ease;
   }
   .faq__item[open] .faq__icon {
     transform: rotate(180deg);
@@ -1345,6 +1797,23 @@ const faqs = [
     margin: 0;
   }
 
+  @media (max-width: 800px) {
+    .faq__layout {
+      grid-template-columns: 1fr;
+    }
+    .faq__nav {
+      position: static;
+    }
+    .faq__nav ul {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+    }
+    .faq__tab {
+      width: auto;
+    }
+  }
+
   /* ─── 9. CTA ─────────────────────────────────────────── */
   .cta {
     background: var(--color-canvas);
@@ -1357,37 +1826,41 @@ const faqs = [
     color: var(--color-on-primary);
     border-radius: var(--radius-xl);
     padding: clamp(40px, 6vw, 72px);
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: var(--space-3xl);
+    align-items: center;
     box-shadow:
       0px 24px 64px -16px rgba(0, 0, 0, 0.32),
       0px 8px 24px -8px rgba(0, 0, 0, 0.16),
       inset 0 0 0 1px rgba(255, 255, 255, 0.06);
   }
-  .cta__card::before {
-    content: "";
+  .cta__card-glow {
     position: absolute;
-    inset: -20%;
+    inset: -30%;
     background: var(--gradient-brand);
-    filter: blur(80px) saturate(120%);
-    opacity: 0.4;
+    filter: blur(100px) saturate(130%);
+    opacity: 0.45;
     pointer-events: none;
     z-index: 0;
+    animation: cta-glow 18s ease-in-out infinite alternate;
+  }
+  @keyframes cta-glow {
+    0% { transform: translate(-10%, -10%) scale(1); }
+    100% { transform: translate(10%, 10%) scale(1.1); }
   }
   .cta__card::after {
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(23,23,23,0.4), rgba(23,23,23,0.85));
+    background: linear-gradient(180deg, rgba(23,23,23,0.45), rgba(23,23,23,0.88));
     pointer-events: none;
     z-index: 0;
   }
   .cta__copy,
-  .cta__form,
-  .cta__fineprint {
+  .cta__action {
     position: relative;
     z-index: 1;
-  }
-  .cta__copy {
-    max-width: 640px;
   }
   .cta__copy :global(.ds-badge) {
     margin-bottom: var(--space-md);
@@ -1404,27 +1877,89 @@ const faqs = [
     font-size: var(--text-body-lg);
     line-height: var(--text-body-lg-line);
     color: rgba(255, 255, 255, 0.75);
-    margin: 0 0 var(--space-2xl);
+    margin: 0 0 var(--space-lg);
+  }
+  .cta__bullets {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    margin: 0;
+  }
+  .cta__bullets li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    color: rgba(255, 255, 255, 0.85);
+    font-size: var(--text-body-sm);
+  }
+  .cta__bullet-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: var(--radius-full);
+    background: var(--color-cyan);
+    box-shadow: 0 0 0 4px rgba(80, 227, 194, 0.15);
+    flex-shrink: 0;
+  }
+
+  .cta__action {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
   }
   .cta__form {
     display: flex;
     flex-direction: column;
     gap: var(--space-sm);
-    max-width: 460px;
   }
   .cta__form :global(.ds-input) {
     background: var(--color-canvas);
   }
   .cta__fineprint {
-    margin-top: var(--space-md);
     font-size: var(--text-caption);
     color: rgba(255, 255, 255, 0.55);
-    max-width: 460px;
+    margin: 0;
   }
   .cta__fineprint a {
     color: rgba(255, 255, 255, 0.85);
     text-decoration: underline;
     text-underline-offset: 3px;
+  }
+  .cta__divider {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    color: rgba(255, 255, 255, 0.45);
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .cta__divider::before,
+  .cta__divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.12);
+  }
+  .cta__alt {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+  .cta__alt :global(.ds-btn--secondary) {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--color-on-primary);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+  .cta__alt :global(.ds-btn--secondary):hover {
+    background: rgba(255, 255, 255, 0.14);
+  }
+  .cta__alt :global(.ds-btn--ghost) {
+    color: var(--color-on-primary);
+  }
+  .cta__alt :global(.ds-btn--ghost):hover {
+    background: rgba(255, 255, 255, 0.06);
   }
 
   @media (min-width: 800px) {
@@ -1437,6 +1972,12 @@ const faqs = [
     }
     .cta__form :global(.ds-btn) {
       flex-shrink: 0;
+    }
+  }
+  @media (max-width: 900px) {
+    .cta__card {
+      grid-template-columns: 1fr;
+      gap: var(--space-2xl);
     }
   }
 
@@ -1555,7 +2096,7 @@ const faqs = [
 </style>
 
 <script>
-  // Mobile nav toggle
+  // ─── Mobile nav toggle ─────────────────────────────────────
   const burger = document.querySelector<HTMLButtonElement>('[data-nav-burger]');
   const mobile = document.querySelector<HTMLElement>('[data-nav-mobile]');
   if (burger && mobile) {
@@ -1577,4 +2118,59 @@ const faqs = [
       });
     });
   }
+
+  // ─── Scroll-reveal observer ────────────────────────────────
+  const revealEls = document.querySelectorAll<HTMLElement>('.reveal');
+  if ('IntersectionObserver' in window && revealEls.length) {
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            // stagger children that share the same parent grid
+            const el = entry.target as HTMLElement;
+            const parent = el.parentElement;
+            if (parent) {
+              const siblings = Array.from(parent.querySelectorAll('.reveal'));
+              const idx = siblings.indexOf(el);
+              el.style.transitionDelay = `${Math.min(idx, 6) * 60}ms`;
+            }
+            el.classList.add('is-visible');
+            io.unobserve(el);
+          }
+        }
+      },
+      { rootMargin: '0px 0px -8% 0px', threshold: 0.05 }
+    );
+    revealEls.forEach((el) => io.observe(el));
+  } else {
+    revealEls.forEach((el) => el.classList.add('is-visible'));
+  }
+
+  // ─── FAQ category filter ──────────────────────────────────
+  const faqTabs = document.querySelectorAll<HTMLButtonElement>('[data-faq-cat]');
+  const faqItems = document.querySelectorAll<HTMLElement>('.faq__item');
+  faqTabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const target = tab.getAttribute('data-faq-cat') || 'all';
+      faqTabs.forEach((t) => t.classList.toggle('is-active', t === tab));
+      faqItems.forEach((item) => {
+        const cat = item.getAttribute('data-faq-cat');
+        const match = target === 'all' || cat === target;
+        item.classList.toggle('is-hidden', !match);
+      });
+    });
+  });
+
+  // ─── Smooth scroll for in-page anchors ────────────────────
+  document.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach((a) => {
+    a.addEventListener('click', (event) => {
+      const id = a.getAttribute('href');
+      if (!id || id === '#') return;
+      const target = document.querySelector(id);
+      if (target) {
+        event.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
 </script>
