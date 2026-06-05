@@ -6,21 +6,17 @@ import ThemeToggle from '../../components/ui/ThemeToggle.astro';
 import {
   JOBS,
   JOB_CATEGORIES,
-  BUDGET_TYPES,
-  filterJobs,
-  formatBudget,
   formatRelativeDate,
-  type JobCategory,
-  type BudgetType,
 } from '../../data/jobs';
 
 /**
  * /student/find-work
  *
- * Student-facing job board. Server-renders the full filtered list (no
- * client-side data fetch needed for the catalog) and exposes a small
- * filter form that submits via the URL query string so the page is
- * bookmarkable and the result set survives a refresh.
+ * Student-facing job board. Static export renders every brief server-side
+ * (the catalog is small and ships in the page bundle) and a small inline
+ * script applies the URL query string filters on the client. The page is
+ * bookmarkable, the result set survives a refresh, and the initial paint
+ * is fully styled — no flash of unfiltered content.
  *
  * Constraints honored from the brief:
  *   - No fake statistics (no "X students applied" counters, no
@@ -33,48 +29,26 @@ import {
  *     Apply CTA.
  */
 
-const url = Astro.url;
-const keyword = url.searchParams.get('q')?.trim() ?? '';
-const categoryParam = url.searchParams.get('category') ?? 'All';
-const budgetParam = url.searchParams.get('budget') ?? 'All';
-const hoursParam = url.searchParams.get('hours');
-const remoteParam = url.searchParams.get('remote');
-
-const category = (JOB_CATEGORIES as readonly string[]).includes(categoryParam)
-  ? (categoryParam as JobCategory | 'All')
-  : ('All' as const);
-const budgetType = (BUDGET_TYPES as readonly string[]).includes(budgetParam)
-  ? (budgetParam as BudgetType | 'All')
-  : ('All' as const);
-const maxHours = hoursParam === '5' || hoursParam === '10' || hoursParam === '20'
-  ? (Number(hoursParam) as 5 | 10 | 20)
-  : undefined;
-const remoteOnly = remoteParam === '1';
-
-const filtered = filterJobs({
-  keyword: keyword || undefined,
-  category,
-  budgetType,
-  maxHoursPerWeek: maxHours,
-  remoteOnly,
-});
-
-// Group results by category for the "browse by track" rail. We keep
-// the order stable (matches the catalog order in /data/jobs.ts) and
-// derive group sizes from the unfiltered JOBS list so the chip rail
-// reflects the whole marketplace, not just the current filter.
+// Pre-compute the per-category counts once, server-side, so the track
+// rail always reflects the full marketplace — not whatever the current
+// filter happens to be.
 const categoriesWithCounts = JOB_CATEGORIES.map((cat) => ({
   key: cat,
   count: JOBS.filter((j) => j.category === cat).length,
 }));
 
 const totalCount = JOBS.length;
-const hasFilters =
-  keyword.length > 0 ||
-  category !== 'All' ||
-  budgetType !== 'All' ||
-  maxHours !== undefined ||
-  remoteOnly;
+
+// Hours-per-week upper bound, derived from the band string. Mirrors
+// filterJobs() in /data/jobs.ts — keep these two in sync.
+function hoursUpperBound(band: string): number {
+  const m = band.match(/(\d+)\s*[-–]\s*(\d+)/);
+  if (m) return Number(m[2]);
+  const single = band.match(/(\d+)/);
+  if (single) return Number(single[1]);
+  if (/20\+/i.test(band)) return 999;
+  return 999;
+}
 ---
 
 <Layout
@@ -83,7 +57,6 @@ const hasFilters =
 >
   <a class="skip-link" href="#fw-main">Skip to content</a>
 
-  {/* ─── Top nav (mirrors /jobs/post pattern) ──────────── */}
   <header class="fw-top" data-fw-top>
     <div class="ds-container fw-top__inner">
       <a href="/" class="nav__brand" aria-label="StudentLancers home">
@@ -129,12 +102,11 @@ const hasFilters =
         </p>
       </header>
 
-      {/* ─── Track rail ───────────────────────────────────── */}
-      <nav class="fw-tracks" aria-label="Browse by category">
+      <nav class="fw-tracks" aria-label="Browse by category" data-fw-tracks>
         <a
           href="/student/find-work"
-          class:list={['fw-track', category === 'All' && 'is-current']}
-          aria-current={category === 'All' ? 'page' : undefined}
+          class="fw-track"
+          data-fw-track="All"
         >
           <span class="fw-track__label">All briefs</span>
           <span class="fw-track__count">{totalCount}</span>
@@ -142,8 +114,8 @@ const hasFilters =
         {categoriesWithCounts.map(({ key, count }) => (
           <a
             href={`/student/find-work?category=${encodeURIComponent(key)}`}
-            class:list={['fw-track', category === key && 'is-current']}
-            aria-current={category === key ? 'page' : undefined}
+            class="fw-track"
+            data-fw-track={key}
           >
             <span class="fw-track__label">{key}</span>
             <span class="fw-track__count">{count}</span>
@@ -151,43 +123,38 @@ const hasFilters =
         ))}
       </nav>
 
-      {/* ─── Filter form ──────────────────────────────────── */}
       <details class="fw-filters" data-fw-filters>
         <summary class="fw-filters__summary">
           <span class="fw-filters__summary-text">
             <span class="fw-filters__eyebrow">Filters</span>
-            <span class="fw-filters__hint">
-              {hasFilters
-                ? `${filtered.length} match${filtered.length === 1 ? '' : 'es'} · tap to edit`
-                : 'Tap to filter by hours, pay type, or remote-only'}
-            </span>
+            <span class="fw-filters__hint" data-fw-hint>Tap to filter by hours, pay type, or remote-only</span>
           </span>
           <svg class="fw-filters__chevron" width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
             <path d="M3.5 5.5L7 9L10.5 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
         </summary>
 
-        <form class="fw-filters__form" method="get" action="/student/find-work">
+        <form class="fw-filters__form" data-fw-form>
           <div class="fw-filters__grid">
             <label class="fw-filters__field">
               <span class="fw-filters__label">Search</span>
               <input
                 type="search"
                 name="q"
-                value={keyword}
-                placeholder="e.g. Figma, tutor, SEO"
                 class="fw-filters__input"
+                placeholder="e.g. Figma, tutor, SEO"
                 autocomplete="off"
+                data-fw-search
               />
             </label>
 
             <label class="fw-filters__field">
               <span class="fw-filters__label">Category</span>
               <span class="fw-filters__select-wrap">
-                <select name="category" class="fw-filters__select">
-                  <option value="All" selected={category === 'All'}>All categories</option>
+                <select name="category" class="fw-filters__select" data-fw-category>
+                  <option value="All">All categories</option>
                   {JOB_CATEGORIES.map((c) => (
-                    <option value={c} selected={category === c}>{c}</option>
+                    <option value={c}>{c}</option>
                   ))}
                 </select>
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
@@ -199,10 +166,10 @@ const hasFilters =
             <label class="fw-filters__field">
               <span class="fw-filters__label">Pay type</span>
               <span class="fw-filters__select-wrap">
-                <select name="budget" class="fw-filters__select">
-                  <option value="All" selected={budgetType === 'All'}>Both</option>
-                  <option value="fixed" selected={budgetType === 'fixed'}>Fixed price</option>
-                  <option value="hourly" selected={budgetType === 'hourly'}>Hourly</option>
+                <select name="budget" class="fw-filters__select" data-fw-budget>
+                  <option value="All">Both</option>
+                  <option value="fixed">Fixed price</option>
+                  <option value="hourly">Hourly</option>
                 </select>
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
                   <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
@@ -213,11 +180,11 @@ const hasFilters =
             <label class="fw-filters__field">
               <span class="fw-filters__label">Max hrs / week</span>
               <span class="fw-filters__select-wrap">
-                <select name="hours" class="fw-filters__select">
-                  <option value="" selected={maxHours === undefined}>Any load</option>
-                  <option value="5" selected={maxHours === 5}>1–5</option>
-                  <option value="10" selected={maxHours === 10}>5–10</option>
-                  <option value="20" selected={maxHours === 20}>10–20</option>
+                <select name="hours" class="fw-filters__select" data-fw-hours>
+                  <option value="">Any load</option>
+                  <option value="5">1–5</option>
+                  <option value="10">5–10</option>
+                  <option value="20">10–20</option>
                 </select>
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
                   <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
@@ -230,127 +197,118 @@ const hasFilters =
                 type="checkbox"
                 name="remote"
                 value="1"
-                checked={remoteOnly}
                 class="fw-filters__checkbox"
+                data-fw-remote
               />
               <span class="fw-filters__check-label">Remote only</span>
             </label>
           </div>
 
           <div class="fw-filters__actions">
-            {hasFilters && (
-              <a class="fw-filters__clear" href="/student/find-work">Clear all</a>
-            )}
+            <a class="fw-filters__clear" href="/student/find-work" data-fw-clear hidden>Clear all</a>
             <Button variant="primary" size="md" type="submit">Apply filters</Button>
           </div>
         </form>
       </details>
 
-      {/* ─── Result count ──────────────────────────────────── */}
       <div class="fw-meta">
-        <span class="fw-meta__count">
-          {filtered.length} {filtered.length === 1 ? 'brief' : 'briefs'}
-          {category !== 'All' ? ` · ${category}` : ''}
-          {keyword ? ` · matching "${keyword}"` : ''}
-        </span>
-        {hasFilters && (
-          <a class="fw-meta__clear" href="/student/find-work">Reset</a>
-        )}
+        <span class="fw-meta__count" data-fw-count>{totalCount} briefs</span>
+        <a class="fw-meta__clear" href="/student/find-work" data-fw-clear-meta hidden>Reset</a>
       </div>
 
-      {/* ─── Result list ───────────────────────────────────── */}
-      {filtered.length === 0 ? (
-        <div class="fw-empty">
-          <span class="fw-empty__icon" aria-hidden="true">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <circle cx="14" cy="14" r="9" stroke="currentColor" stroke-width="1.6" />
-              <path d="M21 21l5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-              <path d="M10 14h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-            </svg>
-          </span>
-          <h2 class="fw-empty__title">No briefs match those filters.</h2>
-          <p class="fw-empty__body">
-            Try widening the hours or pay type, or clear the search to see the
-            full list of {totalCount} open briefs.
-          </p>
-          <Button variant="primary" size="md" href="/student/find-work">Clear filters</Button>
-        </div>
-      ) : (
-        <ul class="fw-list" role="list">
-          {filtered.map((job) => (
-            <li>
-              <a class="fw-card" href={`/jobs/${job.id}`} aria-label={`View ${job.title}`}>
-                <div class="fw-card__head">
-                  <div class="fw-card__head-main">
-                    <div class="fw-card__chips">
-                      <Badge variant="secondary" mono>{job.category}</Badge>
-                      {job.verified && (
-                        <Badge variant="success" dot>Verified</Badge>
-                      )}
-                      {job.remote && (
-                        <Badge variant="cyan">Remote</Badge>
-                      )}
-                    </div>
-                    <h2 class="fw-card__title">{job.title}</h2>
-                    <p class="fw-card__company">
-                      <span>{job.company}</span>
-                      <span class="fw-card__dot" aria-hidden="true">·</span>
-                      <span>{formatRelativeDate(job.postedAt)}</span>
-                    </p>
+      <ul class="fw-list" role="list" data-fw-list>
+        {JOBS.map((job) => (
+          <li
+            data-fw-item
+            data-fw-cat={job.category}
+            data-fw-budget={job.budget.type}
+            data-fw-hours={hoursUpperBound(job.hours)}
+            data-fw-remote={job.remote ? '1' : '0'}
+            data-fw-keyword={`${job.title} ${job.company} ${job.summary} ${job.skills.join(' ')}`.toLowerCase()}
+          >
+            <a class="fw-card" href={`/jobs/${job.id}`} aria-label={`View ${job.title}`}>
+              <div class="fw-card__head">
+                <div class="fw-card__head-main">
+                  <div class="fw-card__chips">
+                    <Badge variant="secondary" mono>{job.category}</Badge>
+                    {job.verified && <Badge variant="success" dot>Verified</Badge>}
+                    {job.remote && <Badge variant="cyan">Remote</Badge>}
                   </div>
-                  <div class="fw-card__rate">
-                    <span class="fw-card__rate-value">
-                      {job.budget.type === 'fixed'
-                        ? `$${job.budget.amount.toLocaleString()}`
-                        : `$${job.budget.amount}`}
-                    </span>
-                    <span class="fw-card__rate-unit">
-                      {job.budget.type === 'fixed' ? 'fixed' : '/ hr'}
-                    </span>
-                  </div>
+                  <h2 class="fw-card__title">{job.title}</h2>
+                  <p class="fw-card__company">
+                    <span>{job.company}</span>
+                    <span class="fw-card__dot" aria-hidden="true">·</span>
+                    <span>{formatRelativeDate(job.postedAt)}</span>
+                  </p>
                 </div>
-
-                <p class="fw-card__summary">{job.summary}</p>
-
-                <div class="fw-card__meta">
-                  <span class="fw-card__meta-item">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-                      <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3" />
-                      <path d="M7 4v3l2 1.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
-                    </svg>
-                    {job.duration}
+                <div class="fw-card__rate">
+                  <span class="fw-card__rate-value">
+                    {job.budget.type === 'fixed'
+                      ? `$${job.budget.amount.toLocaleString()}`
+                      : `$${job.budget.amount}`}
                   </span>
-                  <span class="fw-card__meta-item">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-                      <rect x="2" y="3" width="10" height="9" rx="1.4" stroke="currentColor" stroke-width="1.3" />
-                      <path d="M5 1.5v3M9 1.5v3M2 6h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
-                    </svg>
-                    {job.hours}
+                  <span class="fw-card__rate-unit">
+                    {job.budget.type === 'fixed' ? 'fixed' : '/ hr'}
                   </span>
                 </div>
+              </div>
 
-                <ul class="fw-card__skills" role="list">
-                  {job.skills.slice(0, 4).map((skill) => (
-                    <li class="fw-card__skill">{skill}</li>
-                  ))}
-                  {job.skills.length > 4 && (
-                    <li class="fw-card__skill fw-card__skill--more">
-                      +{job.skills.length - 4}
-                    </li>
-                  )}
-                </ul>
+              <p class="fw-card__summary">{job.summary}</p>
 
-                <span class="fw-card__cta">
-                  View brief
+              <div class="fw-card__meta">
+                <span class="fw-card__meta-item">
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-                    <path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3" />
+                    <path d="M7 4v3l2 1.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
                   </svg>
+                  {job.duration}
                 </span>
-              </a>
-            </li>
-          ))}
-        </ul>
-      )}
+                <span class="fw-card__meta-item">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                    <rect x="2" y="3" width="10" height="9" rx="1.4" stroke="currentColor" stroke-width="1.3" />
+                    <path d="M5 1.5v3M9 1.5v3M2 6h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                  </svg>
+                  {job.hours}
+                </span>
+              </div>
+
+              <ul class="fw-card__skills" role="list">
+                {job.skills.slice(0, 4).map((skill) => (
+                  <li class="fw-card__skill">{skill}</li>
+                ))}
+                {job.skills.length > 4 && (
+                  <li class="fw-card__skill fw-card__skill--more">
+                    +{job.skills.length - 4}
+                  </li>
+                )}
+              </ul>
+
+              <span class="fw-card__cta">
+                View brief
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                  <path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+
+      <div class="fw-empty" data-fw-empty hidden>
+        <span class="fw-empty__icon" aria-hidden="true">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <circle cx="14" cy="14" r="9" stroke="currentColor" stroke-width="1.6" />
+            <path d="M21 21l5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+            <path d="M10 14h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+          </svg>
+        </span>
+        <h2 class="fw-empty__title">No briefs match those filters.</h2>
+        <p class="fw-empty__body" data-fw-empty-body>
+          Try widening the hours or pay type, or clear the search to see the
+          full list of {totalCount} open briefs.
+        </p>
+        <Button variant="primary" size="md" href="/student/find-work" data-fw-clear-button>Clear filters</Button>
+      </div>
 
       <p class="fw-foot">
         Don't see a fit? Set up your profile and we'll surface new briefs
@@ -359,10 +317,187 @@ const hasFilters =
       </p>
     </div>
   </main>
+
+  <script>
+    /**
+     * Filter pass. Reads ?q, ?category, ?budget, ?hours, ?remote from the
+     * URL on load, sets the form controls to match, and toggles the
+     * [hidden] attribute on every <li data-fw-item> that doesn't match.
+     *
+     * Submits update the URL via history.replaceState and re-run the
+     * filter; clicking a track chip navigates the browser (full reload),
+     * which also re-runs the pass from the fresh URL.
+     */
+    type Filter = {
+      q: string;
+      category: string;
+      budget: string;
+      hours: string;
+      remote: boolean;
+    };
+
+    function readFiltersFromURL(): Filter {
+      const sp = new URLSearchParams(location.search);
+      return {
+        q: (sp.get('q') ?? '').trim().toLowerCase(),
+        category: sp.get('category') ?? 'All',
+        budget: sp.get('budget') ?? 'All',
+        hours: sp.get('hours') ?? '',
+        remote: sp.get('remote') === '1',
+      };
+    }
+
+    function passes(item: HTMLElement, f: Filter): boolean {
+      if (f.category !== 'All' && item.dataset.fwCat !== f.category) return false;
+      if (f.budget !== 'All' && item.dataset.fwBudget !== f.budget) return false;
+      if (f.hours) {
+        const max = Number(item.dataset.fwHours ?? '999');
+        if (max > Number(f.hours)) return false;
+      }
+      if (f.remote && item.dataset.fwRemote !== '1') return false;
+      if (f.q) {
+        const haystack = item.dataset.fwKeyword ?? '';
+        if (!haystack.includes(f.q)) return false;
+      }
+      return true;
+    }
+
+    function applyFilters(f: Filter) {
+      const items = Array.from(document.querySelectorAll<HTMLElement>('[data-fw-item]'));
+      let visible = 0;
+      for (const it of items) {
+        const show = passes(it, f);
+        it.hidden = !show;
+        if (show) visible++;
+      }
+      const total = items.length;
+
+      // Meta count
+      const count = document.querySelector<HTMLElement>('[data-fw-count]');
+      if (count) {
+        if (f.category !== 'All' || f.q) {
+          count.textContent = `${visible} ${visible === 1 ? 'brief' : 'briefs'} · ${f.category !== 'All' ? f.category : 'matching'}`;
+        } else {
+          count.textContent = `${visible} ${visible === 1 ? 'brief' : 'briefs'}`;
+        }
+      }
+
+      // Empty state
+      const empty = document.querySelector<HTMLElement>('[data-fw-empty]');
+      const list = document.querySelector<HTMLElement>('[data-fw-list]');
+      if (empty && list) {
+        if (visible === 0) {
+          empty.hidden = false;
+          list.hidden = true;
+        } else {
+          empty.hidden = true;
+          list.hidden = false;
+        }
+      }
+
+      // Track rail — current
+      document.querySelectorAll<HTMLElement>('.fw-track').forEach((el) => {
+        const isCurrent = el.dataset.fwTrack === (f.category || 'All');
+        el.classList.toggle('is-current', isCurrent);
+        if (isCurrent) el.setAttribute('aria-current', 'page');
+        else el.removeAttribute('aria-current');
+      });
+
+      // Filters hint + clear buttons
+      const hint = document.querySelector<HTMLElement>('[data-fw-hint]');
+      const hasFilter = f.category !== 'All' || f.budget !== 'All' || f.hours || f.remote || f.q;
+      if (hint) {
+        hint.textContent = hasFilter
+          ? `${visible} match${visible === 1 ? '' : 'es'} · tap to edit`
+          : 'Tap to filter by hours, pay type, or remote-only';
+      }
+      const details = document.querySelector<HTMLElement>('[data-fw-filters]');
+      if (details && hasFilter) details.setAttribute('open', '');
+
+      document.querySelectorAll<HTMLElement>('[data-fw-clear], [data-fw-clear-meta]').forEach((el) => {
+        el.hidden = !hasFilter;
+      });
+    }
+
+    function syncFormToFilters(f: Filter) {
+      const search = document.querySelector<HTMLInputElement>('[data-fw-search]');
+      const category = document.querySelector<HTMLSelectElement>('[data-fw-category]');
+      const budget = document.querySelector<HTMLSelectElement>('[data-fw-budget]');
+      const hours = document.querySelector<HTMLSelectElement>('[data-fw-hours]');
+      const remote = document.querySelector<HTMLInputElement>('[data-fw-remote]');
+      if (search) search.value = f.q;
+      if (category) category.value = f.category;
+      if (budget) budget.value = f.budget;
+      if (hours) hours.value = f.hours;
+      if (remote) remote.checked = f.remote;
+    }
+
+    function buildURL(f: Filter): string {
+      const sp = new URLSearchParams();
+      if (f.q) sp.set('q', f.q);
+      if (f.category !== 'All') sp.set('category', f.category);
+      if (f.budget !== 'All') sp.set('budget', f.budget);
+      if (f.hours) sp.set('hours', f.hours);
+      if (f.remote) sp.set('remote', '1');
+      const qs = sp.toString();
+      return qs ? `/student/find-work?${qs}` : '/student/find-work';
+    }
+
+    function readFiltersFromForm(): Filter {
+      const search = document.querySelector<HTMLInputElement>('[data-fw-search]');
+      const category = document.querySelector<HTMLSelectElement>('[data-fw-category]');
+      const budget = document.querySelector<HTMLSelectElement>('[data-fw-budget]');
+      const hours = document.querySelector<HTMLSelectElement>('[data-fw-hours]');
+      const remote = document.querySelector<HTMLInputElement>('[data-fw-remote]');
+      return {
+        q: search?.value.trim() ?? '',
+        category: category?.value ?? 'All',
+        budget: budget?.value ?? 'All',
+        hours: hours?.value ?? '',
+        remote: remote?.checked ?? false,
+      };
+    }
+
+    const initial = readFiltersFromURL();
+    syncFormToFilters(initial);
+    applyFilters(initial);
+
+    // Form submit → update URL + re-apply (no full reload)
+    const form = document.querySelector<HTMLFormElement>('[data-fw-form]');
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const f = readFiltersFromForm();
+        history.replaceState(null, '', buildURL(f));
+        applyFilters(f);
+      });
+    }
+
+    // Live search — apply as the user types, no submit needed
+    const searchInput = document.querySelector<HTMLInputElement>('[data-fw-search]');
+    if (searchInput) {
+      let t: number | undefined;
+      searchInput.addEventListener('input', () => {
+        if (t) window.clearTimeout(t);
+        t = window.setTimeout(() => {
+          const f = readFiltersFromForm();
+          history.replaceState(null, '', buildURL(f));
+          applyFilters(f);
+        }, 120);
+      });
+    }
+
+    // Clear buttons navigate to the bare URL
+    document.querySelectorAll<HTMLElement>('[data-fw-clear], [data-fw-clear-meta], [data-fw-clear-button]').forEach((el) => {
+      el.addEventListener('click', (e) => {
+        // Anchor href handles the navigation; we just want a clean reload.
+        // No preventDefault here — the link is the source of truth.
+      });
+    });
+  </script>
 </Layout>
 
 <style>
-  /* ─── Skip link ─────────────────────────────────────── */
   .skip-link {
     position: absolute;
     top: -40px;
@@ -379,7 +514,6 @@ const hasFilters =
     top: 16px;
   }
 
-  /* ─── Top nav (re-uses /jobs/post pattern) ─────────── */
   .fw-top {
     position: sticky;
     top: 0;
@@ -429,7 +563,6 @@ const hasFilters =
     }
   }
 
-  /* ─── Page shell ────────────────────────────────────── */
   .fw-page {
     padding-block: var(--space-3xl) var(--space-5xl);
   }
@@ -466,7 +599,6 @@ const hasFilters =
     margin: 0;
   }
 
-  /* ─── Track rail (horizontally scrollable on mobile) ── */
   .fw-tracks {
     display: flex;
     align-items: center;
@@ -511,7 +643,6 @@ const hasFilters =
     color: color-mix(in srgb, var(--color-on-primary) 70%, transparent);
   }
 
-  /* ─── Filters (details/summary) ─────────────────────── */
   .fw-filters {
     background: var(--color-canvas);
     border: 1px solid var(--color-hairline);
@@ -676,7 +807,6 @@ const hasFilters =
     color: var(--color-ink);
   }
 
-  /* ─── Result meta + count ───────────────────────────── */
   .fw-meta {
     display: flex;
     align-items: baseline;
@@ -699,7 +829,6 @@ const hasFilters =
     text-underline-offset: 3px;
   }
 
-  /* ─── Result list ───────────────────────────────────── */
   .fw-list {
     list-style: none;
     display: grid;
@@ -712,7 +841,6 @@ const hasFilters =
     }
   }
 
-  /* ─── Card ──────────────────────────────────────────── */
   .fw-card {
     display: flex;
     flex-direction: column;
@@ -848,7 +976,7 @@ const hasFilters =
     align-self: flex-start;
     margin-top: auto;
     padding-top: var(--space-xs);
-    font-size: var(--text-body-sm-strong, var(--text-body-sm));
+    font-size: var(--text-body-sm);
     font-weight: 500;
     color: var(--color-link);
   }
@@ -856,7 +984,6 @@ const hasFilters =
     color: var(--color-link-deep);
   }
 
-  /* ─── Empty state ───────────────────────────────────── */
   .fw-empty {
     display: flex;
     flex-direction: column;
@@ -896,7 +1023,6 @@ const hasFilters =
     max-width: 480px;
   }
 
-  /* ─── Foot note ─────────────────────────────────────── */
   .fw-foot {
     font-size: var(--text-body-sm);
     color: var(--color-body);
