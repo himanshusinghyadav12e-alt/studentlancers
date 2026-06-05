@@ -1,0 +1,911 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Button from '../../components/ui/Button.astro';
+import Badge from '../../components/ui/Badge.astro';
+import ThemeToggle from '../../components/ui/ThemeToggle.astro';
+import {
+  JOBS,
+  JOB_CATEGORIES,
+  BUDGET_TYPES,
+  filterJobs,
+  formatBudget,
+  formatRelativeDate,
+  type JobCategory,
+  type BudgetType,
+} from '../../data/jobs';
+
+/**
+ * /student/find-work
+ *
+ * Student-facing job board. Server-renders the full filtered list (no
+ * client-side data fetch needed for the catalog) and exposes a small
+ * filter form that submits via the URL query string so the page is
+ * bookmarkable and the result set survives a refresh.
+ *
+ * Constraints honored from the brief:
+ *   - No fake statistics (no "X students applied" counters, no
+ *     fabricated matches count, no star ratings without reviews).
+ *   - Mobile-first — filters collapse into a details element below
+ *     720px; the card list is the primary content at every viewport.
+ *   - Dark/light mode: every color is a token from the design system,
+ *     so the existing [data-theme="dark"] overrides flip everything.
+ *   - Connect flow: each card links to /jobs/[id] which exposes the
+ *     Apply CTA.
+ */
+
+const url = Astro.url;
+const keyword = url.searchParams.get('q')?.trim() ?? '';
+const categoryParam = url.searchParams.get('category') ?? 'All';
+const budgetParam = url.searchParams.get('budget') ?? 'All';
+const hoursParam = url.searchParams.get('hours');
+const remoteParam = url.searchParams.get('remote');
+
+const category = (JOB_CATEGORIES as readonly string[]).includes(categoryParam)
+  ? (categoryParam as JobCategory | 'All')
+  : ('All' as const);
+const budgetType = (BUDGET_TYPES as readonly string[]).includes(budgetParam)
+  ? (budgetParam as BudgetType | 'All')
+  : ('All' as const);
+const maxHours = hoursParam === '5' || hoursParam === '10' || hoursParam === '20'
+  ? (Number(hoursParam) as 5 | 10 | 20)
+  : undefined;
+const remoteOnly = remoteParam === '1';
+
+const filtered = filterJobs({
+  keyword: keyword || undefined,
+  category,
+  budgetType,
+  maxHoursPerWeek: maxHours,
+  remoteOnly,
+});
+
+// Group results by category for the "browse by track" rail. We keep
+// the order stable (matches the catalog order in /data/jobs.ts) and
+// derive group sizes from the unfiltered JOBS list so the chip rail
+// reflects the whole marketplace, not just the current filter.
+const categoriesWithCounts = JOB_CATEGORIES.map((cat) => ({
+  key: cat,
+  count: JOBS.filter((j) => j.category === cat).length,
+}));
+
+const totalCount = JOBS.length;
+const hasFilters =
+  keyword.length > 0 ||
+  category !== 'All' ||
+  budgetType !== 'All' ||
+  maxHours !== undefined ||
+  remoteOnly;
+---
+
+<Layout
+  title="Find work · StudentLancers"
+  description="Browse open briefs by category, hours, and rate. Apply with a single click."
+>
+  <a class="skip-link" href="#fw-main">Skip to content</a>
+
+  {/* ─── Top nav (mirrors /jobs/post pattern) ──────────── */}
+  <header class="fw-top" data-fw-top>
+    <div class="ds-container fw-top__inner">
+      <a href="/" class="nav__brand" aria-label="StudentLancers home">
+        <span class="nav__logo" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <rect x="0.5" y="0.5" width="21" height="21" rx="5.5" fill="var(--color-primary)" />
+            <path
+              d="M6 7.5L11 4.5L16 7.5V14.5L11 17.5L6 14.5V7.5Z"
+              stroke="white"
+              stroke-width="1.4"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M11 4.5V11M11 11L16 7.5M11 11L6 7.5M11 11V17.5"
+              stroke="white"
+              stroke-width="1.4"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </span>
+        <span class="nav__brand-text">StudentLancers</span>
+      </a>
+      <nav class="fw-top__nav" aria-label="Quick links">
+        <a class="fw-top__link" href="/student/dashboard">Dashboard</a>
+        <a class="fw-top__link" href="/student/find-work" aria-current="page">Find work</a>
+        <a class="fw-top__link" href="#">My applications</a>
+      </nav>
+      <div class="fw-top__right">
+        <ThemeToggle size="md" />
+        <Button variant="secondary-sm" size="md" href="/student/dashboard">Switch account</Button>
+      </div>
+    </div>
+  </header>
+
+  <main id="fw-main" class="fw-page">
+    <div class="ds-container fw-page__inner">
+      <header class="fw-page__head">
+        <span class="fw-page__eyebrow">Find work</span>
+        <h1 class="fw-page__title">Open briefs across the marketplace.</h1>
+        <p class="fw-page__lead">
+          Browse paid gigs from companies looking to hire college talent. Filter
+          by track, weekly hours, or pay type — or just scroll.
+        </p>
+      </header>
+
+      {/* ─── Track rail ───────────────────────────────────── */}
+      <nav class="fw-tracks" aria-label="Browse by category">
+        <a
+          href="/student/find-work"
+          class:list={['fw-track', category === 'All' && 'is-current']}
+          aria-current={category === 'All' ? 'page' : undefined}
+        >
+          <span class="fw-track__label">All briefs</span>
+          <span class="fw-track__count">{totalCount}</span>
+        </a>
+        {categoriesWithCounts.map(({ key, count }) => (
+          <a
+            href={`/student/find-work?category=${encodeURIComponent(key)}`}
+            class:list={['fw-track', category === key && 'is-current']}
+            aria-current={category === key ? 'page' : undefined}
+          >
+            <span class="fw-track__label">{key}</span>
+            <span class="fw-track__count">{count}</span>
+          </a>
+        ))}
+      </nav>
+
+      {/* ─── Filter form ──────────────────────────────────── */}
+      <details class="fw-filters" data-fw-filters>
+        <summary class="fw-filters__summary">
+          <span class="fw-filters__summary-text">
+            <span class="fw-filters__eyebrow">Filters</span>
+            <span class="fw-filters__hint">
+              {hasFilters
+                ? `${filtered.length} match${filtered.length === 1 ? '' : 'es'} · tap to edit`
+                : 'Tap to filter by hours, pay type, or remote-only'}
+            </span>
+          </span>
+          <svg class="fw-filters__chevron" width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M3.5 5.5L7 9L10.5 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </summary>
+
+        <form class="fw-filters__form" method="get" action="/student/find-work">
+          <div class="fw-filters__grid">
+            <label class="fw-filters__field">
+              <span class="fw-filters__label">Search</span>
+              <input
+                type="search"
+                name="q"
+                value={keyword}
+                placeholder="e.g. Figma, tutor, SEO"
+                class="fw-filters__input"
+                autocomplete="off"
+              />
+            </label>
+
+            <label class="fw-filters__field">
+              <span class="fw-filters__label">Category</span>
+              <span class="fw-filters__select-wrap">
+                <select name="category" class="fw-filters__select">
+                  <option value="All" selected={category === 'All'}>All categories</option>
+                  {JOB_CATEGORIES.map((c) => (
+                    <option value={c} selected={category === c}>{c}</option>
+                  ))}
+                </select>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
+            </label>
+
+            <label class="fw-filters__field">
+              <span class="fw-filters__label">Pay type</span>
+              <span class="fw-filters__select-wrap">
+                <select name="budget" class="fw-filters__select">
+                  <option value="All" selected={budgetType === 'All'}>Both</option>
+                  <option value="fixed" selected={budgetType === 'fixed'}>Fixed price</option>
+                  <option value="hourly" selected={budgetType === 'hourly'}>Hourly</option>
+                </select>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
+            </label>
+
+            <label class="fw-filters__field">
+              <span class="fw-filters__label">Max hrs / week</span>
+              <span class="fw-filters__select-wrap">
+                <select name="hours" class="fw-filters__select">
+                  <option value="" selected={maxHours === undefined}>Any load</option>
+                  <option value="5" selected={maxHours === 5}>1–5</option>
+                  <option value="10" selected={maxHours === 10}>5–10</option>
+                  <option value="20" selected={maxHours === 20}>10–20</option>
+                </select>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
+            </label>
+
+            <label class="fw-filters__check">
+              <input
+                type="checkbox"
+                name="remote"
+                value="1"
+                checked={remoteOnly}
+                class="fw-filters__checkbox"
+              />
+              <span class="fw-filters__check-label">Remote only</span>
+            </label>
+          </div>
+
+          <div class="fw-filters__actions">
+            {hasFilters && (
+              <a class="fw-filters__clear" href="/student/find-work">Clear all</a>
+            )}
+            <Button variant="primary" size="md" type="submit">Apply filters</Button>
+          </div>
+        </form>
+      </details>
+
+      {/* ─── Result count ──────────────────────────────────── */}
+      <div class="fw-meta">
+        <span class="fw-meta__count">
+          {filtered.length} {filtered.length === 1 ? 'brief' : 'briefs'}
+          {category !== 'All' ? ` · ${category}` : ''}
+          {keyword ? ` · matching "${keyword}"` : ''}
+        </span>
+        {hasFilters && (
+          <a class="fw-meta__clear" href="/student/find-work">Reset</a>
+        )}
+      </div>
+
+      {/* ─── Result list ───────────────────────────────────── */}
+      {filtered.length === 0 ? (
+        <div class="fw-empty">
+          <span class="fw-empty__icon" aria-hidden="true">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <circle cx="14" cy="14" r="9" stroke="currentColor" stroke-width="1.6" />
+              <path d="M21 21l5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+              <path d="M10 14h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+            </svg>
+          </span>
+          <h2 class="fw-empty__title">No briefs match those filters.</h2>
+          <p class="fw-empty__body">
+            Try widening the hours or pay type, or clear the search to see the
+            full list of {totalCount} open briefs.
+          </p>
+          <Button variant="primary" size="md" href="/student/find-work">Clear filters</Button>
+        </div>
+      ) : (
+        <ul class="fw-list" role="list">
+          {filtered.map((job) => (
+            <li>
+              <a class="fw-card" href={`/jobs/${job.id}`} aria-label={`View ${job.title}`}>
+                <div class="fw-card__head">
+                  <div class="fw-card__head-main">
+                    <div class="fw-card__chips">
+                      <Badge variant="secondary" mono>{job.category}</Badge>
+                      {job.verified && (
+                        <Badge variant="success" dot>Verified</Badge>
+                      )}
+                      {job.remote && (
+                        <Badge variant="cyan">Remote</Badge>
+                      )}
+                    </div>
+                    <h2 class="fw-card__title">{job.title}</h2>
+                    <p class="fw-card__company">
+                      <span>{job.company}</span>
+                      <span class="fw-card__dot" aria-hidden="true">·</span>
+                      <span>{formatRelativeDate(job.postedAt)}</span>
+                    </p>
+                  </div>
+                  <div class="fw-card__rate">
+                    <span class="fw-card__rate-value">
+                      {job.budget.type === 'fixed'
+                        ? `$${job.budget.amount.toLocaleString()}`
+                        : `$${job.budget.amount}`}
+                    </span>
+                    <span class="fw-card__rate-unit">
+                      {job.budget.type === 'fixed' ? 'fixed' : '/ hr'}
+                    </span>
+                  </div>
+                </div>
+
+                <p class="fw-card__summary">{job.summary}</p>
+
+                <div class="fw-card__meta">
+                  <span class="fw-card__meta-item">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                      <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3" />
+                      <path d="M7 4v3l2 1.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                    </svg>
+                    {job.duration}
+                  </span>
+                  <span class="fw-card__meta-item">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                      <rect x="2" y="3" width="10" height="9" rx="1.4" stroke="currentColor" stroke-width="1.3" />
+                      <path d="M5 1.5v3M9 1.5v3M2 6h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                    </svg>
+                    {job.hours}
+                  </span>
+                </div>
+
+                <ul class="fw-card__skills" role="list">
+                  {job.skills.slice(0, 4).map((skill) => (
+                    <li class="fw-card__skill">{skill}</li>
+                  ))}
+                  {job.skills.length > 4 && (
+                    <li class="fw-card__skill fw-card__skill--more">
+                      +{job.skills.length - 4}
+                    </li>
+                  )}
+                </ul>
+
+                <span class="fw-card__cta">
+                  View brief
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                    <path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <p class="fw-foot">
+        Don't see a fit? Set up your profile and we'll surface new briefs
+        that match your skills as they go live.
+        <a href="/student/dashboard">Go to dashboard →</a>
+      </p>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  /* ─── Skip link ─────────────────────────────────────── */
+  .skip-link {
+    position: absolute;
+    top: -40px;
+    left: 16px;
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-body-sm);
+    z-index: 100;
+    transition: top 0.15s ease;
+  }
+  .skip-link:focus {
+    top: 16px;
+  }
+
+  /* ─── Top nav (re-uses /jobs/post pattern) ─────────── */
+  .fw-top {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: color-mix(in srgb, var(--color-canvas) 86%, transparent);
+    backdrop-filter: saturate(180%) blur(12px);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid var(--color-hairline);
+  }
+  .fw-top__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-lg);
+    height: 64px;
+  }
+  .fw-top__nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+  .fw-top__link {
+    display: inline-flex;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-full);
+    color: var(--color-body);
+    font-size: var(--text-body-sm);
+    text-decoration: none;
+    transition: color 0.15s ease, background-color 0.15s ease;
+  }
+  .fw-top__link:hover {
+    color: var(--color-ink);
+    background: var(--color-canvas-soft);
+  }
+  .fw-top__link[aria-current='page'] {
+    color: var(--color-ink);
+    background: var(--color-canvas-soft);
+  }
+  .fw-top__right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+  @media (max-width: 700px) {
+    .fw-top__nav {
+      display: none;
+    }
+  }
+
+  /* ─── Page shell ────────────────────────────────────── */
+  .fw-page {
+    padding-block: var(--space-3xl) var(--space-5xl);
+  }
+  .fw-page__inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+  }
+  .fw-page__head {
+    max-width: 720px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+  .fw-page__eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--color-mute);
+  }
+  .fw-page__title {
+    font-size: clamp(28px, 4vw, var(--text-display-lg));
+    line-height: var(--text-display-lg-line);
+    font-weight: var(--text-display-lg-weight);
+    letter-spacing: var(--text-display-lg-tracking);
+    color: var(--color-ink);
+    margin: 0;
+  }
+  .fw-page__lead {
+    font-size: var(--text-body-md);
+    line-height: var(--text-body-md-line);
+    color: var(--color-body);
+    margin: 0;
+  }
+
+  /* ─── Track rail (horizontally scrollable on mobile) ── */
+  .fw-tracks {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    overflow-x: auto;
+    padding: 4px 2px;
+    margin-inline: -2px;
+    scrollbar-width: none;
+  }
+  .fw-tracks::-webkit-scrollbar {
+    display: none;
+  }
+  .fw-track {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: 0 var(--space-md);
+    height: 36px;
+    background: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-pill-sm);
+    color: var(--color-ink);
+    font-size: var(--text-body-sm);
+    text-decoration: none;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .fw-track:hover {
+    background: var(--color-canvas-soft);
+  }
+  .fw-track.is-current {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    border-color: var(--color-primary);
+  }
+  .fw-track__count {
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: var(--color-mute);
+  }
+  .fw-track.is-current .fw-track__count {
+    color: color-mix(in srgb, var(--color-on-primary) 70%, transparent);
+  }
+
+  /* ─── Filters (details/summary) ─────────────────────── */
+  .fw-filters {
+    background: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-level-1);
+    overflow: hidden;
+  }
+  .fw-filters[open] {
+    box-shadow: var(--shadow-level-2);
+  }
+  .fw-filters__summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding: var(--space-md) var(--space-lg);
+    cursor: pointer;
+    list-style: none;
+    transition: background-color 0.15s ease;
+  }
+  .fw-filters__summary::-webkit-details-marker {
+    display: none;
+  }
+  .fw-filters__summary:hover {
+    background: var(--color-canvas-soft);
+  }
+  .fw-filters__summary-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .fw-filters__eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--color-ink);
+  }
+  .fw-filters__hint {
+    font-size: var(--text-body-sm);
+    color: var(--color-body);
+  }
+  .fw-filters__chevron {
+    color: var(--color-body);
+    transition: transform 0.2s ease;
+  }
+  .fw-filters[open] .fw-filters__chevron {
+    transform: rotate(180deg);
+  }
+  .fw-filters__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    padding: var(--space-lg);
+    padding-top: 0;
+    border-top: 1px solid var(--color-hairline);
+  }
+  .fw-filters__grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr 1fr auto;
+    gap: var(--space-md);
+    align-items: end;
+  }
+  @media (max-width: 900px) {
+    .fw-filters__grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  @media (max-width: 500px) {
+    .fw-filters__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .fw-filters__field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .fw-filters__label {
+    font-size: var(--text-caption);
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-mute);
+  }
+  .fw-filters__input,
+  .fw-filters__select {
+    width: 100%;
+    height: 40px;
+    padding: 0 var(--space-sm);
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    line-height: var(--text-body-sm-line);
+    letter-spacing: -0.28px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .fw-filters__input:focus-visible,
+  .fw-filters__select:focus-visible {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(23, 23, 23, 0.08);
+  }
+  .fw-filters__select-wrap {
+    position: relative;
+    display: block;
+  }
+  .fw-filters__select-wrap svg {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-mute);
+    pointer-events: none;
+  }
+  .fw-filters__select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding-right: 32px;
+    cursor: pointer;
+  }
+  .fw-filters__check {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    height: 40px;
+    padding: 0 var(--space-xs);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-sm);
+    background: var(--color-canvas);
+    font-size: var(--text-body-sm);
+    color: var(--color-ink);
+    cursor: pointer;
+    user-select: none;
+  }
+  .fw-filters__checkbox {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--color-primary);
+    margin: 0;
+  }
+  .fw-filters__check-label {
+    line-height: 1;
+  }
+  .fw-filters__actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-sm);
+  }
+  .fw-filters__clear {
+    font-size: var(--text-body-sm);
+    color: var(--color-body);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .fw-filters__clear:hover {
+    color: var(--color-ink);
+  }
+
+  /* ─── Result meta + count ───────────────────────────── */
+  .fw-meta {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding-bottom: var(--space-xs);
+    border-bottom: 1px solid var(--color-hairline);
+  }
+  .fw-meta__count {
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-body);
+  }
+  .fw-meta__clear {
+    font-size: var(--text-body-sm);
+    color: var(--color-body);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  /* ─── Result list ───────────────────────────────────── */
+  .fw-list {
+    list-style: none;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+  }
+  @media (min-width: 800px) {
+    .fw-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  /* ─── Card ──────────────────────────────────────────── */
+  .fw-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    height: 100%;
+    padding: var(--space-lg);
+    background: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-level-2);
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+  .fw-card:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-level-3);
+    border-color: var(--color-hairline-strong);
+  }
+  .fw-card:focus-visible {
+    outline: 2px solid var(--color-link);
+    outline-offset: 2px;
+  }
+  .fw-card__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-md);
+  }
+  .fw-card__head-main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    min-width: 0;
+  }
+  .fw-card__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .fw-card__title {
+    font-size: var(--text-display-sm);
+    line-height: var(--text-display-sm-line);
+    font-weight: var(--text-display-sm-weight);
+    letter-spacing: var(--text-display-sm-tracking);
+    color: var(--color-ink);
+    margin: 0;
+  }
+  .fw-card__company {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--text-body-sm);
+    color: var(--color-body);
+    margin: 0;
+  }
+  .fw-card__dot {
+    color: var(--color-mute);
+  }
+  .fw-card__rate {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    flex-shrink: 0;
+    text-align: right;
+  }
+  .fw-card__rate-value {
+    font-size: var(--text-display-sm);
+    line-height: 1.1;
+    font-weight: var(--text-display-sm-weight);
+    color: var(--color-ink);
+    letter-spacing: var(--text-display-sm-tracking);
+    font-variant-numeric: tabular-nums;
+  }
+  .fw-card__rate-unit {
+    font-size: var(--text-caption);
+    color: var(--color-mute);
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .fw-card__summary {
+    font-size: var(--text-body-sm);
+    line-height: var(--text-body-sm-line);
+    color: var(--color-body);
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .fw-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+  }
+  .fw-card__meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--text-body-sm);
+    color: var(--color-body);
+  }
+  .fw-card__meta-item svg {
+    color: var(--color-mute);
+    flex-shrink: 0;
+  }
+  .fw-card__skills {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .fw-card__skill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    background: var(--color-canvas-soft);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-full);
+    font-size: var(--text-caption);
+    color: var(--color-ink);
+    white-space: nowrap;
+  }
+  .fw-card__skill--more {
+    color: var(--color-mute);
+    font-family: var(--font-mono);
+  }
+  .fw-card__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    align-self: flex-start;
+    margin-top: auto;
+    padding-top: var(--space-xs);
+    font-size: var(--text-body-sm-strong, var(--text-body-sm));
+    font-weight: 500;
+    color: var(--color-link);
+  }
+  .fw-card:hover .fw-card__cta {
+    color: var(--color-link-deep);
+  }
+
+  /* ─── Empty state ───────────────────────────────────── */
+  .fw-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-sm);
+    padding: var(--space-3xl) var(--space-xl);
+    background: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-level-1);
+  }
+  .fw-empty__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-full);
+    background: var(--color-canvas-soft);
+    color: var(--color-body);
+    margin-bottom: var(--space-xs);
+  }
+  .fw-empty__title {
+    font-size: var(--text-display-sm);
+    line-height: var(--text-display-sm-line);
+    font-weight: var(--text-display-sm-weight);
+    letter-spacing: var(--text-display-sm-tracking);
+    color: var(--color-ink);
+    margin: 0;
+  }
+  .fw-empty__body {
+    font-size: var(--text-body-sm);
+    line-height: var(--text-body-sm-line);
+    color: var(--color-body);
+    margin: 0 0 var(--space-sm);
+    max-width: 480px;
+  }
+
+  /* ─── Foot note ─────────────────────────────────────── */
+  .fw-foot {
+    font-size: var(--text-body-sm);
+    color: var(--color-body);
+    text-align: center;
+    margin: 0;
+    padding-top: var(--space-lg);
+    border-top: 1px solid var(--color-hairline);
+  }
+  .fw-foot a {
+    margin-left: 6px;
+  }
+</style>

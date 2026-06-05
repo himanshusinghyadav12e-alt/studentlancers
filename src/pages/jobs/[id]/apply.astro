@@ -4,13 +4,14 @@ import Button from '../../../components/ui/Button.astro';
 import Input from '../../../components/ui/Input.astro';
 import Field from '../../../components/ui/Field.astro';
 import ThemeToggle from '../../../components/ui/ThemeToggle.astro';
+import { getAllJobIds, getJobById, formatBudget, type Job } from '../../../data/jobs';
 
 /**
  * /jobs/[id]/apply
  *
  * Application flow for a specific brief. The brief content is looked
- * up by the `id` route param from a small static catalog — until the
- * real API is wired, this gives every URL a meaningful page.
+ * up by the `id` route param from the shared jobs data source — the
+ * same catalog that powers /student/find-work and /jobs/[id].
  *
  * The form captures:
  *   - Cover letter (required, 80+ chars)
@@ -24,87 +25,32 @@ import ThemeToggle from '../../../components/ui/ThemeToggle.astro';
  */
 
 export function getStaticPaths() {
-  return [
-    { params: { id: 'brand-designer-webflow' } },
-    { params: { id: 'data-viz-dashboard' } },
-    { params: { id: 'marketing-copy-launch' } },
-  ];
+  return getAllJobIds().map((id) => ({ params: { id } }));
 }
 
 const { id } = Astro.params as { id: string };
+const job = getJobById(id);
 
-interface Brief {
-  title: string;
-  company: string;
-  category: string;
-  summary: string;
-  budget: { type: 'hourly' | 'fixed'; amount: number };
-  duration: string;
-  hours: string;
-  skills: string[];
-  description: string;
-}
-
-const BRIEFS: Record<string, Brief> = {
-  'brand-designer-webflow': {
-    title: 'Brand designer for a 4-page Webflow site',
-    company: 'Linear Labs',
-    category: 'Design',
-    summary:
-      'Translate our existing Figma system into a polished Webflow site. Two-week engagement, fixed price.',
-    budget: { type: 'fixed', amount: 1200 },
-    duration: '1–2 weeks',
-    hours: '10–20 hrs / week',
-    skills: ['Figma', 'Webflow', 'CSS', 'Brand design'],
-    description:
-      'We have an approved Figma file for our marketing site (4 pages: home, product, pricing, contact). We are looking for a designer who can take ownership of the Webflow build end-to-end: setting up the design system in Webflow, translating the Figma to responsive Webflow components, and tightening the final QA pass.\n\nYou will work directly with our marketing lead. We will provide brand assets, copy, and a 30-minute kickoff. We expect ~10–20 hours per week over 1–2 weeks.',
-  },
-  'data-viz-dashboard': {
-    title: 'Data viz dashboard for a research dataset',
-    company: 'Atlas Research',
-    category: 'Data',
-    summary: 'Build an interactive dashboard over a public education dataset. ~3 week engagement.',
-    budget: { type: 'hourly', amount: 45 },
-    duration: '2–4 weeks',
-    hours: '10–20 hrs / week',
-    skills: ['Python', 'Streamlit', 'Pandas', 'Data visualization'],
-    description:
-      'Atlas Research is publishing a dataset on college outcomes and we need an interactive dashboard so readers can slice it by state, major, and year. We have a CSV, a list of questions we want answered, and a Streamlit deploy target. You will own the build, the chart design, and a short README.',
-  },
-  'marketing-copy-launch': {
-    title: 'Marketing copy for a product launch',
-    company: 'Plaid',
-    category: 'Writing',
-    summary: 'Three launch emails, a landing page, and a press release. ~1 week.',
-    budget: { type: 'fixed', amount: 900 },
-    duration: '1 week',
-    hours: '5–10 hrs / week',
-    skills: ['Copywriting', 'Email', 'B2B SaaS'],
-    description:
-      'We are launching a new product next month and need sharp, conversion-focused copy across three surfaces: a launch email sequence (3 emails), the landing page hero + sub, and a press release. Voice: confident, plain-spoken, a little dry. References will be provided.',
-  },
-};
-
-const brief = BRIEFS[id];
-
-const fallback: Brief = {
+const fallback: Job = {
+  id,
   title: 'Brief ' + id,
   company: 'A company on StudentLancers',
-  category: 'Project',
   summary:
     'The full brief content is loaded from the API once you click through from a listing. You can still apply — your application will be sent to the company as soon as they finish posting.',
+  description: 'Full description will appear here once the brief is fully loaded.',
+  category: 'Project',
   budget: { type: 'fixed', amount: 0 },
   duration: '—',
   hours: '—',
   skills: [],
-  description: 'Full description will appear here once the brief is fully loaded.',
+  postedAt: '2026-06-05',
+  location: 'US',
+  remote: true,
+  verified: false,
 };
 
-const view = brief ?? fallback;
-const budgetLabel =
-  view.budget.type === 'fixed'
-    ? `$${view.budget.amount.toLocaleString()} fixed`
-    : `$${view.budget.amount}/hr`;
+const view = job ?? fallback;
+const budgetLabel = formatBudget(view);
 ---
 
 <Layout title={`Apply · ${view.title}`} description={`Apply to ${view.title}.`}>
@@ -137,7 +83,7 @@ const budgetLabel =
     <div class="ds-container post-page__inner">
       <header class="post-page__head">
         <span class="post-page__eyebrow">
-          <a href="#" style="color: inherit; text-decoration: underline; text-underline-offset: 3px;">← Back to brief</a>
+          <a href={`/jobs/${id}`} style="color: inherit; text-decoration: underline; text-underline-offset: 3px;">← Back to brief</a>
         </span>
         <h1 class="post-page__title">Apply to {view.title}</h1>
         <p class="post-page__lead">

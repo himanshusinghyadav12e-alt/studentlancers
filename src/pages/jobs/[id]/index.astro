@@ -1,0 +1,689 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Button from '../../../components/ui/Button.astro';
+import Badge from '../../../components/ui/Badge.astro';
+import ThemeToggle from '../../../components/ui/ThemeToggle.astro';
+import {
+  JOBS,
+  getAllJobIds,
+  getJobById,
+  formatBudget,
+  formatRelativeDate,
+  type Job,
+} from '../../../data/jobs';
+
+/**
+ * /jobs/[id]
+ *
+ * Single-brief detail page. Source of truth is the shared jobs data
+ * module, so the same record powers the listing and this view. The
+ * page exposes a primary Apply CTA that links to /jobs/[id]/apply,
+ * a sticky sidebar with the metadata pill cluster, and a small
+ * "more like this" rail drawn from the same catalog.
+ *
+ * No fake activity — no "X students have applied" or "Viewed N times
+ * today". The only meta we render is the brief's own attributes
+ * (budget, duration, hours) plus a verified-email indicator.
+ */
+
+export function getStaticPaths() {
+  return getAllJobIds().map((id) => ({ params: { id } }));
+}
+
+const { id } = Astro.params as { id: string };
+const job: Job | undefined = getJobById(id);
+
+// Fallback for unknown slugs — Astro is configured to pre-render only
+// the known IDs above, but server fallback keeps the page resilient.
+const fallback: Job = {
+  id: id,
+  title: 'Brief not found',
+  company: 'A company on StudentLancers',
+  summary: 'The brief you are looking for is no longer available.',
+  description:
+    'This brief may have been closed, withdrawn, or the link is incorrect. Browse all open briefs to find one that fits.',
+  category: 'Design',
+  budget: { type: 'fixed', amount: 0 },
+  duration: '—',
+  hours: '—',
+  skills: [],
+  postedAt: '2026-06-05',
+  location: 'US',
+  remote: true,
+  verified: false,
+};
+
+const view = job ?? fallback;
+const isFallback = !job;
+
+const budgetLabel = formatBudget(view);
+const postedLabel = formatRelativeDate(view.postedAt);
+
+// Related: same category, excluding the current brief, capped at 3.
+const related = JOBS.filter(
+  (j) => j.id !== view.id && j.category === view.category
+).slice(0, 3);
+
+// Description rendered as plain text with paragraph breaks preserved.
+const descriptionParagraphs = view.description.split(/\n\s*\n/);
+---
+
+<Layout
+  title={isFallback ? 'Brief not found · StudentLancers' : `${view.title} · StudentLancers`}
+  description={view.summary}
+>
+  <a class="skip-link" href="#jd-main">Skip to content</a>
+
+  <header class="jd-top" data-jd-top>
+    <div class="ds-container jd-top__inner">
+      <a href="/" class="nav__brand" aria-label="StudentLancers home">
+        <span class="nav__logo" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <rect x="0.5" y="0.5" width="21" height="21" rx="5.5" fill="var(--color-primary)" />
+            <path
+              d="M6 7.5L11 4.5L16 7.5V14.5L11 17.5L6 14.5V7.5Z"
+              stroke="white"
+              stroke-width="1.4"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M11 4.5V11M11 11L16 7.5M11 11L6 7.5M11 11V17.5"
+              stroke="white"
+              stroke-width="1.4"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </span>
+        <span class="nav__brand-text">StudentLancers</span>
+      </a>
+      <nav class="jd-top__nav" aria-label="Quick links">
+        <a class="jd-top__link" href="/student/dashboard">Dashboard</a>
+        <a class="jd-top__link" href="/student/find-work">Find work</a>
+      </nav>
+      <div class="jd-top__right">
+        <ThemeToggle size="md" />
+        <Button variant="secondary-sm" size="md" href="/student/find-work">Back to briefs</Button>
+      </div>
+    </div>
+  </header>
+
+  <main id="jd-main" class="jd-page">
+    <div class="ds-container jd-page__inner">
+      <nav class="jd-crumbs" aria-label="Breadcrumb">
+        <a href="/student/find-work">Find work</a>
+        <span aria-hidden="true">/</span>
+        <a href={`/student/find-work?category=${encodeURIComponent(view.category)}`}>{view.category}</a>
+        <span aria-hidden="true">/</span>
+        <span class="jd-crumbs__current" aria-current="page">{view.title}</span>
+      </nav>
+
+      <div class="jd-grid">
+        <article class="jd-main">
+          <header class="jd-head">
+            <div class="jd-head__chips">
+              <Badge variant="secondary" mono>{view.category}</Badge>
+              {view.verified && <Badge variant="success" dot>Verified company</Badge>}
+              {view.remote && <Badge variant="cyan">Remote</Badge>}
+            </div>
+            <h1 class="jd-head__title">{view.title}</h1>
+            <p class="jd-head__meta">
+              <span class="jd-head__company">{view.company}</span>
+              <span class="jd-head__dot" aria-hidden="true">·</span>
+              <span>{postedLabel}</span>
+            </p>
+            <p class="jd-head__summary">{view.summary}</p>
+          </header>
+
+          <section class="jd-section" aria-labelledby="jd-overview">
+            <h2 id="jd-overview" class="jd-section__title">Overview</h2>
+            <div class="jd-prose">
+              {descriptionParagraphs.map((para) => (
+                <p>{para}</p>
+              ))}
+            </div>
+          </section>
+
+          <section class="jd-section" aria-labelledby="jd-skills">
+            <h2 id="jd-skills" class="jd-section__title">Skills we're looking for</h2>
+            {view.skills.length > 0 ? (
+              <ul class="jd-skills" role="list">
+                {view.skills.map((skill) => (
+                  <li class="jd-skill">{skill}</li>
+                ))}
+              </ul>
+            ) : (
+              <p class="jd-section__empty">No specific skills listed for this brief.</p>
+            )}
+          </section>
+
+          <section class="jd-section" aria-labelledby="jd-how">
+            <h2 id="jd-how" class="jd-section__title">How it works</h2>
+            <ol class="jd-steps" role="list">
+              <li class="jd-step">
+                <span class="jd-step__num" aria-hidden="true">01</span>
+                <div>
+                  <h3 class="jd-step__title">Apply with a short pitch</h3>
+                  <p class="jd-step__body">
+                    Tell the company why you're a fit. Most students spend 5–10 minutes
+                    on this — a tight cover letter beats a long one.
+                  </p>
+                </div>
+              </li>
+              <li class="jd-step">
+                <span class="jd-step__num" aria-hidden="true">02</span>
+                <div>
+                  <h3 class="jd-step__title">Shortlisted for an intro call</h3>
+                  <p class="jd-step__body">
+                    If your application moves forward, the company will reach out
+                    to schedule a short call to discuss scope and timing.
+                  </p>
+                </div>
+              </li>
+              <li class="jd-step">
+                <span class="jd-step__num" aria-hidden="true">03</span>
+                <div>
+                  <h3 class="jd-step__title">Get hired with escrow</h3>
+                  <p class="jd-step__body">
+                    Once hired, funds are held in escrow and released when work is
+                    approved. You get a clear paper trail from kickoff to payout.
+                  </p>
+                </div>
+              </li>
+            </ol>
+          </section>
+
+          {related.length > 0 && (
+            <section class="jd-section" aria-labelledby="jd-related">
+              <h2 id="jd-related" class="jd-section__title">More {view.category} briefs</h2>
+              <ul class="jd-related" role="list">
+                {related.map((r) => (
+                  <li>
+                    <a class="jd-related__card" href={`/jobs/${r.id}`}>
+                      <div class="jd-related__head">
+                        <h3 class="jd-related__title">{r.title}</h3>
+                        <span class="jd-related__rate">
+                          {r.budget.type === 'fixed'
+                            ? `$${r.budget.amount.toLocaleString()}`
+                            : `$${r.budget.amount}/hr`}
+                        </span>
+                      </div>
+                      <p class="jd-related__summary">{r.summary}</p>
+                      <span class="jd-related__cta">
+                        View brief
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                          <path d="M3 6h6M6 3l3 3-3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </article>
+
+        <aside class="jd-side" aria-label="Apply">
+          <div class="jd-apply">
+            <div class="jd-apply__rate">
+              <span class="jd-apply__rate-value">
+                {view.budget.type === 'fixed'
+                  ? `$${view.budget.amount.toLocaleString()}`
+                  : `$${view.budget.amount}`}
+              </span>
+              <span class="jd-apply__rate-unit">
+                {view.budget.type === 'fixed' ? 'fixed price' : 'per hour'}
+              </span>
+            </div>
+
+            <Button
+              variant="primary"
+              size="lg"
+              href={isFallback ? '/student/find-work' : `/jobs/${view.id}/apply`}
+              class="jd-apply__cta"
+            >
+              {isFallback ? 'Browse briefs' : 'Apply to this brief →'}
+            </Button>
+
+            <dl class="jd-apply__facts">
+              <div class="jd-apply__fact">
+                <dt>Category</dt>
+                <dd>{view.category}</dd>
+              </div>
+              <div class="jd-apply__fact">
+                <dt>Duration</dt>
+                <dd>{view.duration}</dd>
+              </div>
+              <div class="jd-apply__fact">
+                <dt>Hours / week</dt>
+                <dd>{view.hours}</dd>
+              </div>
+              <div class="jd-apply__fact">
+                <dt>Location</dt>
+                <dd>
+                  {view.remote ? 'Remote' : `On-site · ${view.location}`}
+                </dd>
+              </div>
+              <div class="jd-apply__fact">
+                <dt>Posted</dt>
+                <dd>{postedLabel}</dd>
+              </div>
+              <div class="jd-apply__fact">
+                <dt>Company</dt>
+                <dd>{view.company}</dd>
+              </div>
+            </dl>
+
+            <p class="jd-apply__fineprint">
+              Funds are held in escrow on day one and released on approval. Most
+              companies respond to applications within two business days.
+            </p>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .skip-link {
+    position: absolute;
+    top: -40px;
+    left: 16px;
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-body-sm);
+    z-index: 100;
+    transition: top 0.15s ease;
+  }
+  .skip-link:focus {
+    top: 16px;
+  }
+
+  /* Top nav */
+  .jd-top {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: color-mix(in srgb, var(--color-canvas) 86%, transparent);
+    backdrop-filter: saturate(180%) blur(12px);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid var(--color-hairline);
+  }
+  .jd-top__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-lg);
+    height: 64px;
+  }
+  .jd-top__nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+  .jd-top__link {
+    display: inline-flex;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-full);
+    color: var(--color-body);
+    font-size: var(--text-body-sm);
+    text-decoration: none;
+    transition: color 0.15s ease, background-color 0.15s ease;
+  }
+  .jd-top__link:hover {
+    color: var(--color-ink);
+    background: var(--color-canvas-soft);
+  }
+  .jd-top__right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+  @media (max-width: 700px) {
+    .jd-top__nav {
+      display: none;
+    }
+  }
+
+  /* Page */
+  .jd-page {
+    padding-block: var(--space-2xl) var(--space-5xl);
+  }
+  .jd-page__inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+  }
+
+  /* Breadcrumb */
+  .jd-crumbs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--text-body-sm);
+    color: var(--color-mute);
+  }
+  .jd-crumbs a {
+    color: var(--color-body);
+    text-decoration: none;
+  }
+  .jd-crumbs a:hover {
+    color: var(--color-ink);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .jd-crumbs__current {
+    color: var(--color-ink);
+    max-width: 320px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Grid: main + sticky aside */
+  .jd-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: var(--space-2xl);
+    align-items: start;
+  }
+  @media (max-width: 960px) {
+    .jd-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Main column */
+  .jd-main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xl);
+    min-width: 0;
+  }
+  .jd-head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+  .jd-head__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .jd-head__title {
+    font-size: clamp(28px, 4vw, var(--text-display-xl));
+    line-height: 1.05;
+    font-weight: var(--text-display-xl-weight);
+    letter-spacing: var(--text-display-xl-tracking);
+    color: var(--color-ink);
+    margin: 0;
+  }
+  .jd-head__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--text-body-sm);
+    color: var(--color-body);
+    margin: 0;
+  }
+  .jd-head__company {
+    color: var(--color-ink);
+    font-weight: 500;
+  }
+  .jd-head__dot {
+    color: var(--color-mute);
+  }
+  .jd-head__summary {
+    font-size: var(--text-body-lg);
+    line-height: var(--text-body-lg-line);
+    color: var(--color-body);
+    margin: 0;
+    max-width: 720px;
+  }
+
+  /* Sections */
+  .jd-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    padding-top: var(--space-xl);
+    border-top: 1px solid var(--color-hairline);
+  }
+  .jd-section__title {
+    font-size: var(--text-display-sm);
+    line-height: var(--text-display-sm-line);
+    font-weight: var(--text-display-sm-weight);
+    letter-spacing: var(--text-display-sm-tracking);
+    color: var(--color-ink);
+    margin: 0;
+  }
+  .jd-section__empty {
+    font-size: var(--text-body-sm);
+    color: var(--color-body);
+    margin: 0;
+  }
+  .jd-prose {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    max-width: 680px;
+  }
+  .jd-prose p {
+    font-size: var(--text-body-md);
+    line-height: var(--text-body-md-line);
+    color: var(--color-ink);
+    margin: 0;
+    white-space: pre-line;
+  }
+
+  /* Skills */
+  .jd-skills {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+  .jd-skill {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    background: var(--color-canvas-soft);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-full);
+    font-size: var(--text-body-sm);
+    color: var(--color-ink);
+  }
+
+  /* How it works */
+  .jd-steps {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+  .jd-step {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-md);
+  }
+  .jd-step__num {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    background: var(--color-canvas-soft);
+    border: 1px solid var(--color-hairline);
+    color: var(--color-ink);
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    font-weight: 500;
+  }
+  .jd-step__title {
+    font-size: var(--text-body-md);
+    line-height: var(--text-body-md-line);
+    font-weight: 500;
+    color: var(--color-ink);
+    margin: 0 0 4px;
+  }
+  .jd-step__body {
+    font-size: var(--text-body-sm);
+    line-height: var(--text-body-sm-line);
+    color: var(--color-body);
+    margin: 0;
+  }
+
+  /* Related */
+  .jd-related {
+    list-style: none;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-sm);
+  }
+  @media (min-width: 600px) {
+    .jd-related {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  .jd-related__card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    height: 100%;
+    padding: var(--space-md);
+    background: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+  .jd-related__card:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-level-2);
+    border-color: var(--color-hairline-strong);
+  }
+  .jd-related__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-sm);
+  }
+  .jd-related__title {
+    font-size: var(--text-body-md);
+    line-height: var(--text-body-md-line);
+    font-weight: 500;
+    color: var(--color-ink);
+    margin: 0;
+  }
+  .jd-related__rate {
+    flex-shrink: 0;
+    font-size: var(--text-body-sm);
+    color: var(--color-body);
+    font-variant-numeric: tabular-nums;
+    font-family: var(--font-mono);
+  }
+  .jd-related__summary {
+    font-size: var(--text-body-sm);
+    line-height: var(--text-body-sm-line);
+    color: var(--color-body);
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .jd-related__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: auto;
+    font-size: var(--text-body-sm);
+    color: var(--color-link);
+  }
+
+  /* Sticky sidebar */
+  .jd-side {
+    position: sticky;
+    top: 88px;
+  }
+  @media (max-width: 960px) {
+    .jd-side {
+      position: static;
+    }
+  }
+
+  .jd-apply {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    padding: var(--space-xl);
+    background: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-level-3);
+  }
+  .jd-apply__rate {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .jd-apply__rate-value {
+    font-size: var(--text-display-md);
+    line-height: 1;
+    font-weight: var(--text-display-md-weight);
+    letter-spacing: var(--text-display-md-tracking);
+    color: var(--color-ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .jd-apply__rate-unit {
+    font-size: var(--text-body-sm);
+    color: var(--color-body);
+  }
+  .jd-apply__cta {
+    width: 100%;
+  }
+  :global(.jd-apply__cta.ds-btn) {
+    width: 100%;
+  }
+  .jd-apply__facts {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    margin: var(--space-sm) 0 0;
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--color-hairline);
+  }
+  .jd-apply__fact {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-md);
+    font-size: var(--text-body-sm);
+  }
+  .jd-apply__fact dt {
+    color: var(--color-mute);
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: var(--text-caption);
+  }
+  .jd-apply__fact dd {
+    color: var(--color-ink);
+    margin: 0;
+    text-align: right;
+  }
+  .jd-apply__fineprint {
+    font-size: var(--text-caption);
+    line-height: var(--text-caption-line);
+    color: var(--color-mute);
+    margin: 0;
+    padding-top: var(--space-xs);
+  }
+</style>
