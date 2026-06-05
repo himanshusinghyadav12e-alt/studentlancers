@@ -60,8 +60,8 @@
 /* ─── Brand pane (left) ────────────────────────────────────── */
 .auth-pane--brand {
   position: relative;
-  background: var(--color-primary);
-  color: var(--color-on-primary);
+  background: var(--inverted-bg);
+  color: var(--inverted-fg);
   overflow: hidden;
   padding: var(--space-3xl) var(--space-3xl);
   display: flex;
@@ -82,7 +82,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, transparent 0%, var(--color-primary) 92%);
+  background: linear-gradient(180deg, transparent 0%, var(--inverted-bg) 92%);
 }
 
 .auth-pane__inner,
@@ -101,7 +101,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-xs);
-  color: var(--color-on-primary);
+  color: var(--inverted-fg);
   text-decoration: none;
 }
 .auth-brand__text {
@@ -117,14 +117,14 @@
   z-index: 2;
 }
 .auth-pane__toggle .theme-toggle {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.16);
-  color: rgba(255, 255, 255, 0.85);
+  background: var(--inverted-surface-soft);
+  border-color: var(--inverted-border);
+  color: var(--inverted-fg-muted);
 }
 .auth-pane__toggle .theme-toggle:hover {
-  background: rgba(255, 255, 255, 0.16);
-  color: var(--color-on-primary);
-  border-color: rgba(255, 255, 255, 0.24);
+  background: var(--inverted-surface-soft);
+  color: var(--inverted-fg);
+  border-color: var(--inverted-border-strong);
 }
 
 .auth-pane__copy {
@@ -138,7 +138,7 @@
   font-size: var(--text-caption);
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--inverted-fg-subtle);
   margin: 0;
 }
 .auth-pane__quote {
@@ -146,16 +146,16 @@
   line-height: 1.4;
   font-weight: 500;
   letter-spacing: -0.6px;
-  color: var(--color-on-primary);
+  color: var(--inverted-fg);
   margin: 0;
 }
 .auth-pane__attr {
   font-size: var(--text-body-sm);
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--inverted-fg-muted);
   margin: 0;
 }
 .auth-pane__attr strong {
-  color: var(--color-on-primary);
+  color: var(--inverted-fg);
   font-weight: var(--text-body-sm-strong-weight);
 }
 
@@ -171,20 +171,20 @@
   align-items: center;
   gap: var(--space-sm);
   font-size: var(--text-body-sm);
-  color: rgba(255, 255, 255, 0.78);
+  color: var(--inverted-fg-muted);
 }
 .auth-pane__dot {
   width: 6px;
   height: 6px;
   border-radius: var(--radius-full);
   background: var(--color-cyan);
-  box-shadow: 0 0 0 4px rgba(80, 227, 194, 0.15);
+  box-shadow: 0 0 0 4px var(--inverted-surface-soft);
   flex-shrink: 0;
 }
 
 .auth-pane__foot {
   font-size: var(--text-caption);
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--inverted-fg-subtle);
   font-family: var(--font-mono);
   letter-spacing: 0.04em;
 }

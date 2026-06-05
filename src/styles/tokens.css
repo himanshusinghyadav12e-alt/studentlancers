@@ -2,19 +2,30 @@
  * Design tokens — Vercel-inspired system
  *
  * Source of truth: /DESIGN.md
- * Every value lives in CSS custom properties so components consume them
- * via var(--token-name) and a future dark-mode pass can override the
- * semantic layer only.
+ *
+ * The token system has two layers:
+ *   1. Concrete palette  — the raw color values (--color-canvas, --color-ink,
+ *      --color-primary, etc.). These flip with the theme.
+ *   2. Semantic aliases  — stable, intent-named tokens that components
+ *      should consume (--fg, --fg-muted, --surface, --surface-2, --border,
+ *      --link, --inverted-fg, --inverted-bg, ...). They map onto the
+ *      concrete layer in both light and dark mode so the rest of the
+ *      codebase never needs to know what the underlying palette is.
+ *
+ * Components should reach for the semantic layer whenever possible. The
+ * concrete palette is reserved for the token definitions themselves and
+ * for the few cases where a component genuinely needs a themed surface
+ * (the auth brand panel, the home-page CTA card, etc.).
  */
 
 :root {
-  /* ─── Colors ────────────────────────────────────────────── */
+  /* ─── Concrete palette (light) ─────────────────────────── */
   --color-primary: #171717;
   --color-on-primary: #ffffff;
 
   --color-ink: #171717;
   --color-body: #4d4d4d;
-  --color-mute: #888888;
+  --color-mute: #6b6b6b;
 
   --color-hairline: #ebebeb;
   --color-hairline-strong: #a1a1a1;
@@ -53,6 +64,41 @@
 
   --color-selection-bg: #171717;
   --color-selection-fg: #f2f2f2;
+
+  /* ─── Semantic aliases (light defaults) ──────────────────
+   * Use these from components. They map to the concrete palette
+   * above and flip to the dark equivalents in [data-theme="dark"]. */
+  --fg: var(--color-ink);
+  --fg-body: var(--color-body);
+  --fg-muted: var(--color-mute);
+  --fg-on-inverted: var(--color-on-primary);
+  --fg-inverted-muted: rgba(255, 255, 255, 0.72);
+  --fg-inverted-subtle: rgba(255, 255, 255, 0.55);
+
+  --surface: var(--color-canvas);
+  --surface-2: var(--color-canvas-soft);
+  --surface-3: var(--color-canvas-soft-2);
+
+  --border: var(--color-hairline);
+  --border-strong: var(--color-hairline-strong);
+
+  --link: var(--color-link);
+  --link-deep: var(--color-link-deep);
+  --link-bg: var(--color-link-bg-soft);
+
+  /* Inverted surface (auth brand panel, dark hero card, dark section).
+   * In light mode the inverted surface is the dark side. In dark mode
+   * it flips to the light side so the polarity of every "on dark"
+   * section inverts with the theme. Components that paint "on dark"
+   * read --inverted-fg / --inverted-bg, not raw --color-primary. */
+  --inverted-fg: #ededed;
+  --inverted-bg: #171717;
+  --inverted-bg-2: #1f1f1f;
+  --inverted-border: rgba(255, 255, 255, 0.12);
+  --inverted-border-strong: rgba(255, 255, 255, 0.24);
+  --inverted-surface-soft: rgba(255, 255, 255, 0.06);
+  --inverted-fg-muted: rgba(255, 255, 255, 0.72);
+  --inverted-fg-subtle: rgba(255, 255, 255, 0.55);
 
   /* ─── Typography ────────────────────────────────────────── */
   --font-sans: "Geist", Inter, system-ui, -apple-system, sans-serif;
@@ -189,9 +235,9 @@
  *
  * Overrides the concrete tokens (not a parallel semantic layer) so every
  * existing component that reads var(--color-canvas), var(--color-ink),
- * etc. flips automatically. The brand primary stays dark on dark — the
- * Vercel convention is to keep the primary button as a near-black surface
- * in light mode and as a near-white surface in dark mode.
+ * etc. flips automatically. Components that paint "on dark" should
+ * consume the semantic --inverted-fg / --inverted-bg aliases (which
+ * flip with the theme) instead of the concrete --color-primary.
  *
  * Activated by [data-theme="dark"] on <html> (set by the theme script
  * before paint to avoid flash). Also activates on
@@ -203,8 +249,8 @@
     --color-on-primary: #0a0a0a;
 
     --color-ink: #ededed;
-    --color-body: #a1a1a1;
-    --color-mute: #707070;
+    --color-body: #b5b5b5;
+    --color-mute: #8a8a8a;
 
     --color-hairline: #2a2a2a;
     --color-hairline-strong: #525252;
@@ -233,6 +279,37 @@
 
     --color-selection-bg: #ededed;
     --color-selection-fg: #0a0a0a;
+
+    /* Semantic aliases (dark) — light text on dark surface. */
+    --fg: var(--color-ink);
+    --fg-body: var(--color-body);
+    --fg-muted: var(--color-mute);
+    --fg-on-inverted: #171717;
+    --fg-inverted-muted: rgba(23, 23, 23, 0.72);
+    --fg-inverted-subtle: rgba(23, 23, 23, 0.55);
+
+    --surface: var(--color-canvas);
+    --surface-2: var(--color-canvas-soft);
+    --surface-3: var(--color-canvas-soft-2);
+
+    --border: var(--color-hairline);
+    --border-strong: var(--color-hairline-strong);
+
+    --link: var(--color-link);
+    --link-deep: var(--color-link-deep);
+    --link-bg: var(--color-link-bg-soft);
+
+    /* Inverted surface in dark mode: light side of the polarity, with
+     * dark text on it. Used by sections that always paint as "the
+     * other side" (CTA card, "How it works" section, auth brand panel). */
+    --inverted-fg: #171717;
+    --inverted-bg: #ededed;
+    --inverted-bg-2: #f5f5f5;
+    --inverted-border: rgba(0, 0, 0, 0.1);
+    --inverted-border-strong: rgba(0, 0, 0, 0.2);
+    --inverted-surface-soft: rgba(0, 0, 0, 0.05);
+    --inverted-fg-muted: rgba(23, 23, 23, 0.72);
+    --inverted-fg-subtle: rgba(23, 23, 23, 0.55);
   }
 }
 
@@ -241,8 +318,8 @@
   --color-on-primary: #0a0a0a;
 
   --color-ink: #ededed;
-  --color-body: #a1a1a1;
-  --color-mute: #707070;
+  --color-body: #b5b5b5;
+  --color-mute: #8a8a8a;
 
   --color-hairline: #2a2a2a;
   --color-hairline-strong: #525252;
@@ -271,4 +348,32 @@
 
   --color-selection-bg: #ededed;
   --color-selection-fg: #0a0a0a;
+
+  /* Semantic aliases (dark) — mirror the prefers-color-scheme block. */
+  --fg: var(--color-ink);
+  --fg-body: var(--color-body);
+  --fg-muted: var(--color-mute);
+  --fg-on-inverted: #171717;
+  --fg-inverted-muted: rgba(23, 23, 23, 0.72);
+  --fg-inverted-subtle: rgba(23, 23, 23, 0.55);
+
+  --surface: var(--color-canvas);
+  --surface-2: var(--color-canvas-soft);
+  --surface-3: var(--color-canvas-soft-2);
+
+  --border: var(--color-hairline);
+  --border-strong: var(--color-hairline-strong);
+
+  --link: var(--color-link);
+  --link-deep: var(--color-link-deep);
+  --link-bg: var(--color-link-bg-soft);
+
+  --inverted-fg: #171717;
+  --inverted-bg: #ededed;
+  --inverted-bg-2: #f5f5f5;
+  --inverted-border: rgba(0, 0, 0, 0.1);
+  --inverted-border-strong: rgba(0, 0, 0, 0.2);
+  --inverted-surface-soft: rgba(0, 0, 0, 0.05);
+  --inverted-fg-muted: rgba(23, 23, 23, 0.72);
+  --inverted-fg-subtle: rgba(23, 23, 23, 0.55);
 }

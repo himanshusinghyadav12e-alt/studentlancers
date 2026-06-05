@@ -158,11 +158,11 @@ const Tag = href ? 'a' : 'button';
   }
 
   .ds-btn--primary:hover:not(:disabled) {
-    background-color: #2a2a2a;
+    background-color: color-mix(in srgb, var(--color-primary) 88%, var(--color-on-primary));
   }
 
   .ds-btn--primary:active:not(:disabled) {
-    background-color: #000000;
+    background-color: color-mix(in srgb, var(--color-primary) 76%, var(--color-on-primary));
   }
 
   /* ─── Secondary: white pill, ink text ───────────────────── */
