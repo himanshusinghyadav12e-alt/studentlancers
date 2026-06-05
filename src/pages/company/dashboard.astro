@@ -31,6 +31,7 @@ const myBriefIds = new Set(myBriefs.map((b) => b.id));
 const appsForMine = store.applications.list().filter((a) => myBriefIds.has(a.briefId));
 const openBriefsCount = myBriefs.length;
 const applicantsCount = appsForMine.length;
+const activeHiresCount = appsForMine.filter((a) => a.status === 'hired').length;
 const recentBriefs = myBriefs.slice(0, 3);
 ---
 
@@ -74,8 +75,17 @@ const recentBriefs = myBriefs.slice(0, 3);
       </div>
       <div class="dash-stat">
         <span class="dash-stat__label">Active hires</span>
-        <span class="dash-stat__value dash-stat__value--placeholder">—</span>
-        <span class="dash-stat__hint">Currently in progress</span>
+        {activeHiresCount === 0 ? (
+          <>
+            <span class="dash-stat__value dash-stat__value--placeholder">—</span>
+            <span class="dash-stat__hint">Hire from the applicants inbox</span>
+          </>
+        ) : (
+          <a class="dash-stat__link" href="/company/hires" aria-label={`View ${activeHiresCount} active hires`}>
+            <span class="dash-stat__value">{activeHiresCount}</span>
+            <span class="dash-stat__hint dash-stat__hint--link">View active hires →</span>
+          </a>
+        )}
       </div>
       <div class="dash-stat">
         <span class="dash-stat__label">Escrow funded</span>

@@ -3,14 +3,21 @@ import DashboardLayout, { type NavItem } from '../../layouts/DashboardLayout.ast
 import Button from '../../components/ui/Button.astro';
 import Badge from '../../components/ui/Badge.astro';
 import SubPageShell from '../../components/SubPageShell.astro';
-import { store } from '../../scripts/store';
+import { store, type ApplicationStatus } from '../../scripts/store';
 
 /**
  * /company/applicants
  *
- * Lists every application the company's briefs have received. Pulled
- * from the local store; falls back to the shared empty state when
- * there is nothing to show.
+ * Company inbox. Lists every application on the briefs the signed-in
+ * company has posted, grouped by brief, with a status filter, a
+ * per-applicant action row (Shortlist / Hire / Reject), and summary
+ * counts in the header. Action buttons are wired by
+ * src/scripts/applicants.ts, which writes through to the store and
+ * updates the DOM in place — no full page reload.
+ *
+ * The page renders honest empty states at two levels: no applications
+ * at all (SubPageShell) and a brief with zero applicants matching
+ * the active filter (inline).
  */
 
 const companyNav: NavItem[] = [
@@ -27,13 +34,54 @@ const session = store.auth.current();
 const companyName = session?.name ?? 'Your company';
 
 const myBriefs = session ? store.briefs.listByOwner(session.userId) : [];
-const myBriefIds = new Set(myBriefs.map((b) => b.id));
-const apps = store.applications.list().filter((a) => myBriefIds.has(a.briefId));
+const apps = session ? store.applications.listByOwner(session.userId) : [];
 
-// Group applications by brief for the in-page navigation
-const byBrief = myBriefs
+// Group by brief. We sort briefs by most-recent activity (most recent
+// application) so the inbox reads like an email thread, not a brief
+// list.
+const lastActivity = new Map<string, string>();
+for (const a of apps) {
+  const prev = lastActivity.get(a.briefId);
+  if (!prev || a.createdAt > prev) lastActivity.set(a.briefId, a.createdAt);
+}
+const sortedBriefs = [...myBriefs].sort((a, b) => {
+  const aa = lastActivity.get(a.id) ?? a.createdAt;
+  const bb = lastActivity.get(b.id) ?? b.createdAt;
+  return bb.localeCompare(aa);
+});
+const byBrief = sortedBriefs
   .map((b) => ({ brief: b, apps: apps.filter((a) => a.briefId === b.id) }))
   .filter((row) => row.apps.length > 0);
+
+const counts = {
+  total: apps.length,
+  new: apps.filter((a) => a.status === 'new').length,
+  shortlisted: apps.filter((a) => a.status === 'shortlisted').length,
+  hired: apps.filter((a) => a.status === 'hired').length,
+  rejected: apps.filter((a) => a.status === 'rejected').length,
+};
+
+const FILTERS: { value: 'all' | ApplicationStatus; label: string; pillClass?: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'new', label: 'New', pillClass: 'dash-pill--cyan' },
+  { value: 'shortlisted', label: 'Shortlisted', pillClass: 'dash-pill--violet' },
+  { value: 'hired', label: 'Hired', pillClass: 'dash-pill--success' },
+  { value: 'rejected', label: 'Rejected', pillClass: 'dash-pill--warning' },
+];
+
+const statusLabel: Record<ApplicationStatus, string> = {
+  new: 'New',
+  shortlisted: 'Shortlisted',
+  hired: 'Hired',
+  rejected: 'Rejected',
+};
+
+const statusPillClass: Record<ApplicationStatus, string> = {
+  new: 'dash-pill dash-pill--cyan',
+  shortlisted: 'dash-pill dash-pill--violet',
+  hired: 'dash-pill dash-pill--success',
+  rejected: 'dash-pill dash-pill--warning',
+};
 ---
 
 {
@@ -64,7 +112,13 @@ const byBrief = myBriefs
           <span class="dash-page-head__eyebrow">Applicants</span>
           <h1 class="dash-page-head__title">Review ranked proposals</h1>
           <p class="dash-page-head__lead">
-            {apps.length} {apps.length === 1 ? 'applicant' : 'applicants'} across {byBrief.length} {byBrief.length === 1 ? 'brief' : 'briefs'}.
+            {counts.total} {counts.total === 1 ? 'applicant' : 'applicants'} across {byBrief.length} {byBrief.length === 1 ? 'brief' : 'briefs'}.
+            {counts.hired > 0 && (
+              <>
+                {' '}
+                <span class={`apps__inline-stat ${statusPillClass.hired}`}>{counts.hired} hired</span>
+              </>
+            )}
           </p>
         </div>
         <div class="dash-page-head__actions">
@@ -72,31 +126,131 @@ const byBrief = myBriefs
         </div>
       </header>
 
-      <section class="apps" aria-label="Applicants by brief">
+      <section class="apps-stats" aria-label="Status counts">
+        {FILTERS.slice(1).map((f) => (
+          <div class="apps-stats__cell">
+            <span class="apps-stats__label">{f.label}</span>
+            <span class="apps-stats__value">{counts[f.value as ApplicationStatus]}</span>
+          </div>
+        ))}
+      </section>
+
+      <section class="apps" aria-label="Applicants by brief" data-applicants-root>
+        <div class="apps__filters" role="group" aria-label="Filter by status" data-applicants-filters>
+          {FILTERS.map((f) => {
+            const count =
+              f.value === 'all' ? counts.total : counts[f.value as ApplicationStatus];
+            return (
+              <button
+                type="button"
+                class="dash-filters__chip"
+                aria-pressed={f.value === 'all' ? 'true' : 'false'}
+                data-filter={f.value}
+              >
+                <span>{f.label}</span>
+                <span class="apps__chip-count" aria-hidden="true">{count}</span>
+              </button>
+            );
+          })}
+        </div>
+
         {byBrief.map(({ brief, apps }) => (
-          <article class="apps__group">
+          <article class="apps__group" data-brief-id={brief.id}>
             <header class="apps__group-head">
-              <h2>{brief.title}</h2>
-              <span>{apps.length} {apps.length === 1 ? 'applicant' : 'applicants'}</span>
+              <div>
+                <h2 class="apps__group-title">{brief.title}</h2>
+                <span class="apps__group-meta">
+                  {apps.length} {apps.length === 1 ? 'applicant' : 'applicants'} · {brief.budgetType === 'hourly' ? `$${brief.budget}/hr` : `$${brief.budget} fixed`}
+                </span>
+              </div>
+              <a class="apps__brief-link" href={`/jobs/${brief.id}`} target="_blank" rel="noopener noreferrer">
+                View brief →
+              </a>
             </header>
-            <ul class="apps__list" role="list">
+            <ul class="apps__list" role="list" data-applicants-list>
               {apps.map((a) => (
-                <li class="apps__item">
+                <li
+                  class="apps__item"
+                  id={`applicant-${a.id}`}
+                  data-applicant-card
+                  data-applicant-id={a.id}
+                  data-applicant-status={a.status}
+                >
                   <div class="apps__row">
-                    <div class="apps__main">
-                      <div class="apps__name">{a.applicantName}</div>
-                      <div class="apps__email">{a.applicantEmail}</div>
+                    <div class="apps__identity">
+                      <span class="dash-list-avatar" aria-hidden="true" data-color={a.status === 'hired' ? 'link' : a.status === 'shortlisted' ? 'violet' : a.status === 'rejected' ? 'ink' : 'cyan'}>
+                        {a.applicantName.split(' ').map((p) => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '·'}
+                      </span>
+                      <div class="apps__main">
+                        <div class="apps__name">{a.applicantName}</div>
+                        <a class="apps__email" href={`mailto:${a.applicantEmail}`}>{a.applicantEmail}</a>
+                      </div>
                     </div>
                     <div class="apps__numbers">
-                      <span>${a.rate} <em>proposed</em></span>
-                      <span>{a.timeline}</span>
+                      <span class="apps__rate">${a.rate} <em>proposed</em></span>
+                      <span class="apps__timeline">{a.timeline}</span>
+                    </div>
+                    <div class="apps__status">
+                      <span class={statusPillClass[a.status]} data-applicant-status-pill>
+                        {statusLabel[a.status]}
+                      </span>
                     </div>
                   </div>
-                  <p class="apps__excerpt">{a.cover.slice(0, 220)}{a.cover.length > 220 ? '…' : ''}</p>
+
+                  <details class="apps__cover">
+                    <summary>
+                      <span class="apps__cover-toggle">Read full proposal</span>
+                      <span class="apps__cover-excerpt">{a.cover.length > 140 ? `${a.cover.slice(0, 140).trimEnd()}…` : a.cover}</span>
+                    </summary>
+                    <p class="apps__cover-body">{a.cover}</p>
+                  </details>
+
                   <div class="apps__foot">
-                    <Badge variant="cyan">New</Badge>
                     <a class="apps__link" href={a.portfolio} target="_blank" rel="noopener noreferrer">View portfolio →</a>
                     <span class="apps__id">Application <code>{a.id}</code></span>
+                    <div class="apps__manage" data-applicant-manage>
+                      <button
+                        type="button"
+                        class="ds-btn ds-btn--tab ds-btn--size-md"
+                        aria-expanded="false"
+                        data-manage-toggle
+                        aria-controls={`manage-row-${a.id}`}
+                      >
+                        Manage
+                      </button>
+                      <div
+                        class="apps__manage-row"
+                        id={`manage-row-${a.id}`}
+                        role="group"
+                        aria-label={`Manage ${a.applicantName}'s application`}
+                        hidden
+                      >
+                        <button
+                          type="button"
+                          class="ds-btn ds-btn--ghost ds-btn--size-md"
+                          data-action="shortlist"
+                          data-applicant-id={a.id}
+                        >
+                          Shortlist
+                        </button>
+                        <button
+                          type="button"
+                          class="ds-btn ds-btn--primary-sm ds-btn--size-md"
+                          data-action="hire"
+                          data-applicant-id={a.id}
+                        >
+                          Hire
+                        </button>
+                        <button
+                          type="button"
+                          class="ds-btn ds-btn--ghost ds-btn--size-md apps__action-reject"
+                          data-action="reject"
+                          data-applicant-id={a.id}
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </li>
               ))}
@@ -114,6 +268,78 @@ const byBrief = myBriefs
     flex-direction: column;
     gap: var(--space-xl);
   }
+
+  /* ─── Header summary stats ────────────────────────────── */
+  .apps-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-md);
+  }
+  @media (max-width: 800px) {
+    .apps-stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .apps-stats__cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: var(--space-md) var(--space-lg);
+    background: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-level-1);
+  }
+  .apps-stats__label {
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-mute);
+  }
+  .apps-stats__value {
+    font-size: var(--text-display-md);
+    line-height: var(--text-display-md-line);
+    font-weight: var(--text-display-md-weight);
+    letter-spacing: var(--text-display-md-tracking);
+    color: var(--color-ink);
+  }
+
+  /* ─── Filter chips ────────────────────────────────────── */
+  .apps__filters {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+    padding: var(--space-md);
+    background: var(--color-canvas-soft);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-lg);
+  }
+  .apps__chip-count {
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: var(--color-mute);
+    background: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-full);
+    padding: 1px 8px;
+    min-width: 24px;
+    text-align: center;
+  }
+  .dash-filters__chip[aria-pressed='true'] .apps__chip-count {
+    background: rgba(255, 255, 255, 0.16);
+    color: var(--color-on-primary);
+    border-color: transparent;
+  }
+
+  /* ─── Inline stat next to total count in the header ─── */
+  .apps__inline-stat {
+    margin-left: var(--space-xs);
+    vertical-align: middle;
+  }
+
+  /* ─── Per-brief group ────────────────────────────────── */
   .apps__group {
     display: flex;
     flex-direction: column;
@@ -121,27 +347,40 @@ const byBrief = myBriefs
     padding: var(--space-lg);
     background: var(--color-canvas);
     border: 1px solid var(--color-hairline);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-level-1);
   }
   .apps__group-head {
     display: flex;
-    align-items: baseline;
+    align-items: flex-start;
     justify-content: space-between;
     gap: var(--space-md);
+    flex-wrap: wrap;
   }
-  .apps__group-head h2 {
+  .apps__group-title {
     margin: 0;
     font-size: var(--text-body-md);
     line-height: var(--text-body-md-line);
     font-weight: var(--text-body-md-strong-weight);
     color: var(--color-ink);
   }
-  .apps__group-head span {
+  .apps__group-meta {
+    display: block;
     font-family: var(--font-mono);
     font-size: var(--text-caption);
     color: var(--color-mute);
+    margin-top: 2px;
   }
+  .apps__brief-link {
+    font-size: var(--text-body-sm);
+    color: var(--color-link);
+    text-decoration: none;
+  }
+  .apps__brief-link:hover {
+    text-decoration: underline;
+  }
+
+  /* ─── Applicant card ─────────────────────────────────── */
   .apps__list {
     list-style: none;
     margin: 0;
@@ -158,7 +397,43 @@ const byBrief = myBriefs
     background: var(--color-canvas-soft);
     border: 1px solid var(--color-hairline);
     border-radius: var(--radius-md);
+    transition: border-color 0.15s ease, opacity 0.2s ease;
   }
+  .apps__item[data-applicant-status='rejected'] {
+    opacity: 0.65;
+  }
+  .apps__item[data-applicant-status='hired'] {
+    border-color: color-mix(in srgb, var(--color-link) 32%, var(--color-hairline));
+    background: var(--color-link-bg-soft);
+  }
+  .apps__item.is-hidden {
+    display: none;
+  }
+
+  /* Deep-link flash: when a card is the :target (the browser jumped
+     to /company/applicants#applicant-{id} from /company/hires), give
+     it a brief border + box-shadow pulse so the user sees where the
+     page landed. The animation runs once and decays back to the
+     card's resting style over ~2s. */
+  @keyframes apps-target-flash {
+    0% {
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-link) 28%, transparent);
+      border-color: var(--color-link);
+    }
+    100% {
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-link) 0%, transparent);
+    }
+  }
+  .apps__item:target {
+    animation: apps-target-flash 2s ease-out 1;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .apps__item:target {
+      animation: none;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-link) 18%, transparent);
+    }
+  }
+
   .apps__row {
     display: flex;
     align-items: center;
@@ -166,35 +441,110 @@ const byBrief = myBriefs
     gap: var(--space-md);
     flex-wrap: wrap;
   }
+  .apps__identity {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    min-width: 0;
+    flex: 1 1 220px;
+  }
+  .apps__main {
+    min-width: 0;
+  }
   .apps__name {
     font-size: var(--text-body-md);
     font-weight: var(--text-body-md-strong-weight);
     color: var(--color-ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .apps__email {
     font-family: var(--font-mono);
     font-size: var(--text-caption);
     color: var(--color-mute);
+    text-decoration: none;
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .apps__email:hover {
+    color: var(--color-link);
   }
   .apps__numbers {
     display: flex;
-    gap: var(--space-md);
+    flex-direction: column;
+    gap: 2px;
+    align-items: flex-start;
     font-family: var(--font-mono);
     font-size: var(--text-caption);
     color: var(--color-ink);
+    flex: 0 0 auto;
   }
-  .apps__numbers em {
+  .apps__rate em {
     font-style: normal;
     color: var(--color-mute);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     margin-left: 4px;
   }
-  .apps__excerpt {
-    margin: 0;
+  .apps__timeline {
+    color: var(--color-mute);
+  }
+  .apps__status {
+    flex: 0 0 auto;
+  }
+
+  /* ─── Cover letter (collapsible) ─────────────────────── */
+  .apps__cover {
+    border-top: 1px solid var(--color-hairline);
+    padding-top: var(--space-sm);
+  }
+  .apps__cover > summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+  }
+  .apps__cover > summary::-webkit-details-marker {
+    display: none;
+  }
+  .apps__cover-toggle {
+    font-size: var(--text-body-sm);
+    font-weight: var(--text-body-sm-strong-weight);
+    color: var(--color-link);
+    flex-shrink: 0;
+  }
+  .apps__cover[open] .apps__cover-toggle::before {
+    content: '− ';
+  }
+  .apps__cover:not([open]) .apps__cover-toggle::before {
+    content: '+ ';
+  }
+  .apps__cover-excerpt {
     font-size: var(--text-body-sm);
     color: var(--color-body);
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
+  .apps__cover[open] .apps__cover-excerpt {
+    display: none;
+  }
+  .apps__cover-body {
+    margin: var(--space-sm) 0 0;
+    font-size: var(--text-body-sm);
+    line-height: 1.6;
+    color: var(--color-body);
+    white-space: pre-wrap;
+  }
+
+  /* ─── Footer row ─────────────────────────────────────── */
   .apps__foot {
     display: flex;
     align-items: center;
@@ -206,12 +556,15 @@ const byBrief = myBriefs
   .apps__link {
     font-size: var(--text-body-sm);
     color: var(--color-link);
+    text-decoration: none;
+  }
+  .apps__link:hover {
+    text-decoration: underline;
   }
   .apps__id {
     font-size: var(--text-caption);
     color: var(--color-mute);
     font-family: var(--font-mono);
-    margin-left: auto;
   }
   .apps__id code {
     background: var(--color-canvas);
@@ -219,4 +572,31 @@ const byBrief = myBriefs
     border-radius: var(--radius-sm);
     color: var(--color-ink);
   }
+
+  /* ─── Manage button + action row ────────────────────── */
+  .apps__manage {
+    margin-left: auto;
+    position: relative;
+  }
+  .apps__manage-row {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    flex-wrap: wrap;
+  }
+  .apps__manage-row[hidden] {
+    display: none;
+  }
+  .apps__action-reject {
+    color: var(--color-error);
+  }
+  .apps__action-reject[data-confirming='true'] {
+    background: var(--color-error);
+    color: var(--color-on-primary);
+  }
 </style>
+
+<script>
+  import { mountApplicants } from '../../scripts/applicants';
+  mountApplicants();
+</script>

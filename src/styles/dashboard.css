@@ -415,6 +415,23 @@
   color: var(--color-mute);
 }
 
+/* Linked stat: when a stat cell carries a real number, the value
+   becomes a link to the deeper page. Keep the same vertical rhythm
+   so the grid still aligns with non-linked cells. */
+.dash-stat__link {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-decoration: none;
+  color: inherit;
+}
+.dash-stat__link:hover .dash-stat__value {
+  color: var(--color-link-deep);
+}
+.dash-stat__hint--link {
+  color: var(--color-link);
+}
+
 /* ─── Section row (recent + side panel) ───────────────────── */
 .dash-row {
   display: grid;

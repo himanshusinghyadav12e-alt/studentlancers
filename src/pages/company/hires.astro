@@ -1,9 +1,27 @@
 ---
+import DashboardLayout, { type NavItem } from '../../layouts/DashboardLayout.astro';
+import Button from '../../components/ui/Button.astro';
+import Badge from '../../components/ui/Badge.astro';
 import SubPageShell from '../../components/SubPageShell.astro';
-import { store } from '../../scripts/store';
-import type { NavItem } from '../../layouts/DashboardLayout.astro';
+import { store, type Application } from '../../scripts/store';
 
-const nav: NavItem[] = [
+/**
+ * /company/hires
+ *
+ * Lists every student the signed-in company has hired, grouped by
+ * the brief they were hired on. Pulls from Application.status ===
+ * 'hired' on briefs the company owns; falls back to a SubPageShell
+ * when there are none.
+ *
+ * The page is intentionally read-only. The current data model
+ * captures the hire itself (status + hiredAt) but does not model
+ * milestones, files, or a message thread — those would be a separate
+ * "engagement" surface and are out of scope here. The "Hired" pill
+ * and the brief/applicant links are the real, honest shape of an
+ * active hire in the demo.
+ */
+
+const companyNav: NavItem[] = [
   { href: '/company/dashboard', label: 'Overview', icon: 'home' },
   { href: '/jobs/post', label: 'Post a brief', icon: 'brief' },
   { href: '/company/applicants', label: 'Applicants', icon: 'inbox' },
@@ -12,19 +30,356 @@ const nav: NavItem[] = [
   { href: '/company/profile', label: 'Company profile', icon: 'profile' },
   { href: '/company/settings', label: 'Settings', icon: 'settings' },
 ];
+
 const session = store.auth.current();
-const name = session?.name ?? 'Your company';
+const isCompany = session?.role === 'company';
+const myBriefs = isCompany && session ? store.briefs.listByOwner(session.userId) : [];
+const allApps = isCompany && session ? store.applications.listByOwner(session.userId) : [];
+const hires: Application[] = allApps.filter((a) => a.status === 'hired');
+
+/**
+ * Format an ISO date as a build-time-stable relative phrase. We never
+ * call `new Date()` from a formatter that runs both at build and at
+ * hydration — the build clock and the user's clock drift. Instead we
+ * anchor to the most recent timestamp we know about at build (now)
+ * and render the phrase once, server-side. On the client, the static
+ * copy is the truth.
+ */
+const BUILD_NOW = new Date();
+
+function formatHiredAt(iso: string | undefined): string {
+  if (!iso) return 'Hire date unknown';
+  const then = new Date(iso);
+  if (Number.isNaN(then.getTime())) return 'Hire date unknown';
+  const diffMs = BUILD_NOW.getTime() - then.getTime();
+  if (diffMs < 0) {
+    // Future-dated (clock skew, v3-backfilled placeholder). Render
+    // the absolute date so the user sees something honest.
+    return `Hired on ${then.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+  }
+  const minutes = Math.floor(diffMs / 60_000);
+  if (minutes < 1) return 'Hired just now';
+  if (minutes < 60) return `Hired ${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `Hired ${hours} hour${hours === 1 ? '' : 's'} ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `Hired ${days} day${days === 1 ? '' : 's'} ago`;
+  return `Hired on ${then.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+}
+
+const totalHires = hires.length;
+
+// Sort hires by hiredAt desc (most recent first), with createdAt as
+// a tiebreaker for backfilled rows where hiredAt === createdAt.
+const sortedHires = [...hires].sort((a, b) => {
+  const at = a.hiredAt ?? a.createdAt;
+  const bt = b.hiredAt ?? b.createdAt;
+  return bt.localeCompare(at);
+});
+
+// Group by brief. Briefs with no hires are dropped (they will not
+// exist in the filter step below anyway, but we use briefs as the
+// iteration source so the order is stable).
+const myBriefById = new Map(myBriefs.map((b) => [b.id, b]));
+const byBrief = sortedHires
+  .map((h) => ({ brief: myBriefById.get(h.briefId), hire: h }))
+  .filter((row): row is { brief: NonNullable<typeof row.brief>; hire: Application } => Boolean(row.brief));
+
+// Briefs also sorted by most recent hire.
+const briefOrder: string[] = [];
+byBrief.forEach((row) => {
+  if (!briefOrder.includes(row.brief.id)) briefOrder.push(row.brief.id);
+});
+byBrief.sort((a, b) => briefOrder.indexOf(a.brief.id) - briefOrder.indexOf(b.brief.id));
+briefOrder.sort((a, b) => {
+  const aHire = sortedHires.find((h) => h.briefId === a);
+  const bHire = sortedHires.find((h) => h.briefId === b);
+  const at = aHire?.hiredAt ?? aHire?.createdAt ?? '';
+  const bt = bHire?.hiredAt ?? bHire?.createdAt ?? '';
+  return bt.localeCompare(at);
+});
+
+const showShell = !isCompany;
 ---
-<SubPageShell
-  title="Active hires · StudentLancers"
-  description="Students you have hired on StudentLancers."
-  name={name}
-  role="Company"
-  nav={nav}
-  eyebrow="Active hires"
-  heading="Students in progress"
-  body="Once you approve a proposal, the engagement lands here with its milestones, files, and message thread. Until you hire your first student, the list stays empty."
-  ctaLabel="Post a brief"
-  ctaHref="/jobs/post"
-  badge="Empty"
-/>
+
+{
+  showShell ? (
+    <SubPageShell
+      title="Active hires · StudentLancers"
+      description="Students you have hired on StudentLancers."
+      name={session?.name ?? 'Your company'}
+      role="Company"
+      nav={companyNav}
+      eyebrow="Active hires"
+      heading="Sign in as a company to see your hires"
+      body="This page lists the students your company has hired. Sign in with the company account you used to post briefs."
+      ctaLabel="Sign in"
+      ctaHref="/login"
+      badge="Sign in required"
+    />
+  ) : totalHires === 0 ? (
+    <SubPageShell
+      title="Active hires · StudentLancers"
+      description="Students you have hired on StudentLancers."
+      name={session!.name}
+      role="Company"
+      nav={companyNav}
+      eyebrow="Active hires"
+      heading="No hires yet"
+      body="Once you approve a proposal from the applicants inbox, the engagement lands here. Until then, the list stays empty."
+      ctaLabel="Open applicants"
+      ctaHref="/company/applicants"
+      badge="Empty"
+    />
+  ) : (
+    <DashboardLayout
+      title="Active hires · StudentLancers"
+      description="Students you have hired on StudentLancers."
+      name={session!.name}
+      role="Company"
+      nav={companyNav}
+    >
+      <header class="dash-page-head">
+        <div class="dash-page-head__copy">
+          <span class="dash-page-head__eyebrow">Active hires</span>
+          <h1 class="dash-page-head__title">Students in progress</h1>
+          <p class="dash-page-head__lead">
+            {totalHires} {totalHires === 1 ? 'student' : 'students'} hired across {briefOrder.length} {briefOrder.length === 1 ? 'brief' : 'briefs'}.
+          </p>
+        </div>
+        <div class="dash-page-head__actions">
+          <Button variant="primary" size="md" href="/company/applicants">Review applicants</Button>
+          <Button variant="secondary" size="md" href="/jobs/post">Post another brief</Button>
+        </div>
+      </header>
+
+      <section class="hires" aria-label="Hired students by brief">
+        {briefOrder.map((briefId) => {
+          const brief = myBriefById.get(briefId);
+          if (!brief) return null;
+          const rows = byBrief.filter((r) => r.brief.id === briefId);
+          return (
+            <article class="hires__group">
+              <header class="hires__group-head">
+                <div>
+                  <h2 class="hires__group-title">{brief.title}</h2>
+                  <span class="hires__group-meta">
+                    {rows.length} {rows.length === 1 ? 'hire' : 'hires'} · {brief.budgetType === 'hourly' ? `$${brief.budget}/hr` : `$${brief.budget.toLocaleString()} fixed`}
+                  </span>
+                </div>
+                <a class="hires__brief-link" href={`/jobs/${brief.id}`} target="_blank" rel="noopener noreferrer">
+                  View brief →
+                </a>
+              </header>
+              <ul class="hires__list" role="list">
+                {rows.map(({ hire }) => (
+                  <li class="hires__item">
+                    <div class="hires__row">
+                      <div class="hires__identity">
+                        <span class="dash-list-avatar" data-color="link" aria-hidden="true">
+                          {hire.applicantName.split(' ').map((p) => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '·'}
+                        </span>
+                        <div class="hires__main">
+                          <div class="hires__name">{hire.applicantName}</div>
+                          <a class="hires__email" href={`mailto:${hire.applicantEmail}`}>{hire.applicantEmail}</a>
+                        </div>
+                      </div>
+                      <div class="hires__numbers">
+                        <span class="hires__rate">${hire.rate} <em>proposed</em></span>
+                        <span class="hires__timeline">{hire.timeline}</span>
+                      </div>
+                      <div class="hires__status">
+                        <span class="dash-pill dash-pill--success">Hired</span>
+                        <span class="hires__date">{formatHiredAt(hire.hiredAt ?? hire.createdAt)}</span>
+                      </div>
+                    </div>
+                    <div class="hires__foot">
+                      <a class="hires__link" href={hire.portfolio} target="_blank" rel="noopener noreferrer">View portfolio →</a>
+                      <span class="hires__id">Application <code>{hire.id}</code></span>
+                      <a class="hires__back" href={`/company/applicants#applicant-${hire.id}`}>View in applicants →</a>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </article>
+          );
+        })}
+      </section>
+    </DashboardLayout>
+  )
+}
+
+<style>
+  .hires {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+  }
+
+  .hires__group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    padding: var(--space-lg);
+    background: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-level-1);
+  }
+  .hires__group-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+  }
+  .hires__group-title {
+    margin: 0;
+    font-size: var(--text-body-md);
+    line-height: var(--text-body-md-line);
+    font-weight: var(--text-body-md-strong-weight);
+    color: var(--color-ink);
+  }
+  .hires__group-meta {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: var(--color-mute);
+    margin-top: 2px;
+  }
+  .hires__brief-link {
+    font-size: var(--text-body-sm);
+    color: var(--color-link);
+    text-decoration: none;
+  }
+  .hires__brief-link:hover {
+    text-decoration: underline;
+  }
+
+  .hires__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+  .hires__item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+    background: var(--color-link-bg-soft);
+    border: 1px solid color-mix(in srgb, var(--color-link) 22%, var(--color-hairline));
+    border-radius: var(--radius-md);
+  }
+
+  .hires__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+  }
+  .hires__identity {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    min-width: 0;
+    flex: 1 1 220px;
+  }
+  .hires__main {
+    min-width: 0;
+  }
+  .hires__name {
+    font-size: var(--text-body-md);
+    font-weight: var(--text-body-md-strong-weight);
+    color: var(--color-ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .hires__email {
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: var(--color-mute);
+    text-decoration: none;
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .hires__email:hover {
+    color: var(--color-link);
+  }
+  .hires__numbers {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: flex-start;
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: var(--color-ink);
+    flex: 0 0 auto;
+  }
+  .hires__rate em {
+    font-style: normal;
+    color: var(--color-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-left: 4px;
+  }
+  .hires__timeline {
+    color: var(--color-mute);
+  }
+  .hires__status {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex: 0 0 auto;
+  }
+  .hires__date {
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: var(--color-mute);
+  }
+
+  .hires__foot {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+    padding-top: var(--space-sm);
+    border-top: 1px solid var(--color-hairline);
+  }
+  .hires__link {
+    font-size: var(--text-body-sm);
+    color: var(--color-link);
+    text-decoration: none;
+  }
+  .hires__link:hover {
+    text-decoration: underline;
+  }
+  .hires__id {
+    font-size: var(--text-caption);
+    color: var(--color-mute);
+    font-family: var(--font-mono);
+  }
+  .hires__id code {
+    background: var(--color-canvas);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    color: var(--color-ink);
+  }
+  .hires__back {
+    margin-left: auto;
+    font-size: var(--text-body-sm);
+    color: var(--color-link);
+    text-decoration: none;
+  }
+  .hires__back:hover {
+    text-decoration: underline;
+  }
+</style>
