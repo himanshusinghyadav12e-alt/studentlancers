@@ -5,17 +5,23 @@ import Card from '../components/ui/Card.astro';
 import Badge from '../components/ui/Badge.astro';
 import Input from '../components/ui/Input.astro';
 import Field from '../components/ui/Field.astro';
+import ThemeToggle from '../components/ui/ThemeToggle.astro';
 
 /* ─── Section data ─────────────────────────────────────────── */
-const trustedLogos = [
-  'Stanford',
-  'MIT',
-  'Y Combinator',
-  'Berkeley',
-  'Notion',
-  'Linear',
-  'Vercel',
-  'Stripe',
+
+/*
+ * No fake statistics, user counts, or company logos appear anywhere in
+ * the UI. The "trust" copy below is a value-prop statement, not a
+ * claim of partnership or user base. Testimonials and reviews are
+ * intentionally omitted from the homepage — the app is new and we do
+ * not have real customer quotes to share. Once we do, they will be
+ * added with explicit, verifiable attribution.
+ */
+const trustPillars = [
+  'Built for college hiring',
+  'Verified .edu enrollment',
+  'Escrow on every engagement',
+  'No card to join',
 ];
 
 const features = [
@@ -91,7 +97,6 @@ const benefits = [
       'Get paid through secure escrow.',
       'Receive reviews that travel with you.',
     ],
-    stat: { value: '$2,400', label: 'avg. earnings per active student · 2025' },
     cta: 'Start freelancing',
   },
   {
@@ -104,37 +109,11 @@ const benefits = [
       'Find specialists across 40+ majors.',
       'Cancel or extend engagements anytime.',
     ],
-    stat: { value: '6 hrs', label: 'median time from brief to first proposal' },
     cta: 'Post a brief',
   },
 ];
 
-const testimonials = [
-  {
-    quote:
-      'I shipped my first paid design sprint in week two. By finals I had more portfolio work than my entire major had given me.',
-    name: 'Maya Chen',
-    role: 'B.S. Design · UC San Diego',
-    rating: 5,
-    company: 'Student',
-  },
-  {
-    quote:
-      'StudentLancers is the only place we hire for landing-page work. The talent is sharper than agencies we have used, and a fraction of the cost.',
-    name: 'Daniel Park',
-    role: 'Founder · Linear Labs',
-    rating: 5,
-    company: 'Linear Labs',
-  },
-  {
-    quote:
-      'The escrow flow made me comfortable hiring a student for a $4k build. The result was better than three prior agency engagements.',
-    name: 'Priya Anand',
-    role: 'Head of Product · Plaid',
-    rating: 5,
-    company: 'Plaid',
-  },
-];
+// Testimonials are intentionally omitted — see the note above trustPillars.
 
 const faqs = [
   {
@@ -208,6 +187,7 @@ const faqCategories = Array.from(new Set(faqs.map((f) => f.cat)));
       </nav>
 
       <div class="nav__cta">
+        <ThemeToggle size="md" />
         <Button variant="primary-sm" size="md" href="#cta">Sign up</Button>
         <Button variant="secondary-sm" size="md" href="#cta">Log in</Button>
       </div>
@@ -230,6 +210,7 @@ const faqCategories = Array.from(new Set(faqs.map((f) => f.cat)));
       <a class="nav__link nav__link--mobile" href="#faq">Pricing</a>
       <a class="nav__link nav__link--mobile" href="#faq">FAQ</a>
       <div class="nav__mobile-cta">
+        <ThemeToggle size="md" />
         <Button variant="primary-sm" size="md" href="#cta">Sign up</Button>
         <Button variant="secondary-sm" size="md" href="#cta">Log in</Button>
       </div>
@@ -262,9 +243,9 @@ const faqCategories = Array.from(new Set(faqs.map((f) => f.cat)));
         </div>
 
         <ul class="hero__meta" role="list">
-          <li><span>12,400+</span> vetted students</li>
-          <li><span>$4.2M</span> paid out in 2025</li>
-          <li><span>4.9 / 5</span> average rating</li>
+          <li><span>Verified</span> .edu enrollment</li>
+          <li><span>Escrow</span> on every gig</li>
+          <li><span>Free</span> to join · no card</li>
         </ul>
 
         <div class="hero__preview" aria-hidden="true">
@@ -326,12 +307,12 @@ const faqCategories = Array.from(new Set(faqs.map((f) => f.cat)));
       </div>
     </section>
 
-    {/* ─── 3. Trusted By ──────────────────────────────────── */}
-    <section class="trust" aria-label="Trusted by">
+    {/* ─── 3. Trust pillars ──────────────────────────────────── */}
+    <section class="trust" aria-label="What we offer">
       <div class="ds-container trust__inner">
-        <p class="trust__eyebrow">Trusted by teams hiring at</p>
+        <p class="trust__eyebrow">What you get on day one</p>
         <ul class="trust__row" role="list">
-          {trustedLogos.map((name) => (
+          {trustPillars.map((name) => (
             <li class="trust__logo">{name}</li>
           ))}
         </ul>
@@ -486,10 +467,6 @@ const faqCategories = Array.from(new Set(faqs.map((f) => f.cat)));
                   </li>
                 ))}
               </ul>
-              <div class="benefit-card__stat" aria-label={`${b.stat.label}: ${b.stat.value}`}>
-                <span class="benefit-card__stat-value">{b.stat.value}</span>
-                <span class="benefit-card__stat-label">{b.stat.label}</span>
-              </div>
               <div slot="footer">
                 <Button
                   variant={i === 0 ? 'secondary' : 'primary'}
@@ -505,57 +482,118 @@ const faqCategories = Array.from(new Set(faqs.map((f) => f.cat)));
       </div>
     </section>
 
-    {/* ─── 7. Testimonials ────────────────────────────────── */}
+    {/* ─── 7. What's next (replaces testimonials) ─────────────
+     * Testimonials are intentionally not shown here. The product is
+     * pre-launch and we don't have real, attributable customer quotes
+     * to share. Once we do, this section will be replaced with a
+     * verified-customer grid; the slot is reserved in the layout. */}
     <section class="testimonials" id="testimonials">
       <div class="ds-container testimonials__inner">
         <div class="testimonials__head reveal">
-          <Badge mono variant="secondary">Testimonials</Badge>
-          <h2 class="testimonials__title">Loved by students and the teams that hire them.</h2>
+          <Badge mono variant="secondary">Built for both sides</Badge>
+          <h2 class="testimonials__title">A marketplace that earns trust on day one.</h2>
           <p class="testimonials__lead">
-            4.9 / 5 from 2,300+ reviews. Here's what a few of them had to say.
+            Verified .edu enrollment, escrow on every engagement, and a review
+            trail for both sides — built into the platform, not bolted on.
           </p>
         </div>
 
         <div class="testimonials__grid">
-          {testimonials.map((t) => (
-            <Card variant="marketing" class="testimonial-card reveal">
-              <div class="testimonial-card__top">
-                <span class="testimonial-card__rating" aria-label={`${t.rating} out of 5 stars`}>
-                  {Array.from({ length: t.rating }).map(() => (
-                    <svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor" aria-hidden="true">
-                      <path d="M6.5 0.5L8 4.5h4l-3.2 2.4 1.2 4L6.5 8.5 3 10.9l1.2-4L1 4.5h4l1.5-4Z" />
-                    </svg>
-                  ))}
-                </span>
-                <svg
-                  class="testimonial-card__quote"
-                  width="22"
-                  height="16"
-                  viewBox="0 0 22 16"
-                  fill="none"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M0 16V9.143C0 6.476 0.667 4.19 2 2.286 3.333 0.762 5.467 0 8.4 0V3.429C6.8 3.429 5.667 3.905 5 4.857 4.333 5.81 4 7.048 4 8.571H8V16H0ZM12 16V9.143C12 6.476 12.667 4.19 14 2.286 15.333 0.762 17.467 0 20.4 0V3.429C18.8 3.429 17.667 3.905 17 4.857 16.333 5.81 16 7.048 16 8.571H20V16H12Z"
-                    fill="currentColor"
-                  />
+          <Card variant="marketing" class="testimonial-card reveal">
+            <div class="testimonial-card__top">
+              <span class="testimonial-card__badge" aria-hidden="true">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M7 1L8.6 4.4 12.5 5l-2.9 2.8.7 3.9L7 9.9 3.7 11.7l.7-3.9L1.5 5l3.9-.6L7 1Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" />
                 </svg>
+              </span>
+              <svg
+                class="testimonial-card__quote"
+                width="22"
+                height="16"
+                viewBox="0 0 22 16"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M0 16V9.143C0 6.476 0.667 4.19 2 2.286 3.333 0.762 5.467 0 8.4 0V3.429C6.8 3.429 5.667 3.905 5 4.857 4.333 5.81 4 7.048 4 8.571H8V16H0ZM12 16V9.143C12 6.476 12.667 4.19 14 2.286 15.333 0.762 17.467 0 20.4 0V3.429C18.8 3.429 17.667 3.905 17 4.857 16.333 5.81 16 7.048 16 8.571H20V16H12Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </div>
+            <p class="testimonial-card__quote-text">Enrollment is verified with a .edu check, so every student you can hire is actually a student.</p>
+            <div slot="footer" class="testimonial-card__person">
+              <span class="testimonial-card__avatar" aria-hidden="true">V</span>
+              <div class="testimonial-card__person-info">
+                <strong>Verified enrollment</strong>
+                <em>.edu email + ID match</em>
               </div>
-              <p class="testimonial-card__quote-text">"{t.quote}"</p>
-              <div slot="footer" class="testimonial-card__person">
-                <span class="testimonial-card__avatar" aria-hidden="true">
-                  {t.name.split(' ').map((p) => p[0]).join('')}
-                </span>
-                <div class="testimonial-card__person-info">
-                  <strong>{t.name}</strong>
-                  <em>{t.role}</em>
-                </div>
-                {t.company !== 'Student' && (
-                  <span class="testimonial-card__company">{t.company}</span>
-                )}
+            </div>
+          </Card>
+
+          <Card variant="marketing" class="testimonial-card reveal">
+            <div class="testimonial-card__top">
+              <span class="testimonial-card__badge" aria-hidden="true">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <rect x="1.5" y="3.5" width="11" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4" />
+                  <path d="M1.5 6.5h11" stroke="currentColor" stroke-width="1.4" />
+                  <path d="M4 9h2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+                </svg>
+              </span>
+              <svg
+                class="testimonial-card__quote"
+                width="22"
+                height="16"
+                viewBox="0 0 22 16"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M0 16V9.143C0 6.476 0.667 4.19 2 2.286 3.333 0.762 5.467 0 8.4 0V3.429C6.8 3.429 5.667 3.905 5 4.857 4.333 5.81 4 7.048 4 8.571H8V16H0ZM12 16V9.143C12 6.476 12.667 4.19 14 2.286 15.333 0.762 17.467 0 20.4 0V3.429C18.8 3.429 17.667 3.905 17 4.857 16.333 5.81 16 7.048 16 8.571H20V16H12Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </div>
+            <p class="testimonial-card__quote-text">Funds are held in escrow from the moment a project starts and released only when you approve the work.</p>
+            <div slot="footer" class="testimonial-card__person">
+              <span class="testimonial-card__avatar" aria-hidden="true">$</span>
+              <div class="testimonial-card__person-info">
+                <strong>Escrow on day one</strong>
+                <em>Approve, then payout</em>
               </div>
-            </Card>
-          ))}
+            </div>
+          </Card>
+
+          <Card variant="marketing" class="testimonial-card reveal">
+            <div class="testimonial-card__top">
+              <span class="testimonial-card__badge" aria-hidden="true">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M2 5l5-3 5 3v5l-5 3-5-3V5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" />
+                  <path d="M5 7.5L6.5 9 9 6.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
+              <svg
+                class="testimonial-card__quote"
+                width="22"
+                height="16"
+                viewBox="0 0 22 16"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M0 16V9.143C0 6.476 0.667 4.19 2 2.286 3.333 0.762 5.467 0 8.4 0V3.429C6.8 3.429 5.667 3.905 5 4.857 4.333 5.81 4 7.048 4 8.571H8V16H0ZM12 16V9.143C12 6.476 12.667 4.19 14 2.286 15.333 0.762 17.467 0 20.4 0V3.429C18.8 3.429 17.667 3.905 17 4.857 16.333 5.81 16 7.048 16 8.571H20V16H12Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </div>
+            <p class="testimonial-card__quote-text">Both sides leave a review after every engagement, so the next match starts with a paper trail, not a leap of faith.</p>
+            <div slot="footer" class="testimonial-card__person">
+              <span class="testimonial-card__avatar" aria-hidden="true">R</span>
+              <div class="testimonial-card__person-info">
+                <strong>Reviews both ways</strong>
+                <em>Two-sided, after every gig</em>
+              </div>
+            </div>
+          </Card>
         </div>
       </div>
     </section>
@@ -617,8 +655,9 @@ const faqCategories = Array.from(new Set(faqs.map((f) => f.cat)));
             <Badge mono variant="success" dot>Get started · Free to join</Badge>
             <h2 class="cta__title">Your next hire — or your next gig — is one brief away.</h2>
             <p class="cta__lead">
-              Join 12,400+ students and 2,100+ companies building the future of
-              flexible work. Set up takes two minutes. No card required.
+              Whether you are hiring your first student freelancer or looking
+              for paid work that fits your schedule — set up takes two minutes,
+              and the first brief goes out for free.
             </p>
 
             <ul class="cta__bullets" role="list">
@@ -1501,38 +1540,6 @@ const faqCategories = Array.from(new Set(faqs.map((f) => f.cat)));
   .benefit-card :global(.ds-card--soft) .benefit-card__summary {
     color: var(--color-body);
   }
-  .benefit-card__stat {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: var(--space-md);
-    border-radius: var(--radius-md);
-    background: var(--color-canvas-soft-2);
-    border: 1px solid var(--color-hairline);
-    margin-top: var(--space-xs);
-  }
-  .benefits :global(.ds-card--marketing-large) .benefit-card__stat {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
-  .benefit-card__stat-value {
-    font-family: var(--font-sans);
-    font-size: var(--text-display-sm);
-    line-height: var(--text-display-sm-line);
-    font-weight: var(--text-display-sm-weight);
-    letter-spacing: var(--text-display-sm-tracking);
-    color: var(--color-ink);
-  }
-  .benefits :global(.ds-card--marketing-large) .benefit-card__stat-value {
-    color: var(--color-on-primary);
-  }
-  .benefit-card__stat-label {
-    font-size: var(--text-caption);
-    color: var(--color-mute);
-  }
-  .benefits :global(.ds-card--marketing-large) .benefit-card__stat-label {
-    color: rgba(255, 255, 255, 0.6);
-  }
 
   /* ─── 7. Testimonials ────────────────────────────────── */
   .testimonials {
@@ -1587,6 +1594,17 @@ const faqCategories = Array.from(new Set(faqs.map((f) => f.cat)));
     align-items: center;
     gap: 2px;
     color: var(--color-warning);
+  }
+  .testimonial-card__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-full);
+    background: var(--color-canvas-soft);
+    color: var(--color-ink);
+    border: 1px solid var(--color-hairline);
   }
   .testimonial-card__quote {
     color: var(--color-hairline-strong);
