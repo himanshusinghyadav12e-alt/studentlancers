@@ -1,0 +1,42 @@
+---
+import InfoLayout from '../layouts/InfoLayout.astro';
+---
+
+<InfoLayout
+  title="Security · StudentLancers"
+  description="How StudentLancers protects accounts, payments, and personal data."
+  eyebrow="Security"
+  heading="How we keep StudentLancers safe."
+  lead="An honest summary of what we do, what we don't, and how to report a vulnerability."
+>
+  <h2>Account security</h2>
+  <ul>
+    <li>Passwords are hashed with bcrypt (cost 12+).</li>
+    <li>Optional two-factor authentication for company accounts.</li>
+    <li>Session cookies are HttpOnly, Secure, and SameSite=Lax.</li>
+    <li>Brute-force protection on the login and password-reset endpoints.</li>
+  </ul>
+
+  <h2>Payments</h2>
+  <p>
+    All payments flow through Stripe Connect. We are PCI-DSS compliant via
+    Stripe's SAQ-A. Funds held in escrow sit in a separate, regulated
+    account — they never co-mingle with operating funds.
+  </p>
+
+  <h2>Data</h2>
+  <p>
+    All data is encrypted in transit (TLS 1.3) and at rest (AES-256). Daily
+    backups are stored in a separate region. We run annual third-party
+    penetration tests.
+  </p>
+
+  <h2>Report a vulnerability</h2>
+  <p>
+    Found a bug or a security issue? Please email
+    <a href="mailto:security@studentlancers.com">security@studentlancers.com</a>
+    with a description and reproduction steps. We respond within one
+    business day and credit researchers (with permission) in our public
+    hall of fame.
+  </p>
+</InfoLayout>

@@ -1,0 +1,30 @@
+---
+import SubPageShell from '../../components/SubPageShell.astro';
+import { store } from '../../scripts/store';
+import type { NavItem } from '../../layouts/DashboardLayout.astro';
+
+const nav: NavItem[] = [
+  { href: '/company/dashboard', label: 'Overview', icon: 'home' },
+  { href: '/jobs/post', label: 'Post a brief', icon: 'brief' },
+  { href: '/company/applicants', label: 'Applicants', icon: 'inbox' },
+  { href: '/company/hires', label: 'Active hires', icon: 'gigs' },
+  { href: '/company/billing', label: 'Billing', icon: 'wallet', current: true },
+  { href: '/company/profile', label: 'Company profile', icon: 'profile' },
+  { href: '/company/settings', label: 'Settings', icon: 'settings' },
+];
+const session = store.auth.current();
+const name = session?.name ?? 'Your company';
+---
+<SubPageShell
+  title="Billing · StudentLancers"
+  description="Manage your payment methods and view invoices."
+  name={name}
+  role="Company"
+  nav={nav}
+  eyebrow="Billing"
+  heading="Billing &amp; payment methods"
+  body="Add a card on file, set a default payment method, and download invoices. The full billing portal is coming soon — for now, payments are funded per brief when you approve an applicant."
+  ctaLabel="Post a brief"
+  ctaHref="/jobs/post"
+  badge="Coming soon"
+/>

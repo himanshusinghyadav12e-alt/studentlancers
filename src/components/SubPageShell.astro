@@ -1,0 +1,81 @@
+---
+/**
+ * SubPageShell
+ *
+ * Reusable empty-state shell for the dashboard sub-pages that don't
+ * have full implementations yet (Applications, Earnings, Profile,
+ * Settings, etc.). Renders the dashboard chrome (DashboardLayout) and
+ * a single empty card explaining what will live here, with a sensible
+ * primary CTA back to the parts of the product that do work.
+ */
+import DashboardLayout, { type NavItem } from '../layouts/DashboardLayout.astro';
+import Button from '../components/ui/Button.astro';
+import Badge from '../components/ui/Badge.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  name: string;
+  role: 'Student' | 'Company';
+  nav: NavItem[];
+  eyebrow: string;
+  heading: string;
+  body: string;
+  ctaLabel: string;
+  ctaHref: string;
+  badge?: string;
+}
+
+const {
+  title,
+  description,
+  name,
+  role,
+  nav,
+  eyebrow,
+  heading,
+  body,
+  ctaLabel,
+  ctaHref,
+  badge,
+} = Astro.props as Props;
+---
+
+<DashboardLayout
+  title={title}
+  description={description}
+  name={name}
+  role={role}
+  nav={nav}
+>
+  <header class="dash-page-head">
+    <div class="dash-page-head__copy">
+      <span class="dash-page-head__eyebrow">{eyebrow}</span>
+      <h1 class="dash-page-head__title">{heading}</h1>
+      <p class="dash-page-head__lead">{body}</p>
+    </div>
+  </header>
+
+  <section class="dash-card" aria-label={heading}>
+    <div class="dash-card__head">
+      <h2 class="dash-card__title">{heading}</h2>
+      {badge && <Badge mono variant="secondary">{badge}</Badge>}
+    </div>
+    <div class="dash-card__body">
+      <div class="dash-empty">
+        <span class="dash-empty__icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <rect x="4" y="5" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.5" />
+            <path d="M4 11h16" stroke="currentColor" stroke-width="1.5" />
+            <path d="M9 5V3.5h6V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+          </svg>
+        </span>
+        <h3 class="dash-empty__title">Nothing here yet</h3>
+        <p class="dash-empty__body">
+          {body}
+        </p>
+        <Button variant="primary" size="md" href={ctaHref}>{ctaLabel}</Button>
+      </div>
+    </div>
+  </section>
+</DashboardLayout>

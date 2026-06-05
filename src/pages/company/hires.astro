@@ -1,0 +1,30 @@
+---
+import SubPageShell from '../../components/SubPageShell.astro';
+import { store } from '../../scripts/store';
+import type { NavItem } from '../../layouts/DashboardLayout.astro';
+
+const nav: NavItem[] = [
+  { href: '/company/dashboard', label: 'Overview', icon: 'home' },
+  { href: '/jobs/post', label: 'Post a brief', icon: 'brief' },
+  { href: '/company/applicants', label: 'Applicants', icon: 'inbox' },
+  { href: '/company/hires', label: 'Active hires', icon: 'gigs', current: true },
+  { href: '/company/billing', label: 'Billing', icon: 'wallet' },
+  { href: '/company/profile', label: 'Company profile', icon: 'profile' },
+  { href: '/company/settings', label: 'Settings', icon: 'settings' },
+];
+const session = store.auth.current();
+const name = session?.name ?? 'Your company';
+---
+<SubPageShell
+  title="Active hires · StudentLancers"
+  description="Students you have hired on StudentLancers."
+  name={name}
+  role="Company"
+  nav={nav}
+  eyebrow="Active hires"
+  heading="Students in progress"
+  body="Once you approve a proposal, the engagement lands here with its milestones, files, and message thread. Until you hire your first student, the list stays empty."
+  ctaLabel="Post a brief"
+  ctaHref="/jobs/post"
+  badge="Empty"
+/>

@@ -131,9 +131,9 @@ const {
 
           <footer class="auth-foot">
             <ul class="auth-foot__links" role="list">
-              <li><a href="#">Privacy</a></li>
-              <li><a href="#">Terms</a></li>
-              <li><a href="#">Support</a></li>
+              <li><a href="/privacy">Privacy</a></li>
+              <li><a href="/terms">Terms</a></li>
+              <li><a href="/contact">Support</a></li>
             </ul>
             <p class="auth-foot__copy">
               © {new Date().getFullYear()} StudentLancers, Inc.
@@ -146,6 +146,8 @@ const {
     <script>
       import { mountThemeToggle } from '../scripts/theme-toggle';
       mountThemeToggle();
+      import { mountSessionBar } from '../scripts/session-bar';
+      mountSessionBar();
     </script>
   </body>
 </html>

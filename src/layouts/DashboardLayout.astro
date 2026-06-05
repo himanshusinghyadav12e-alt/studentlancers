@@ -193,6 +193,8 @@ const initials = name
     <script>
       import { mountThemeToggle } from '../scripts/theme-toggle';
       mountThemeToggle();
+      import { mountSessionBar } from '../scripts/session-bar';
+      mountSessionBar();
 
       // Shadow the top nav once it scrolls past the initial offset so
       // long pages get a clear visual boundary.
@@ -205,6 +207,17 @@ const initials = name
         onScroll();
         window.addEventListener('scroll', onScroll, { passive: true });
       }
+
+      // "Switch account" is shorthand for sign out + go to the login page.
+      const signoutLinks = document.querySelectorAll<HTMLAnchorElement>('.dash-rail__signout');
+      signoutLinks.forEach((a) => {
+        a.addEventListener('click', async (event) => {
+          event.preventDefault();
+          const { store } = await import('../scripts/store');
+          store.auth.signOut();
+          window.location.href = '/login';
+        });
+      });
     </script>
   </body>
 </html>

@@ -375,6 +375,54 @@ async function fakeSubmit(_data: FormData): Promise<{ ok: true; id: string }> {
   return { ok: true, id };
 }
 
+/**
+ * Real submit path: persists the brief to the local store. Returns
+ * the generated brief id and brief record.
+ */
+import { store } from './store';
+async function persistBrief(
+  form: HTMLFormElement,
+  skills: string[],
+): Promise<{ ok: true; id: string } | { ok: false; message: string }> {
+  const data = new FormData(form);
+  const session = store.auth.current();
+  if (!session || session.role !== 'company') {
+    return { ok: false, message: 'You need to be signed in as a company to post a brief.' };
+  }
+  const title = String(data.get('title') || '').trim();
+  const category = String(data.get('category') || '').trim();
+  const summary = String(data.get('summary') || '').trim();
+  const description = String(data.get('description') || '').trim();
+  const budgetType = String(data.get('budget_type') || 'fixed') as 'fixed' | 'hourly';
+  const budget = Number(data.get('budget') || 0);
+  const duration = String(data.get('duration') || '').trim();
+  const hours = String(data.get('hours') || '').trim();
+  const links = String(data.get('links') || '').trim();
+
+  if (!title || !category || !summary || !description || !duration || !hours) {
+    return { ok: false, message: 'Please fill in every required field.' };
+  }
+  if (skills.length < 3) {
+    return { ok: false, message: 'Add at least 3 skills.' };
+  }
+
+  const brief = store.briefs.create({
+    title,
+    category,
+    summary,
+    description,
+    budgetType,
+    budget,
+    duration,
+    hours,
+    skills,
+    links,
+    ownerId: session.userId,
+    ownerName: session.name,
+  });
+  return { ok: true, id: brief.id };
+}
+
 function setDraftStatus(form: HTMLFormElement, text: string) {
   const el = form.querySelector<HTMLElement>('[data-draft-status]');
   if (el) el.textContent = text;
@@ -465,9 +513,10 @@ export function mountPostForm() {
     const skillsSnapshot = getSkills();
     setLoading(form, true);
     try {
-      const result = await fakeSubmit(data);
+      const result = await persistBrief(form, skillsSnapshot);
       if (!result.ok) {
-        setFormAlert(form.querySelector<HTMLElement>('[data-form-alert]'), 'Network error. Please try again.');
+        setFormAlert(form.querySelector<HTMLElement>('[data-form-alert]'), result.message);
+        setLoading(form, false);
         return;
       }
       // Success: hide the form, show the success card

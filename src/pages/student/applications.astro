@@ -1,0 +1,200 @@
+---
+import DashboardLayout, { type NavItem } from '../../layouts/DashboardLayout.astro';
+import Button from '../../components/ui/Button.astro';
+import Badge from '../../components/ui/Badge.astro';
+import SubPageShell from '../../components/SubPageShell.astro';
+import { store } from '../../scripts/store';
+import { JOBS } from '../../data/jobs';
+
+/**
+ * /student/applications
+ *
+ * Lists every application the signed-in student has submitted. Pulls
+ * straight from the local mock store so the dashboard reflects what
+ * the user has actually done. If nothing has been submitted, falls
+ * back to the shared empty state via SubPageShell.
+ */
+
+const studentNav: NavItem[] = [
+  { href: '/student/dashboard', label: 'Overview', icon: 'home' },
+  { href: '/student/find-work', label: 'Find work', icon: 'brief' },
+  { href: '/student/applications', label: 'My applications', icon: 'inbox', current: true },
+  { href: '/student/earnings', label: 'Earnings', icon: 'wallet' },
+  { href: '/student/reviews', label: 'Reviews', icon: 'reviews' },
+  { href: '/student/profile', label: 'Profile', icon: 'profile' },
+  { href: '/student/settings', label: 'Settings', icon: 'settings' },
+];
+
+const session = store.auth.current();
+const studentName = session?.name ?? 'Your name';
+const applications = session
+  ? store.applications.listByApplicant(session.userId)
+  : [];
+
+// Resolve brief metadata from the static catalog so we can show the
+// category, budget, and a thumbnail. If a brief was posted by a
+// company in this session it would live in store.briefs — but the
+// static catalog covers the seeded case.
+const enriched = applications.map((a) => {
+  const job = JOBS.find((j) => j.id === a.briefId);
+  return {
+    ...a,
+    briefCategory: job?.category ?? 'General',
+    briefBudget: job ? job.budget : null,
+    briefDuration: job?.duration ?? '—',
+    briefHours: job?.hours ?? '—',
+    briefCompany: job?.company ?? 'A company on StudentLancers',
+  };
+});
+
+const submitted = enriched;
+---
+
+{
+  submitted.length === 0 ? (
+    <SubPageShell
+      title="My applications · StudentLancers"
+      description="Track every brief you have applied to on StudentLancers."
+      name={studentName}
+      role="Student"
+      nav={studentNav}
+      eyebrow="Applications"
+      heading="Your applications"
+      body="When you apply to a brief, it shows up here with its current status — in review, invited to interview, or hired. Until you submit your first one, the list is empty."
+      ctaLabel="Find a brief to apply to"
+      ctaHref="/student/find-work"
+      badge="Empty"
+    />
+  ) : (
+    <DashboardLayout
+      title="My applications · StudentLancers"
+      description="Every brief you have applied to on StudentLancers."
+      name={studentName}
+      role="Student"
+      nav={studentNav}
+    >
+      <header class="dash-page-head">
+        <div class="dash-page-head__copy">
+          <span class="dash-page-head__eyebrow">Applications</span>
+          <h1 class="dash-page-head__title">Your applications</h1>
+          <p class="dash-page-head__lead">
+            {submitted.length} {submitted.length === 1 ? 'application' : 'applications'} sent. Most companies respond within two business days.
+          </p>
+        </div>
+        <div class="dash-page-head__actions">
+          <Button variant="primary" size="md" href="/student/find-work">Find more briefs</Button>
+        </div>
+      </header>
+
+      <section class="apps" aria-label="Submitted applications">
+        <ul class="apps__list" role="list">
+          {submitted.map((a) => (
+            <li class="apps__item">
+              <div class="apps__head">
+                <div class="apps__chips">
+                  <Badge variant="secondary" mono>{a.briefCategory}</Badge>
+                  <Badge variant="cyan">Applied</Badge>
+                </div>
+                <span class="apps__date">
+                  {new Date(a.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                </span>
+              </div>
+              <h2 class="apps__title">
+                <a href={`/jobs/${a.briefId}`}>{a.briefTitle}</a>
+              </h2>
+              <p class="apps__company">{a.briefCompany} · {a.briefDuration} · {a.briefHours}</p>
+              <p class="apps__excerpt">{a.cover.slice(0, 180)}{a.cover.length > 180 ? '…' : ''}</p>
+              <div class="apps__meta">
+                <span>Proposed rate: <strong>${a.rate}</strong></span>
+                <span>Timeline: <strong>{a.timeline}</strong></span>
+                <span>Application <code>{a.id}</code></span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </DashboardLayout>
+  )
+}
+
+<style>
+  .apps {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+  .apps__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+  .apps__item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    padding: var(--space-lg);
+    background: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-level-1);
+  }
+  .apps__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+  }
+  .apps__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .apps__date {
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: var(--color-mute);
+  }
+  .apps__title {
+    font-size: var(--text-body-md);
+    line-height: var(--text-body-md-line);
+    font-weight: var(--text-body-md-strong-weight);
+    color: var(--color-ink);
+    margin: 0;
+  }
+  .apps__title a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .apps__title a:hover {
+    color: var(--color-link);
+  }
+  .apps__company {
+    margin: 0;
+    font-size: var(--text-body-sm);
+    color: var(--color-body);
+  }
+  .apps__excerpt {
+    margin: 0;
+    font-size: var(--text-body-sm);
+    color: var(--color-body);
+  }
+  .apps__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+    font-size: var(--text-caption);
+    color: var(--color-mute);
+    font-family: var(--font-mono);
+    padding-top: var(--space-sm);
+    border-top: 1px solid var(--color-hairline);
+  }
+  .apps__meta code {
+    background: var(--color-canvas-soft);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    color: var(--color-ink);
+  }
+</style>

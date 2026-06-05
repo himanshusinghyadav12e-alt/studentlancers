@@ -1,0 +1,36 @@
+---
+import InfoLayout from '../layouts/InfoLayout.astro';
+---
+
+<InfoLayout
+  title="Changelog · StudentLancers"
+  description="What we shipped, week by week."
+  eyebrow="Changelog"
+  heading="What we shipped"
+  lead="A weekly log of features, fixes, and the occasional honest admission of a bug."
+>
+  <h2>June 5, 2026</h2>
+  <ul>
+    <li>Every button, link, and form on the marketing site is now wired to a real destination or working flow.</li>
+    <li>Auth flows (sign up, log in, log out, forgot password) now persist a session and route to the right dashboard.</li>
+    <li>Demo accounts ship seeded so the marketplace is browsable on first load.</li>
+  </ul>
+
+  <h2>May 28, 2026</h2>
+  <ul>
+    <li>Find-work page went live with filters, search, and a sticky category rail.</li>
+    <li>Job-detail and apply pages rendered from the shared jobs data source.</li>
+  </ul>
+
+  <h2>May 20, 2026</h2>
+  <ul>
+    <li>Student and company dashboards shipped with explicit empty states (no fake stats).</li>
+    <li>Post-a-brief flow went live with autosave drafts and a live preview pane.</li>
+  </ul>
+
+  <h2>May 15, 2026</h2>
+  <ul>
+    <li>Dark mode support (token-driven, no-flash boot).</li>
+    <li>Removed fabricated homepage numbers, logos, and reviews.</li>
+  </ul>
+</InfoLayout>

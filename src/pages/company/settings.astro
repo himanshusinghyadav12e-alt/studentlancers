@@ -1,0 +1,30 @@
+---
+import SubPageShell from '../../components/SubPageShell.astro';
+import { store } from '../../scripts/store';
+import type { NavItem } from '../../layouts/DashboardLayout.astro';
+
+const nav: NavItem[] = [
+  { href: '/company/dashboard', label: 'Overview', icon: 'home' },
+  { href: '/jobs/post', label: 'Post a brief', icon: 'brief' },
+  { href: '/company/applicants', label: 'Applicants', icon: 'inbox' },
+  { href: '/company/hires', label: 'Active hires', icon: 'gigs' },
+  { href: '/company/billing', label: 'Billing', icon: 'wallet' },
+  { href: '/company/profile', label: 'Company profile', icon: 'profile' },
+  { href: '/company/settings', label: 'Settings', icon: 'settings', current: true },
+];
+const session = store.auth.current();
+const name = session?.name ?? 'Your company';
+---
+<SubPageShell
+  title="Settings · StudentLancers"
+  description="Account, security, and notification settings."
+  name={name}
+  role="Company"
+  nav={nav}
+  eyebrow="Settings"
+  heading="Account settings"
+  body="Manage team members, change your password, set up two-factor authentication, and choose which email notifications you receive. The full settings editor is coming soon."
+  ctaLabel="Go to dashboard"
+  ctaHref="/company/dashboard"
+  badge="Coming soon"
+/>

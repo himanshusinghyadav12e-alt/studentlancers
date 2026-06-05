@@ -2,34 +2,33 @@
 import DashboardLayout, { type NavItem } from '../../layouts/DashboardLayout.astro';
 import Button from '../../components/ui/Button.astro';
 import Badge from '../../components/ui/Badge.astro';
+import { store } from '../../scripts/store';
 
 /**
  * /student/dashboard
  *
- * The student side of the marketplace. Until the user is signed in
- * and has activity, every list and stat shows an explicit empty
- * state — never a fabricated number or placeholder review.
- *
- * Real data wiring is a one-prop replacement once the API lands.
+ * The student side of the marketplace. Reads the signed-in session
+ * from the local store and surfaces real activity (or an explicit
+ * empty state) for every list and stat. No fabricated numbers.
  */
 
 const studentNav: NavItem[] = [
   { href: '/student/dashboard', label: 'Overview', icon: 'home', current: true },
   { href: '/student/find-work', label: 'Find work', icon: 'brief' },
-  { href: '#', label: 'My applications', icon: 'inbox' },
-  { href: '#', label: 'Earnings', icon: 'wallet' },
-  { href: '#', label: 'Reviews', icon: 'reviews' },
-  { href: '#', label: 'Profile', icon: 'profile' },
-  { href: '#', label: 'Settings', icon: 'settings' },
+  { href: '/student/applications', label: 'My applications', icon: 'inbox' },
+  { href: '/student/earnings', label: 'Earnings', icon: 'wallet' },
+  { href: '/student/reviews', label: 'Reviews', icon: 'reviews' },
+  { href: '/student/profile', label: 'Profile', icon: 'profile' },
+  { href: '/student/settings', label: 'Settings', icon: 'settings' },
 ];
 
-/*
- * TODO(api): these placeholders should resolve from the session.
- * Until then, we render the empty state explicitly so users are
- * never shown fake activity counts.
- */
-const studentName = 'Your name';
-const greeting = 'Welcome back';
+const session = store.auth.current();
+const studentName = session?.name ?? 'there';
+const greeting = session ? `Welcome back, ${studentName.split(' ')[0]}` : 'Welcome';
+
+const myApps = session ? store.applications.listByApplicant(session.userId) : [];
+const appsCount = myApps.length;
+const recent = myApps.slice(0, 3);
 ---
 
 <DashboardLayout
@@ -49,8 +48,8 @@ const greeting = 'Welcome back';
       </p>
     </div>
     <div class="dash-page-head__actions">
-      <Button variant="primary" size="md" href="#">Browse briefs</Button>
-      <Button variant="secondary" size="md" href="#">Edit profile</Button>
+      <Button variant="primary" size="md" href="/student/find-work">Browse briefs</Button>
+      <Button variant="secondary" size="md" href="/student/profile">Edit profile</Button>
     </div>
   </header>
 
@@ -58,8 +57,10 @@ const greeting = 'Welcome back';
     <div class="dash-stats">
       <div class="dash-stat">
         <span class="dash-stat__label">Active applications</span>
-        <span class="dash-stat__value dash-stat__value--placeholder">—</span>
-        <span class="dash-stat__hint">Updates as you apply</span>
+        <span class={`dash-stat__value ${appsCount === 0 ? 'dash-stat__value--placeholder' : ''}`}>
+          {appsCount === 0 ? '—' : appsCount}
+        </span>
+        <span class="dash-stat__hint">{appsCount === 0 ? 'Apply to start tracking' : 'In review or interview'}</span>
       </div>
       <div class="dash-stat">
         <span class="dash-stat__label">Open invites</span>
@@ -83,23 +84,43 @@ const greeting = 'Welcome back';
     <div class="dash-card">
       <div class="dash-card__head">
         <h2 class="dash-card__title">Recent applications</h2>
-        <Badge mono variant="secondary">Empty</Badge>
+        <Badge mono variant="secondary">{appsCount === 0 ? 'Empty' : `${appsCount} total`}</Badge>
       </div>
       <div class="dash-card__body">
-        <div class="dash-empty">
-          <span class="dash-empty__icon" aria-hidden="true">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M3 9l2-4h14l2 4v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
-              <path d="M3 9h4l1 2h8l1-2h4" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
-            </svg>
-          </span>
-          <h3 class="dash-empty__title">No applications yet</h3>
-          <p class="dash-empty__body">
-            When you apply to a brief it will show up here with its current status —
-            in review, invited to interview, or hired.
-          </p>
-          <Button variant="secondary" size="md" href="#">Find your first brief</Button>
-        </div>
+        {recent.length === 0 ? (
+          <div class="dash-empty">
+            <span class="dash-empty__icon" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M3 9l2-4h14l2 4v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+                <path d="M3 9h4l1 2h8l1-2h4" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+              </svg>
+            </span>
+            <h3 class="dash-empty__title">No applications yet</h3>
+            <p class="dash-empty__body">
+              When you apply to a brief it will show up here with its current status —
+              in review, invited to interview, or hired.
+            </p>
+            <Button variant="secondary" size="md" href="/student/find-work">Find your first brief</Button>
+          </div>
+        ) : (
+          <ul class="dash-list" role="list">
+            {recent.map((a) => (
+              <li class="dash-list__item">
+                <span class="dash-list-avatar" data-color="cyan" aria-hidden="true">A</span>
+                <div class="dash-list__main">
+                  <span class="dash-list__title">{a.briefTitle}</span>
+                  <span class="dash-list__sub">Proposed ${a.rate} · {a.timeline}</span>
+                </div>
+                <Badge variant="cyan">In review</Badge>
+              </li>
+            ))}
+            {appsCount > recent.length && (
+              <li class="dash-list__more">
+                <a href="/student/applications">See all {appsCount} applications →</a>
+              </li>
+            )}
+          </ul>
+        )}
       </div>
     </div>
 
@@ -169,3 +190,16 @@ const greeting = 'Welcome back';
     </div>
   </section>
 </DashboardLayout>
+
+<style>
+  .dash-list__more {
+    list-style: none;
+    padding: 8px 0 0;
+    text-align: center;
+    border-top: 1px solid var(--color-hairline);
+  }
+  .dash-list__more a {
+    font-size: var(--text-body-sm);
+    color: var(--color-link);
+  }
+</style>

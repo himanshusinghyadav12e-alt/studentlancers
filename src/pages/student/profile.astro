@@ -1,0 +1,30 @@
+---
+import SubPageShell from '../../components/SubPageShell.astro';
+import { store } from '../../scripts/store';
+import type { NavItem } from '../../layouts/DashboardLayout.astro';
+
+const nav: NavItem[] = [
+  { href: '/student/dashboard', label: 'Overview', icon: 'home' },
+  { href: '/student/find-work', label: 'Find work', icon: 'brief' },
+  { href: '/student/applications', label: 'My applications', icon: 'inbox' },
+  { href: '/student/earnings', label: 'Earnings', icon: 'wallet' },
+  { href: '/student/reviews', label: 'Reviews', icon: 'reviews' },
+  { href: '/student/profile', label: 'Profile', icon: 'profile', current: true },
+  { href: '/student/settings', label: 'Settings', icon: 'settings' },
+];
+const session = store.auth.current();
+const name = session?.name ?? 'Your name';
+---
+<SubPageShell
+  title="Profile · StudentLancers"
+  description="Edit your StudentLancers student profile."
+  name={name}
+  role="Student"
+  nav={nav}
+  eyebrow="Profile"
+  heading="Your public profile"
+  body="A complete profile ranks higher in matching. The fields you can edit: name, school, major, graduation year, skills, hourly rate, portfolio links, and a short bio. The full editor is coming soon — for now, find a brief to apply to and we'll capture the rest during onboarding."
+  ctaLabel="Find a brief to apply to"
+  ctaHref="/student/find-work"
+  badge="Onboarding"
+/>

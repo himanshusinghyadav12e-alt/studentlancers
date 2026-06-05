@@ -1,0 +1,222 @@
+---
+import DashboardLayout, { type NavItem } from '../../layouts/DashboardLayout.astro';
+import Button from '../../components/ui/Button.astro';
+import Badge from '../../components/ui/Badge.astro';
+import SubPageShell from '../../components/SubPageShell.astro';
+import { store } from '../../scripts/store';
+
+/**
+ * /company/applicants
+ *
+ * Lists every application the company's briefs have received. Pulled
+ * from the local store; falls back to the shared empty state when
+ * there is nothing to show.
+ */
+
+const companyNav: NavItem[] = [
+  { href: '/company/dashboard', label: 'Overview', icon: 'home' },
+  { href: '/jobs/post', label: 'Post a brief', icon: 'brief' },
+  { href: '/company/applicants', label: 'Applicants', icon: 'inbox', current: true },
+  { href: '/company/hires', label: 'Active hires', icon: 'gigs' },
+  { href: '/company/billing', label: 'Billing', icon: 'wallet' },
+  { href: '/company/profile', label: 'Company profile', icon: 'profile' },
+  { href: '/company/settings', label: 'Settings', icon: 'settings' },
+];
+
+const session = store.auth.current();
+const companyName = session?.name ?? 'Your company';
+
+const myBriefs = session ? store.briefs.listByOwner(session.userId) : [];
+const myBriefIds = new Set(myBriefs.map((b) => b.id));
+const apps = store.applications.list().filter((a) => myBriefIds.has(a.briefId));
+
+// Group applications by brief for the in-page navigation
+const byBrief = myBriefs
+  .map((b) => ({ brief: b, apps: apps.filter((a) => a.briefId === b.id) }))
+  .filter((row) => row.apps.length > 0);
+---
+
+{
+  byBrief.length === 0 ? (
+    <SubPageShell
+      title="Applicants · StudentLancers"
+      description="Review ranked proposals on the briefs you have posted."
+      name={companyName}
+      role="Company"
+      nav={companyNav}
+      eyebrow="Applicants"
+      heading="Review applicants"
+      body="Ranked proposals land here once you post a brief. Until then, the inbox is empty."
+      ctaLabel="Post your first brief"
+      ctaHref="/jobs/post"
+      badge="Empty"
+    />
+  ) : (
+    <DashboardLayout
+      title="Applicants · StudentLancers"
+      description="Review ranked proposals on the briefs you have posted."
+      name={companyName}
+      role="Company"
+      nav={companyNav}
+    >
+      <header class="dash-page-head">
+        <div class="dash-page-head__copy">
+          <span class="dash-page-head__eyebrow">Applicants</span>
+          <h1 class="dash-page-head__title">Review ranked proposals</h1>
+          <p class="dash-page-head__lead">
+            {apps.length} {apps.length === 1 ? 'applicant' : 'applicants'} across {byBrief.length} {byBrief.length === 1 ? 'brief' : 'briefs'}.
+          </p>
+        </div>
+        <div class="dash-page-head__actions">
+          <Button variant="primary" size="md" href="/jobs/post">Post another brief</Button>
+        </div>
+      </header>
+
+      <section class="apps" aria-label="Applicants by brief">
+        {byBrief.map(({ brief, apps }) => (
+          <article class="apps__group">
+            <header class="apps__group-head">
+              <h2>{brief.title}</h2>
+              <span>{apps.length} {apps.length === 1 ? 'applicant' : 'applicants'}</span>
+            </header>
+            <ul class="apps__list" role="list">
+              {apps.map((a) => (
+                <li class="apps__item">
+                  <div class="apps__row">
+                    <div class="apps__main">
+                      <div class="apps__name">{a.applicantName}</div>
+                      <div class="apps__email">{a.applicantEmail}</div>
+                    </div>
+                    <div class="apps__numbers">
+                      <span>${a.rate} <em>proposed</em></span>
+                      <span>{a.timeline}</span>
+                    </div>
+                  </div>
+                  <p class="apps__excerpt">{a.cover.slice(0, 220)}{a.cover.length > 220 ? '…' : ''}</p>
+                  <div class="apps__foot">
+                    <Badge variant="cyan">New</Badge>
+                    <a class="apps__link" href={a.portfolio} target="_blank" rel="noopener noreferrer">View portfolio →</a>
+                    <span class="apps__id">Application <code>{a.id}</code></span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </article>
+        ))}
+      </section>
+    </DashboardLayout>
+  )
+}
+
+<style>
+  .apps {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+  }
+  .apps__group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    padding: var(--space-lg);
+    background: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-level-1);
+  }
+  .apps__group-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-md);
+  }
+  .apps__group-head h2 {
+    margin: 0;
+    font-size: var(--text-body-md);
+    line-height: var(--text-body-md-line);
+    font-weight: var(--text-body-md-strong-weight);
+    color: var(--color-ink);
+  }
+  .apps__group-head span {
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: var(--color-mute);
+  }
+  .apps__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+  .apps__item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+    background: var(--color-canvas-soft);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-md);
+  }
+  .apps__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+  }
+  .apps__name {
+    font-size: var(--text-body-md);
+    font-weight: var(--text-body-md-strong-weight);
+    color: var(--color-ink);
+  }
+  .apps__email {
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: var(--color-mute);
+  }
+  .apps__numbers {
+    display: flex;
+    gap: var(--space-md);
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: var(--color-ink);
+  }
+  .apps__numbers em {
+    font-style: normal;
+    color: var(--color-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-left: 4px;
+  }
+  .apps__excerpt {
+    margin: 0;
+    font-size: var(--text-body-sm);
+    color: var(--color-body);
+  }
+  .apps__foot {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+    padding-top: var(--space-sm);
+    border-top: 1px solid var(--color-hairline);
+  }
+  .apps__link {
+    font-size: var(--text-body-sm);
+    color: var(--color-link);
+  }
+  .apps__id {
+    font-size: var(--text-caption);
+    color: var(--color-mute);
+    font-family: var(--font-mono);
+    margin-left: auto;
+  }
+  .apps__id code {
+    background: var(--color-canvas);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    color: var(--color-ink);
+  }
+</style>

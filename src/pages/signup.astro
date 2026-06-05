@@ -27,6 +27,7 @@ import Button from '../components/ui/Button.astro';
     aria-describedby="signup-alert"
     data-auth-form="signup"
   >
+    <div class="auth-demo-banner" data-demo-banner hidden></div>
     <div
       id="signup-alert"
       class="auth-alert"
@@ -222,9 +223,9 @@ import Button from '../components/ui/Button.astro';
       />
       <span>
         I agree to the
-        <a class="auth-link" href="#">Terms of Service</a>
+        <a class="auth-link" href="/terms">Terms of Service</a>
         and
-        <a class="auth-link" href="#">Privacy Policy</a>.
+        <a class="auth-link" href="/privacy">Privacy Policy</a>.
       </span>
     </label>
 

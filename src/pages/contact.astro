@@ -1,0 +1,327 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Button from '../components/ui/Button.astro';
+import Input from '../components/ui/Input.astro';
+import Field from '../components/ui/Field.astro';
+import ThemeToggle from '../components/ui/ThemeToggle.astro';
+---
+
+<Layout
+  title="Contact · StudentLancers"
+  description="Get in touch with the StudentLancers team. We answer within one business day."
+>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="ct-top" data-ct-top>
+    <div class="ds-container ct-top__inner">
+      <a href="/" class="nav__brand" aria-label="StudentLancers home">
+        <span class="nav__logo" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <rect x="0.5" y="0.5" width="21" height="21" rx="5.5" fill="var(--color-primary)" />
+            <path d="M6 7.5L11 4.5L16 7.5V14.5L11 17.5L6 14.5V7.5Z" stroke="white" stroke-width="1.4" stroke-linejoin="round" />
+            <path d="M11 4.5V11M11 11L16 7.5M11 11L6 7.5M11 11V17.5" stroke="white" stroke-width="1.4" stroke-linejoin="round" />
+          </svg>
+        </span>
+        <span class="nav__brand-text">StudentLancers</span>
+      </a>
+      <div class="ct-top__right">
+        <ThemeToggle size="md" />
+        <Button variant="secondary-sm" size="md" href="/">Back to home</Button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="ct-page">
+    <div class="ds-container ct-page__inner">
+      <header class="ct-page__head">
+        <span class="ct-page__eyebrow">Contact</span>
+        <h1 class="ct-page__title">Tell us what you need.</h1>
+        <p class="ct-page__lead">
+          Whether you are hiring, freelancing, or just want to say hi — we
+          answer every message within one business day. No bots.
+        </p>
+      </header>
+
+      <div class="ct-grid">
+        <form
+          class="ct-form"
+          novalidate
+          aria-describedby="ct-alert"
+          data-contact-form
+        >
+          <div id="ct-alert" class="alert" role="alert" data-form-alert hidden>
+            <svg class="alert__icon" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+              <circle cx="9" cy="9" r="7.5" stroke="currentColor" stroke-width="1.4" />
+              <path d="M9 5.5v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+              <circle cx="9" cy="12.4" r="0.9" fill="currentColor" />
+            </svg>
+            <div class="alert__body">
+              <p class="alert__title" data-form-alert-title>Something went wrong.</p>
+              <p class="alert__msg" data-form-alert-msg>Please try again.</p>
+            </div>
+          </div>
+
+          <div class="ct-form__row">
+            <Field label="Your name" for="ct-name">
+              <Input type="text" id="ct-name" name="name" size="lg" placeholder="Avery Patel" required data-field="name" />
+            </Field>
+            <Field label="Email" for="ct-email">
+              <Input type="email" id="ct-email" name="email" size="lg" placeholder="you@university.edu" required data-field="email" />
+            </Field>
+          </div>
+
+          <Field label="What is this about?" for="ct-topic">
+            <select
+              id="ct-topic"
+              name="topic"
+              class="ds-input ds-input--input ds-input--size-lg ds-input--default ds-input--select"
+              required
+              data-field="topic"
+            >
+              <option value="" disabled selected>Pick a topic</option>
+              <option value="hiring">I'm hiring students</option>
+              <option value="freelancing">I'm looking for freelance work</option>
+              <option value="partnership">Partnership or press</option>
+              <option value="bug">I found a bug</option>
+              <option value="other">Something else</option>
+            </select>
+          </Field>
+
+          <Field label="Message" for="ct-message" hint="A few sentences is plenty.">
+            <textarea
+              id="ct-message"
+              name="message"
+              class="ds-input ds-input--textarea ds-input--size-lg ds-input--default"
+              rows="6"
+              minlength="20"
+              maxlength="2000"
+              placeholder="Tell us a bit about what you need…"
+              required
+              data-field="message"
+            ></textarea>
+          </Field>
+
+          <Button variant="primary" size="lg" type="submit" data-submit>
+            <span class="auth-submit__spinner" aria-hidden="true"></span>
+            <span data-submit-label>Send message</span>
+          </Button>
+        </form>
+
+        <aside class="ct-side">
+          <div class="ct-side__card">
+            <h2>Other ways to reach us</h2>
+            <ul>
+              <li>
+                <strong>Email</strong>
+                <a href="mailto:hello@studentlancers.com">hello@studentlancers.com</a>
+              </li>
+              <li>
+                <strong>Support</strong>
+                <a href="mailto:support@studentlancers.com">support@studentlancers.com</a>
+              </li>
+              <li>
+                <strong>Press</strong>
+                <a href="mailto:press@studentlancers.com">press@studentlancers.com</a>
+              </li>
+            </ul>
+          </div>
+          <div class="ct-side__card">
+            <h2>Office hours</h2>
+            <p>Monday – Friday, 9am – 6pm US Eastern. We respond within one business day.</p>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <div class="ct-success" data-success-state hidden role="status" aria-live="polite">
+    <div class="ds-container ct-success__inner">
+      <div class="ct-success__card">
+        <span class="auth-success__icon" aria-hidden="true">
+          <svg viewBox="0 0 28 28" fill="none">
+            <path d="M6 14.5l5 5L22 8.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </span>
+        <h2 class="auth-success__title">Message sent</h2>
+        <p class="auth-success__body">
+          We received your message and will reply within one business day. If
+          it's urgent, email <a href="mailto:support@studentlancers.com">support@studentlancers.com</a>.
+        </p>
+        <Button variant="primary" size="md" href="/">Back to home</Button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    import { mountContactForm } from '../scripts/contact-form';
+    mountContactForm();
+  </script>
+</Layout>
+
+<style>
+  .skip-link {
+    position: absolute;
+    top: -40px;
+    left: 16px;
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-body-sm);
+    z-index: 100;
+    transition: top 0.15s ease;
+  }
+  .skip-link:focus {
+    top: 16px;
+  }
+  .ct-top {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: color-mix(in srgb, var(--color-canvas) 86%, transparent);
+    backdrop-filter: saturate(180%) blur(12px);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid var(--color-hairline);
+  }
+  .ct-top__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-lg);
+    height: 64px;
+  }
+  .ct-top__right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+  .ct-page {
+    padding-block: var(--space-3xl) var(--space-5xl);
+  }
+  .ct-page__inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xl);
+  }
+  .ct-page__head {
+    max-width: 720px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+  .ct-page__eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--color-mute);
+  }
+  .ct-page__title {
+    font-size: clamp(28px, 4vw, var(--text-display-lg));
+    line-height: var(--text-display-lg-line);
+    font-weight: var(--text-display-lg-weight);
+    letter-spacing: var(--text-display-lg-tracking);
+    color: var(--color-ink);
+    margin: 0;
+  }
+  .ct-page__lead {
+    font-size: var(--text-body-lg);
+    line-height: var(--text-body-lg-line);
+    color: var(--color-body);
+    margin: 0;
+  }
+  .ct-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: var(--space-2xl);
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .ct-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .ct-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    padding: var(--space-xl);
+    background: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-level-1);
+  }
+  .ct-form__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+  }
+  @media (max-width: 600px) {
+    .ct-form__row {
+      grid-template-columns: 1fr;
+    }
+  }
+  .ct-side {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+  .ct-side__card {
+    padding: var(--space-lg);
+    background: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-md);
+  }
+  .ct-side__card h2 {
+    margin: 0 0 var(--space-sm);
+    font-size: var(--text-body-md);
+    font-weight: var(--text-body-md-strong-weight);
+    color: var(--color-ink);
+  }
+  .ct-side__card ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+  .ct-side__card li {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: var(--text-body-sm);
+    color: var(--color-body);
+  }
+  .ct-side__card strong {
+    color: var(--color-mute);
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 500;
+  }
+  .ct-side__card a {
+    color: var(--color-ink);
+  }
+  .ct-success {
+    padding-block: var(--space-4xl) var(--space-5xl);
+  }
+  .ct-success__inner {
+    display: flex;
+    justify-content: center;
+  }
+  .ct-success__card {
+    max-width: 520px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-md);
+    padding: var(--space-3xl) var(--space-2xl);
+    background: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-level-2);
+  }
+</style>

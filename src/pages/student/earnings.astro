@@ -1,0 +1,30 @@
+---
+import SubPageShell from '../../components/SubPageShell.astro';
+import { store } from '../../scripts/store';
+import type { NavItem } from '../../layouts/DashboardLayout.astro';
+
+const nav: NavItem[] = [
+  { href: '/student/dashboard', label: 'Overview', icon: 'home' },
+  { href: '/student/find-work', label: 'Find work', icon: 'brief' },
+  { href: '/student/applications', label: 'My applications', icon: 'inbox' },
+  { href: '/student/earnings', label: 'Earnings', icon: 'wallet', current: true },
+  { href: '/student/reviews', label: 'Reviews', icon: 'reviews' },
+  { href: '/student/profile', label: 'Profile', icon: 'profile' },
+  { href: '/student/settings', label: 'Settings', icon: 'settings' },
+];
+const session = store.auth.current();
+const name = session?.name ?? 'Your name';
+---
+<SubPageShell
+  title="Earnings · StudentLancers"
+  description="Track your payouts and pending escrow."
+  name={name}
+  role="Student"
+  nav={nav}
+  eyebrow="Earnings"
+  heading="Earnings &amp; payouts"
+  body="Once an engagement is approved, payouts land in your connected Stripe account. This page will show the 30-day, 90-day, and lifetime totals, plus a per-engagement breakdown. Until you finish your first gig, it stays empty."
+  ctaLabel="Browse open briefs"
+  ctaHref="/student/find-work"
+  badge="Empty"
+/>

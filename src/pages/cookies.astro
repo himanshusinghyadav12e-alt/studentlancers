@@ -1,0 +1,32 @@
+---
+import InfoLayout from '../layouts/InfoLayout.astro';
+---
+
+<InfoLayout
+  title="Cookies · StudentLancers"
+  description="The cookies and similar technologies StudentLancers uses."
+  eyebrow="Legal"
+  heading="Cookies we use"
+  lead="We use a small set of cookies. None of them sell your data."
+>
+  <h2>Strictly necessary</h2>
+  <ul>
+    <li><code>sl-session</code> — keeps you signed in (HttpOnly, Secure).</li>
+    <li><code>sl-theme</code> — remembers your light/dark preference.</li>
+  </ul>
+
+  <h2>Analytics</h2>
+  <p>
+    We use privacy-respecting analytics to count visitors and page views.
+    We do not track you across other websites and we do not sell data to
+    advertisers. You can opt out by emailing
+    <a href="mailto:privacy@studentlancers.com">privacy@studentlancers.com</a>.
+  </p>
+
+  <h2>Third parties</h2>
+  <p>
+    Stripe places cookies to process payments securely. Google Fonts loads
+    font files; we are in the process of self-hosting to remove this
+    dependency.
+  </p>
+</InfoLayout>

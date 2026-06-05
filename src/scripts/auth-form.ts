@@ -6,13 +6,16 @@
  *   - Account type radio visual sync
  *   - Inline validation + form-level alerts
  *   - Password strength meter
- *   - Submission loading state
+ *   - Submission loading state (delegates to the local store)
  *   - Forgot-password success state + resend
  *
- * No real network calls — all submissions are intercepted and resolve
- * to a deterministic outcome so the UI is exercised end-to-end. Wiring
- * the real API is a one-liner inside `submitForm`.
+ * Submissions go through `store.auth`, which is a localStorage-backed
+ * mock. Replace the body of `submitForm` with a real fetch() call
+ * when the API ships — the rest of the UI is wired against the same
+ * `Session` shape.
  */
+
+import { store } from './store';
 
 interface FormContext {
   form: HTMLFormElement;
@@ -59,26 +62,20 @@ const STRENGTH_LABELS = ['Too short', 'Weak', 'Okay', 'Strong', 'Excellent'];
 
 function setFieldError(field: HTMLElement | null, message: string | null) {
   if (!field) return;
-  // The terms checkbox lives inside a <label class="auth-check">,
-  // not a .ds-field. Find the closest container that hosts the
-  // error UI; fall back to the field's parent otherwise.
   const fieldEl =
     (field.closest('.ds-field') as HTMLElement | null) ??
     (field.closest('[data-terms]') as HTMLElement | null) ??
     (field.closest('label') as HTMLElement | null);
   if (!fieldEl) return;
 
-  // Remove any previous error
   fieldEl.querySelectorAll('.ds-field__error[data-auth-error]').forEach((n) => n.remove());
 
-  // Toggle native input error styling on text inputs only
   const input = fieldEl.querySelector<HTMLInputElement>('.ds-input');
   if (input) {
     input.classList.toggle('ds-input--error', Boolean(message));
     input.setAttribute('aria-invalid', message ? 'true' : 'false');
   }
 
-  // For the custom checkbox, mark the visible box red
   if (field instanceof HTMLInputElement && field.type === 'checkbox') {
     field.classList.toggle('auth-check__input--error', Boolean(message));
   }
@@ -93,13 +90,15 @@ function setFieldError(field: HTMLElement | null, message: string | null) {
   }
 }
 
-function setFormAlert(alertEl: HTMLElement | null, message: string | null, title = 'Something went wrong.') {
+function setFormAlert(alertEl: HTMLElement | null, message: string | null, title = 'Something went wrong.', variant?: 'success' | 'error') {
   if (!alertEl) return;
   if (!message) {
     alertEl.setAttribute('hidden', '');
+    alertEl.classList.remove('auth-alert--success');
     return;
   }
   alertEl.removeAttribute('hidden');
+  alertEl.classList.toggle('auth-alert--success', variant === 'success');
   const titleEl = alertEl.querySelector<HTMLElement>('[data-form-alert-title]');
   const msgEl = alertEl.querySelector<HTMLElement>('[data-form-alert-msg]');
   if (titleEl) titleEl.textContent = title;
@@ -191,13 +190,8 @@ function attachAccountType(form: HTMLFormElement) {
     const input = choice.querySelector<HTMLInputElement>('.auth-choice__input');
     if (!input) return;
     input.addEventListener('change', sync);
-    input.addEventListener('focus', () => {
-      // Soft highlight when focus enters via keyboard
-      choice.classList.add('is-focused');
-    });
-    input.addEventListener('blur', () => {
-      choice.classList.remove('is-focused');
-    });
+    input.addEventListener('focus', () => choice.classList.add('is-focused'));
+    input.addEventListener('blur', () => choice.classList.remove('is-focused'));
   });
   sync();
 }
@@ -229,10 +223,7 @@ function setLoading(form: HTMLFormElement, loading: boolean) {
   const label = form.querySelector<HTMLElement>('[data-submit-label]');
   if (submit) submit.setAttribute('data-loading', loading ? 'true' : 'false');
   if (label && submit instanceof HTMLButtonElement) {
-    // Preserve original label for non-button submit (link styled as button)
-    if (!label.dataset.original) {
-      label.dataset.original = label.textContent ?? '';
-    }
+    if (!label.dataset.original) label.dataset.original = label.textContent ?? '';
     label.textContent = loading ? 'Working…' : (label.dataset.original ?? label.textContent ?? '');
   }
   form.querySelectorAll<HTMLInputElement>('input, button, select, textarea').forEach((el) => {
@@ -241,15 +232,9 @@ function setLoading(form: HTMLFormElement, loading: boolean) {
   });
 }
 
-/**
- * Mock async submission. Replace with a real API call when wiring the
- * backend. Throws on simulated failure so the form-level alert path is
- * exercised; resolved promise triggers the success path for the
- * forgot-password form.
- */
-async function submitForm(_ctx: FormContext, _data: FormData): Promise<{ ok: true; email: string } | { ok: false; message: string }> {
-  await new Promise((resolve) => setTimeout(resolve, 700));
-  return { ok: true, email: String(_data.get('email') ?? '') };
+/** Wait helper to simulate network latency in the mock. */
+function wait(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
 }
 
 function attachForgotFlow(form: HTMLFormElement) {
@@ -264,7 +249,6 @@ function attachForgotFlow(form: HTMLFormElement) {
     if (successEmail && detail?.email) successEmail.textContent = detail.email;
     requestState.setAttribute('hidden', '');
     successState.removeAttribute('hidden');
-    // Move focus to the success heading for screen reader users
     const heading = successState.querySelector<HTMLElement>('.auth-success__title');
     heading?.setAttribute('tabindex', '-1');
     heading?.focus();
@@ -272,15 +256,27 @@ function attachForgotFlow(form: HTMLFormElement) {
 
   if (resendBtn) {
     resendBtn.addEventListener('click', async () => {
+      const email = (form.querySelector<HTMLInputElement>('[data-field="email"]')?.value) ?? '';
       setLoading(form, true);
-      await new Promise((r) => setTimeout(r, 500));
+      await wait(500);
       setLoading(form, false);
-      resendBtn.textContent = 'Resent ✓';
-      window.setTimeout(() => {
-        resendBtn.textContent = 'Didn’t get it? Resend';
-      }, 2400);
+      const result = store.auth.forgotPassword({ email });
+      if (result.ok) {
+        resendBtn.textContent = 'Resent ✓';
+        window.setTimeout(() => {
+          resendBtn.textContent = 'Didn’t get it? Resend';
+        }, 2400);
+      }
     });
   }
+}
+
+function redirectAfterAuth(role: 'student' | 'company'): void {
+  const dest = role === 'company' ? '/company/dashboard' : '/student/find-work';
+  // Slight delay so the success state is briefly visible before navigation.
+  window.setTimeout(() => {
+    window.location.href = dest;
+  }, 400);
 }
 
 function attachSubmit(form: HTMLFormElement, kind: FormContext['kind']) {
@@ -293,38 +289,70 @@ function attachSubmit(form: HTMLFormElement, kind: FormContext['kind']) {
       return;
     }
 
-    // Capture the form data BEFORE disabling inputs — disabled form
-    // controls are excluded from FormData, which would drop the email
-    // value the success state echoes back to the user.
     const data = new FormData(form);
     setLoading(form, true);
     try {
-      const result = await submitForm({ form, kind }, data);
-      if (!result.ok) {
-        setFormAlert(form.querySelector<HTMLElement>('[data-form-alert]'), result.message);
+      if (kind === 'login') {
+        const result = store.auth.signIn({
+          email: String(data.get('email') ?? ''),
+          password: String(data.get('password') ?? ''),
+        });
+        if (!result.ok) {
+          setFormAlert(form.querySelector<HTMLElement>('[data-form-alert]'), result.message);
+          setLoading(form, false);
+          return;
+        }
+        setFormAlert(
+          form.querySelector<HTMLElement>('[data-form-alert]'),
+          `Welcome back, ${result.session.name.split(' ')[0]}. Redirecting…`,
+          'Signed in',
+          'success',
+        );
+        redirectAfterAuth(result.session.role);
         return;
       }
+
+      if (kind === 'signup') {
+        const accountType = String(data.get('account_type') ?? 'student');
+        const role: 'student' | 'company' = accountType === 'company' ? 'company' : 'student';
+        const result = store.auth.signUp({
+          email: String(data.get('email') ?? ''),
+          password: String(data.get('password') ?? ''),
+          name: String(data.get('name') ?? ''),
+          role,
+        });
+        if (!result.ok) {
+          setFormAlert(form.querySelector<HTMLElement>('[data-form-alert]'), result.message);
+          setLoading(form, false);
+          return;
+        }
+        setFormAlert(
+          form.querySelector<HTMLElement>('[data-form-alert]'),
+          `Account ready. Taking you to the ${role === 'company' ? 'company' : 'student'} dashboard…`,
+          `Welcome, ${result.session.name.split(' ')[0]}`,
+          'success',
+        );
+        redirectAfterAuth(result.session.role);
+        return;
+      }
+
       if (kind === 'forgot') {
+        const result = store.auth.forgotPassword({ email: String(data.get('email') ?? '') });
+        setLoading(form, false);
+        if (!result.ok) {
+          setFormAlert(form.querySelector<HTMLElement>('[data-form-alert]'), result.message);
+          return;
+        }
         form.dispatchEvent(new CustomEvent('auth:success', { detail: { email: result.email } }));
-      } else if (kind === 'login') {
-        // In a real app, redirect to dashboard. For now, show a success hint.
-        const alert = form.querySelector<HTMLElement>('[data-form-alert]');
-        if (alert) {
-          alert.classList.add('auth-alert--success');
-          setFormAlert(alert, 'Signed in. Redirecting…', 'Welcome back.');
-        }
-      } else if (kind === 'signup') {
-        const alert = form.querySelector<HTMLElement>('[data-form-alert]');
-        if (alert) {
-          alert.classList.add('auth-alert--success');
-          setFormAlert(alert, 'Account created. Check your email to verify.', 'Welcome aboard.');
-        }
+        return;
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Network error. Please try again.';
       setFormAlert(form.querySelector<HTMLElement>('[data-form-alert]'), message);
     } finally {
-      setLoading(form, false);
+      // For login/signup the page is navigating away, so leaving the
+      // loading state engaged is fine. Forgot-password handles its own
+      // loading toggle above.
     }
   });
 }
@@ -335,8 +363,6 @@ function attachLiveValidation(form: HTMLFormElement) {
     const name = fieldEl.getAttribute('data-field') || '';
     if (!name) return;
     const handler = () => {
-      // Only re-validate fields that are already showing an error so the
-      // form doesn't yell at users mid-typing.
       const fieldWrap = fieldEl.closest('.ds-field');
       if (!fieldWrap) return;
       const hasError = fieldWrap.querySelector('[data-auth-error]');
@@ -371,15 +397,65 @@ function attachGoogleStub(form: HTMLFormElement) {
   });
 }
 
+/** Pre-fill demo credentials on the auth pages to make testing painless. */
+function attachDemoFill(form: HTMLFormElement, kind: FormContext['kind']) {
+  if (kind === 'forgot') return;
+  const banner = form.querySelector<HTMLElement>('[data-demo-banner]');
+  if (!banner) return;
+  const accounts = store.demo.accounts();
+  if (!accounts.length) return;
+  banner.removeAttribute('hidden');
+  banner.innerHTML = `
+    <span class="auth-demo-banner__label">Try a demo account:</span>
+    <div class="auth-demo-banner__list">
+      ${accounts
+        .map(
+          (a, i) => `
+            <button type="button" class="auth-demo-banner__btn" data-demo-idx="${i}">
+              <strong>${a.role === 'student' ? 'Student' : 'Company'}</strong>
+              <span>${a.email}</span>
+            </button>
+          `,
+        )
+        .join('')}
+    </div>
+  `;
+  banner.querySelectorAll<HTMLButtonElement>('[data-demo-idx]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const idx = Number(btn.getAttribute('data-demo-idx') ?? '0');
+      const acc = accounts[idx];
+      if (!acc) return;
+      const email = form.querySelector<HTMLInputElement>('[data-field="email"]');
+      const password = form.querySelector<HTMLInputElement>('[data-field="password"]');
+      if (email) email.value = acc.email;
+      if (password) password.value = acc.password;
+      email?.dispatchEvent(new Event('input', { bubbles: true }));
+      password?.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+  });
+}
+
 export function mountAuthForms() {
   const forms = document.querySelectorAll<HTMLFormElement>('[data-auth-form]');
   forms.forEach((form) => {
     const kind = (form.getAttribute('data-auth-form') as FormContext['kind']) || 'login';
+    // Pre-fill email from ?email=… so the CTA form deep-links here.
+    try {
+      const url = new URL(window.location.href);
+      const incoming = url.searchParams.get('email');
+      if (incoming) {
+        const emailField = form.querySelector<HTMLInputElement>('[data-field="email"]');
+        if (emailField && !emailField.value) emailField.value = incoming;
+      }
+    } catch {
+      // ignore
+    }
     attachPasswordToggles(form);
     attachAccountType(form);
     attachStrengthMeter(form);
     attachLiveValidation(form);
     attachGoogleStub(form);
+    attachDemoFill(form, kind);
     if (kind === 'forgot') attachForgotFlow(form);
     attachSubmit(form, kind);
   });

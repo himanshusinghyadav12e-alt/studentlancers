@@ -181,15 +181,15 @@ const faqCategories = Array.from(new Set(faqs.map((f) => f.cat)));
       <nav class="nav__links" aria-label="Primary">
         <a class="nav__link" href="#features">Features</a>
         <a class="nav__link" href="#how">How it works</a>
-        <a class="nav__link" href="#testimonials">Customers</a>
-        <a class="nav__link" href="#faq">Pricing</a>
+        <a class="nav__link" href="/student/find-work">Find work</a>
+        <a class="nav__link" href="/jobs/post">Post a brief</a>
         <a class="nav__link" href="#faq">FAQ</a>
       </nav>
 
-      <div class="nav__cta">
+      <div class="nav__cta" data-session-aware>
         <ThemeToggle size="md" />
-        <Button variant="primary-sm" size="md" href="#cta">Sign up</Button>
-        <Button variant="secondary-sm" size="md" href="#cta">Log in</Button>
+        <Button variant="primary-sm" size="md" href="/signup">Sign up</Button>
+        <Button variant="secondary-sm" size="md" href="/login">Log in</Button>
       </div>
 
       <button
@@ -206,13 +206,12 @@ const faqCategories = Array.from(new Set(faqs.map((f) => f.cat)));
     <div class="nav__mobile" data-nav-mobile hidden>
       <a class="nav__link nav__link--mobile" href="#features">Features</a>
       <a class="nav__link nav__link--mobile" href="#how">How it works</a>
-      <a class="nav__link nav__link--mobile" href="#testimonials">Customers</a>
-      <a class="nav__link nav__link--mobile" href="#faq">Pricing</a>
       <a class="nav__link nav__link--mobile" href="#faq">FAQ</a>
-      <div class="nav__mobile-cta">
+      <a class="nav__link nav__link--mobile" href="/contact">Contact</a>
+      <div class="nav__mobile-cta" data-session-aware>
         <ThemeToggle size="md" />
-        <Button variant="primary-sm" size="md" href="#cta">Sign up</Button>
-        <Button variant="secondary-sm" size="md" href="#cta">Log in</Button>
+        <Button variant="primary-sm" size="md" href="/signup">Sign up</Button>
+        <Button variant="secondary-sm" size="md" href="/login">Log in</Button>
       </div>
     </div>
   </header>
@@ -238,8 +237,8 @@ const faqCategories = Array.from(new Set(faqs.map((f) => f.cat)));
         </p>
 
         <div class="hero__cta">
-          <Button variant="primary" size="lg" href="#cta">Hire a student →</Button>
-          <Button variant="secondary" size="lg" href="#cta">Start freelancing</Button>
+          <Button variant="primary" size="lg" href="/jobs/post">Hire a student →</Button>
+          <Button variant="secondary" size="lg" href="/student/find-work">Start freelancing</Button>
         </div>
 
         <ul class="hero__meta" role="list">
@@ -471,7 +470,7 @@ const faqCategories = Array.from(new Set(faqs.map((f) => f.cat)));
                 <Button
                   variant={i === 0 ? 'secondary' : 'primary'}
                   size="md"
-                  href="#cta"
+                  href={i === 0 ? '/student/find-work' : '/jobs/post'}
                 >
                   {b.cta} →
                 </Button>
@@ -677,7 +676,7 @@ const faqCategories = Array.from(new Set(faqs.map((f) => f.cat)));
           </div>
 
           <div class="cta__action">
-            <form class="cta__form" aria-label="Get started" onsubmit="event.preventDefault();">
+            <form class="cta__form" aria-label="Get started" data-cta-form>
               <Field label="Work email" for="cta-email" hideLabel>
                 <Input
                   type="email"
@@ -689,13 +688,22 @@ const faqCategories = Array.from(new Set(faqs.map((f) => f.cat)));
                   required
                 />
               </Field>
-              <Button variant="primary" size="lg" type="submit">Create account →</Button>
+              <Button variant="primary" size="lg" type="submit" data-cta-submit>
+                <span data-cta-submit-label>Create account →</span>
+              </Button>
             </form>
+            <p
+              class="cta__form-status"
+              data-cta-status
+              role="status"
+              aria-live="polite"
+              hidden
+            ></p>
 
             <p class="cta__fineprint">
               Free to sign up. We will never share your email. By creating an
-              account you agree to our <a href="#" class="link-inline">Terms</a> and
-              <a href="#" class="link-inline">Privacy Policy</a>.
+              account you agree to our <a href="/terms" class="link-inline">Terms</a> and
+              <a href="/privacy" class="link-inline">Privacy Policy</a>.
             </p>
 
             <div class="cta__divider" role="separator">
@@ -704,7 +712,7 @@ const faqCategories = Array.from(new Set(faqs.map((f) => f.cat)));
 
             <div class="cta__alt">
               <Button variant="secondary" size="md" href="#how">See how it works</Button>
-              <Button variant="ghost" size="md" href="#cta">Talk to sales</Button>
+              <Button variant="ghost" size="md" href="/contact">Talk to sales</Button>
             </div>
           </div>
         </div>
@@ -740,13 +748,13 @@ const faqCategories = Array.from(new Set(faqs.map((f) => f.cat)));
           The marketplace where students earn and companies hire.
         </p>
         <div class="footer__socials" aria-label="Social links">
-          <a href="#" aria-label="Twitter" class="footer__icon-btn">
+          <a href="https://twitter.com/studentlancers" aria-label="Twitter" class="footer__icon-btn" rel="noopener noreferrer" target="_blank">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M9.5 6.8 14.8 0h-1.3L8.9 5.9 5.2 0H0l5.6 8.2L0 16h1.3l5-6.3L10.4 16H16L9.5 6.8Zm-1.8 2.2-.6-.8L2 1h2.2l3.6 5 .6.8 4.6 6.4h-2.2L7.7 9Z" /></svg>
           </a>
-          <a href="#" aria-label="GitHub" class="footer__icon-btn">
+          <a href="https://github.com/studentlancers" aria-label="GitHub" class="footer__icon-btn" rel="noopener noreferrer" target="_blank">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" /></svg>
           </a>
-          <a href="#" aria-label="LinkedIn" class="footer__icon-btn">
+          <a href="https://linkedin.com/company/studentlancers" aria-label="LinkedIn" class="footer__icon-btn" rel="noopener noreferrer" target="_blank">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M13.6 0H2.4C1.08 0 0 1.06 0 2.36v11.27C0 14.94 1.08 16 2.4 16h11.2c1.32 0 2.4-1.06 2.4-2.36V2.36C16 1.06 14.92 0 13.6 0ZM4.96 13.6H2.4V6.4h2.56v7.2ZM3.68 5.28c-.85 0-1.52-.66-1.52-1.5s.68-1.5 1.52-1.5 1.52.67 1.52 1.5-.67 1.5-1.52 1.5Zm9.92 8.32h-2.56V10.1c0-.85-.02-1.94-1.18-1.94-1.19 0-1.37.93-1.37 1.88v3.56H5.92V6.4h2.46v.98h.04c.34-.65 1.18-1.34 2.43-1.34 2.6 0 3.08 1.71 3.08 3.93v3.63Z" /></svg>
           </a>
         </div>
@@ -758,35 +766,35 @@ const faqCategories = Array.from(new Set(faqs.map((f) => f.cat)));
           <ul role="list">
             <li><a href="#features">Features</a></li>
             <li><a href="#how">How it works</a></li>
-            <li><a href="#cta">Pricing</a></li>
-            <li><a href="#cta">Changelog</a></li>
+            <li><a href="/pricing">Pricing</a></li>
+            <li><a href="/changelog">Changelog</a></li>
           </ul>
         </div>
         <div class="footer__col">
           <h4>For students</h4>
           <ul role="list">
-            <li><a href="#cta">Find work</a></li>
-            <li><a href="#cta">Build a portfolio</a></li>
-            <li><a href="#cta">Get paid</a></li>
-            <li><a href="#cta">Top rated</a></li>
+            <li><a href="/student/find-work">Find work</a></li>
+            <li><a href="/student/dashboard">Build a portfolio</a></li>
+            <li><a href="/student/dashboard">Get paid</a></li>
+            <li><a href="/student/find-work">Top rated</a></li>
           </ul>
         </div>
         <div class="footer__col">
           <h4>For companies</h4>
           <ul role="list">
-            <li><a href="#cta">Post a brief</a></li>
-            <li><a href="#cta">Hire talent</a></li>
-            <li><a href="#cta">Enterprise</a></li>
-            <li><a href="#cta">Case studies</a></li>
+            <li><a href="/jobs/post">Post a brief</a></li>
+            <li><a href="/student/find-work">Hire talent</a></li>
+            <li><a href="/contact">Enterprise</a></li>
+            <li><a href="/contact">Case studies</a></li>
           </ul>
         </div>
         <div class="footer__col">
           <h4>Company</h4>
           <ul role="list">
-            <li><a href="#cta">About</a></li>
-            <li><a href="#cta">Careers</a></li>
-            <li><a href="#cta">Press</a></li>
-            <li><a href="#cta">Contact</a></li>
+            <li><a href="/about">About</a></li>
+            <li><a href="/contact">Careers</a></li>
+            <li><a href="/contact">Press</a></li>
+            <li><a href="/contact">Contact</a></li>
           </ul>
         </div>
       </div>
@@ -795,10 +803,10 @@ const faqCategories = Array.from(new Set(faqs.map((f) => f.cat)));
     <div class="ds-container footer__bottom">
       <p>© {new Date().getFullYear()} StudentLancers, Inc. All rights reserved.</p>
       <ul role="list" class="footer__legal">
-        <li><a href="#">Privacy</a></li>
-        <li><a href="#">Terms</a></li>
-        <li><a href="#">Security</a></li>
-        <li><a href="#">Cookies</a></li>
+        <li><a href="/privacy">Privacy</a></li>
+        <li><a href="/terms">Terms</a></li>
+        <li><a href="/security">Security</a></li>
+        <li><a href="/cookies">Cookies</a></li>
       </ul>
     </div>
   </footer>
@@ -2178,6 +2186,32 @@ const faqCategories = Array.from(new Set(faqs.map((f) => f.cat)));
       });
     });
   });
+
+  // ─── CTA email form — sends user to /signup with the email ─
+  const ctaForm = document.querySelector<HTMLFormElement>('[data-cta-form]');
+  const ctaStatus = document.querySelector<HTMLElement>('[data-cta-status]');
+  if (ctaForm) {
+    ctaForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const input = ctaForm.querySelector<HTMLInputElement>('input[name="email"]');
+      const email = (input?.value || '').trim();
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        if (ctaStatus) {
+          ctaStatus.textContent = 'Please enter a valid email address.';
+          ctaStatus.removeAttribute('hidden');
+          ctaStatus.className = 'cta__form-status cta__form-status--error';
+        }
+        input?.focus();
+        return;
+      }
+      const next = `/signup?email=${encodeURIComponent(email)}`;
+      window.location.href = next;
+    });
+  }
+
+  // ─── Session-aware nav + avatar menu ──────────────────────
+  import { mountSessionBar } from '../scripts/session-bar';
+  mountSessionBar();
 
   // ─── Smooth scroll for in-page anchors ────────────────────
   document.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach((a) => {

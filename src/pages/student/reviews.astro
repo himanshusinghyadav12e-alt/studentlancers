@@ -1,0 +1,30 @@
+---
+import SubPageShell from '../../components/SubPageShell.astro';
+import { store } from '../../scripts/store';
+import type { NavItem } from '../../layouts/DashboardLayout.astro';
+
+const nav: NavItem[] = [
+  { href: '/student/dashboard', label: 'Overview', icon: 'home' },
+  { href: '/student/find-work', label: 'Find work', icon: 'brief' },
+  { href: '/student/applications', label: 'My applications', icon: 'inbox' },
+  { href: '/student/earnings', label: 'Earnings', icon: 'wallet' },
+  { href: '/student/reviews', label: 'Reviews', icon: 'reviews', current: true },
+  { href: '/student/profile', label: 'Profile', icon: 'profile' },
+  { href: '/student/settings', label: 'Settings', icon: 'settings' },
+];
+const session = store.auth.current();
+const name = session?.name ?? 'Your name';
+---
+<SubPageShell
+  title="Reviews · StudentLancers"
+  description="Every review you have earned on StudentLancers."
+  name={name}
+  role="Student"
+  nav={nav}
+  eyebrow="Reviews"
+  heading="Reviews from companies"
+  body="After every completed engagement, the company leaves you a review. They show up here as a list, with the brief title, date, and star rating. Until you finish your first gig, this page stays empty."
+  ctaLabel="Find a brief to apply to"
+  ctaHref="/student/find-work"
+  badge="Empty"
+/>

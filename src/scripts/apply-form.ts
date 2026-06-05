@@ -132,9 +132,53 @@ async function fakeSubmit(_data: FormData): Promise<{ ok: true; id: string }> {
   return { ok: true, id };
 }
 
+import { store } from './store';
+import { getJobById } from '../data/jobs';
+
+async function persistApplication(
+  form: HTMLFormElement,
+  briefId: string,
+): Promise<{ ok: true; id: string } | { ok: false; message: string }> {
+  const data = new FormData(form);
+  const session = store.auth.current();
+  if (!session) {
+    return { ok: false, message: 'You need to be signed in to apply.' };
+  }
+  if (session.role !== 'student') {
+    return { ok: false, message: 'Only student accounts can apply to briefs.' };
+  }
+  const cover = String(data.get('cover') || '').trim();
+  const rate = Number(data.get('rate') || 0);
+  const timeline = String(data.get('timeline') || '').trim();
+  const portfolio = String(data.get('portfolio') || '').trim();
+  if (!cover || !timeline || !portfolio || !rate) {
+    return { ok: false, message: 'Please fill in every required field.' };
+  }
+  const job = getJobById(briefId);
+  const title = job ? job.title : briefId;
+  const app = store.applications.create({
+    briefId,
+    briefTitle: title,
+    applicantId: session.userId,
+    applicantName: session.name,
+    applicantEmail: session.email,
+    cover,
+    rate,
+    timeline,
+    portfolio,
+  });
+  return { ok: true, id: app.id };
+}
+
 export function mountApplyForm() {
   const form = document.querySelector<HTMLFormElement>('[data-apply-form]');
   if (!form) return;
+
+  // Capture the brief id from the URL — the page is /jobs/[id]/apply
+  // and the id param lives in window.location.pathname.
+  const pathParts = window.location.pathname.split('/').filter(Boolean);
+  // ['jobs', '<id>', 'apply']
+  const briefId = pathParts.length >= 2 ? pathParts[pathParts.length - 2] : '';
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -144,12 +188,12 @@ export function mountApplyForm() {
       setFormAlert(form.querySelector<HTMLElement>('[data-form-alert]'), error);
       return;
     }
-    const data = new FormData(form);
     setLoading(form, true);
     try {
-      const result = await fakeSubmit(data);
+      const result = await persistApplication(form, briefId);
       if (!result.ok) {
-        setFormAlert(form.querySelector<HTMLElement>('[data-form-alert]'), 'Network error. Please try again.');
+        setFormAlert(form.querySelector<HTMLElement>('[data-form-alert]'), result.message);
+        setLoading(form, false);
         return;
       }
       const main = document.querySelector<HTMLElement>('.post-page');
