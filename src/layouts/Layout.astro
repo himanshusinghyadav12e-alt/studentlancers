@@ -32,13 +32,15 @@ const {
 			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap"
 		/>
 	</head>
-	<body>
+	<body data-page-auth="public">
 		<slot />
 		<script>
 			import { mountThemeToggle } from '../scripts/theme-toggle';
 			mountThemeToggle();
 			import { mountSessionBar } from '../scripts/session-bar';
 			mountSessionBar();
+			import { mountAuthGuards } from '../scripts/auth-guards';
+			mountAuthGuards();
 		</script>
 	</body>
 </html>

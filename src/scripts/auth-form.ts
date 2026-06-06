@@ -272,10 +272,20 @@ function attachForgotFlow(form: HTMLFormElement) {
 }
 
 function redirectAfterAuth(role: 'student' | 'company'): void {
-  const dest = role === 'company' ? '/company/dashboard' : '/student/find-work';
+  // Honor a same-origin `?next=` deep-link so a user who was bounced
+  // from a protected page lands back where they started. Default to
+  // the role's home if no next is set.
+  const params = new URLSearchParams(window.location.search);
+  const rawNext = params.get('next');
+  const next =
+    rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//')
+      ? rawNext
+      : role === 'company'
+        ? '/company/dashboard'
+        : '/student/dashboard';
   // Slight delay so the success state is briefly visible before navigation.
   window.setTimeout(() => {
-    window.location.href = dest;
+    window.location.href = next;
   }, 400);
 }
 

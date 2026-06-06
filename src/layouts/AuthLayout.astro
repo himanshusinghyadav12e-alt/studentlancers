@@ -54,7 +54,7 @@ const {
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap"
     />
   </head>
-  <body class="auth-body">
+  <body class="auth-body" data-page-auth="guest-only">
     <a class="skip-link" href="#auth-main">Skip to content</a>
 
     <main id="auth-main" class="auth-shell">
@@ -148,6 +148,8 @@ const {
       mountThemeToggle();
       import { mountSessionBar } from '../scripts/session-bar';
       mountSessionBar();
+      import { mountAuthGuards } from '../scripts/auth-guards';
+      mountAuthGuards();
     </script>
   </body>
 </html>

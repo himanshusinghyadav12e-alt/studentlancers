@@ -74,7 +74,7 @@ const initials = name
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap"
     />
   </head>
-  <body class="dash-body">
+  <body class="dash-body" data-page-auth={role.toLowerCase() === 'company' ? 'company' : 'student'}>
     <a class="skip-link" href="#dash-main">Skip to content</a>
 
     <header class="dash-top" data-dash-top>
@@ -195,6 +195,8 @@ const initials = name
       mountThemeToggle();
       import { mountSessionBar } from '../scripts/session-bar';
       mountSessionBar();
+      import { mountAuthGuards } from '../scripts/auth-guards';
+      mountAuthGuards();
 
       // Shadow the top nav once it scrolls past the initial offset so
       // long pages get a clear visual boundary.

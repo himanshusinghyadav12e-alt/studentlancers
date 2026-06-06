@@ -47,7 +47,9 @@ function replaceNavCta(scope: ParentNode = document) {
     const logout = host.querySelector<HTMLButtonElement>('[data-logout]');
     logout?.addEventListener('click', () => {
       store.auth.signOut();
-      window.location.href = '/';
+      // replace() so the back button doesn't dump the user back on the
+      // page they were just signed out of.
+      window.location.replace('/');
     });
   });
 }
@@ -115,7 +117,9 @@ function attachAvatarMenu() {
     `;
     menu.querySelector<HTMLButtonElement>('[data-logout]')?.addEventListener('click', () => {
       store.auth.signOut();
-      window.location.href = '/';
+      // replace() so the back button doesn't dump the user back on the
+      // page they were just signed out of.
+      window.location.replace('/');
     });
   };
   refreshMenu();
