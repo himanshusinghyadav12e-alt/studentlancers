@@ -20,6 +20,11 @@ html {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Tell the UA what color schemes we support so native form
+   * controls (date pickers, scrollbars, the open <option> list,
+   * autofill chips) render with the right surface. Without this,
+   * dark mode shows light dropdown lists with light text. */
+  color-scheme: light dark;
 }
 
 html,

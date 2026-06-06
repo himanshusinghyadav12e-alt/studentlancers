@@ -17,14 +17,33 @@
  */
 
 export type JobCategory =
-  | 'Design'
-  | 'Engineering'
-  | 'Marketing'
-  | 'Writing'
-  | 'Research'
-  | 'Data'
-  | 'Video'
-  | 'Tutoring';
+  | 'Web Development'
+  | 'Mobile Development'
+  | 'UI/UX Design'
+  | 'Graphic Design'
+  | 'Video Editing'
+  | 'Content Writing'
+  | 'Copywriting'
+  | 'SEO'
+  | 'Digital Marketing'
+  | 'Social Media Management'
+  | 'Data Entry'
+  | 'Virtual Assistant'
+  | 'AI / Machine Learning'
+  | 'Automation'
+  | 'Cybersecurity'
+  | 'DevOps'
+  | 'Game Development'
+  | 'WordPress'
+  | 'Shopify'
+  | 'E-commerce'
+  | 'Customer Support'
+  | 'Sales'
+  | 'Business Research'
+  | 'Finance'
+  | 'Accounting'
+  | 'Tutoring'
+  | 'Other';
 
 export type BudgetType = 'fixed' | 'hourly';
 
@@ -60,7 +79,7 @@ export const JOBS: Job[] = [
       'Translate our existing Figma system into a polished Webflow site. Two-week engagement, fixed price.',
     description:
       'We have an approved Figma file for our marketing site (4 pages: home, product, pricing, contact). We are looking for a designer who can take ownership of the Webflow build end-to-end: setting up the design system in Webflow, translating the Figma to responsive Webflow components, and tightening the final QA pass.\n\nYou will work directly with our marketing lead. We will provide brand assets, copy, and a 30-minute kickoff. We expect ~10–20 hours per week over 1–2 weeks.',
-    category: 'Design',
+    category: 'UI/UX Design',
     budget: { type: 'fixed', amount: 1200 },
     duration: '1–2 weeks',
     hours: '10–20 hrs / week',
@@ -77,7 +96,7 @@ export const JOBS: Job[] = [
     summary: 'Build an interactive dashboard over a public education dataset. ~3 week engagement.',
     description:
       'Atlas Research is publishing a dataset on college outcomes and we need an interactive dashboard so readers can slice it by state, major, and year. We have a CSV, a list of questions we want answered, and a Streamlit deploy target. You will own the build, the chart design, and a short README.',
-    category: 'Data',
+    category: 'AI / Machine Learning',
     budget: { type: 'hourly', amount: 45 },
     duration: '2–4 weeks',
     hours: '10–20 hrs / week',
@@ -94,7 +113,7 @@ export const JOBS: Job[] = [
     summary: 'Three launch emails, a landing page, and a press release. ~1 week.',
     description:
       'We are launching a new product next month and need sharp, conversion-focused copy across three surfaces: a launch email sequence (3 emails), the landing page hero + sub, and a press release. Voice: confident, plain-spoken, a little dry. References will be provided.',
-    category: 'Writing',
+    category: 'Copywriting',
     budget: { type: 'fixed', amount: 900 },
     duration: '1 week',
     hours: '5–10 hrs / week',
@@ -129,7 +148,7 @@ export const JOBS: Job[] = [
     summary: 'Small, well-scoped engagement to fix a known Android push notification issue.',
     description:
       'We have a known regression in our React Native app: push notifications are not delivered on Android after the app is background-killed. We have a reduced repro and a hypothesis. Looking for someone who has shipped RN apps to Android to fix and ship the patch this week.',
-    category: 'Engineering',
+    category: 'Mobile Development',
     budget: { type: 'fixed', amount: 450 },
     duration: 'Less than 1 week',
     hours: '5–10 hrs / week',
@@ -146,7 +165,7 @@ export const JOBS: Job[] = [
     summary: 'Rough iPhone cuts → polished 30–45s vertical videos with captions and music.',
     description:
       'We shot six short testimonial videos on an iPhone. Looking for a video editor to trim, add captions, score with royalty-free music, and export vertical 30–45s cuts for our homepage. Source files are in Google Drive.',
-    category: 'Video',
+    category: 'Video Editing',
     budget: { type: 'fixed', amount: 600 },
     duration: '1–2 weeks',
     hours: '5–10 hrs / week',
@@ -163,7 +182,7 @@ export const JOBS: Job[] = [
     summary: 'Help run a 6-week diary study with 12 participants for a banking client.',
     description:
       'We are running a 6-week diary study for a regional bank and need a research assistant to help with participant recruitment, weekly check-ins, and tagging notes in Dovetail. Prior diary-study experience is a plus but not required — we will teach you our process.',
-    category: 'Research',
+    category: 'Business Research',
     budget: { type: 'hourly', amount: 28 },
     duration: '1–3 months',
     hours: '5–10 hrs / week',
@@ -180,7 +199,7 @@ export const JOBS: Job[] = [
     summary: 'Long-form posts targeting comparison keywords in the project management space.',
     description:
       'We need four 1,200-word blog posts targeting "X vs Y" comparison keywords in the project-management space. You will receive an outline, a target keyword, and three reference posts per piece. Voice: clear, technical, second-person.',
-    category: 'Writing',
+    category: 'SEO',
     budget: { type: 'fixed', amount: 800 },
     duration: '1–2 weeks',
     hours: '5–10 hrs / week',
@@ -197,7 +216,7 @@ export const JOBS: Job[] = [
     summary: 'Twelve on-brand spot illustrations used across empty states and onboarding.',
     description:
       'We need twelve 1x illustrations used across empty states, onboarding, and error screens in our fintech iOS app. Style: clean, geometric, two-tone. We will provide a style frame and a color palette. Final files should be SVG with named layers.',
-    category: 'Design',
+    category: 'Graphic Design',
     budget: { type: 'fixed', amount: 2400 },
     duration: '1–3 months',
     hours: '5–10 hrs / week',
@@ -214,7 +233,7 @@ export const JOBS: Job[] = [
     summary: 'Adapt three policies (Access Control, Vendor Risk, Incident Response) for our stack.',
     description:
       'We are working toward SOC 2 Type 1 and need help adapting three security policies — Access Control, Vendor Risk Management, and Incident Response — to our actual stack (Vercel, AWS, Linear, Notion, GitHub). You will draft v1; our vCISO will review.',
-    category: 'Research',
+    category: 'Cybersecurity',
     budget: { type: 'hourly', amount: 55 },
     duration: '2–4 weeks',
     hours: '5–10 hrs / week',
@@ -231,7 +250,7 @@ export const JOBS: Job[] = [
     summary: 'Shoot, edit, and post 20 short-form videos with a clear hook formula.',
     description:
       'We want to test TikTok as a channel for our DTC brand. Looking for someone to shoot, edit, and post 20 short-form videos over 30 days, following a hook template we will provide. We will ship product samples and brand guidelines.',
-    category: 'Marketing',
+    category: 'Social Media Management',
     budget: { type: 'fixed', amount: 1500 },
     duration: '1 month',
     hours: '10–20 hrs / week',
@@ -248,7 +267,7 @@ export const JOBS: Job[] = [
     summary: 'Run scheduled sweeps over a small set of vision models, log results, summarize.',
     description:
       'We are a 4-person lab and need a part-time research assistant to run scheduled hyperparameter sweeps over a small set of vision models, log results in Weights & Biases, and write a short weekly summary. Must be comfortable with PyTorch and the W&B CLI.',
-    category: 'Data',
+    category: 'AI / Machine Learning',
     budget: { type: 'hourly', amount: 40 },
     duration: '1–3 months',
     hours: '5–10 hrs / week',
@@ -263,14 +282,33 @@ export const JOBS: Job[] = [
 /* ─── Derived helpers ─────────────────────────────────────────── */
 
 export const JOB_CATEGORIES: JobCategory[] = [
-  'Design',
-  'Engineering',
-  'Marketing',
-  'Writing',
-  'Research',
-  'Data',
-  'Video',
+  'Web Development',
+  'Mobile Development',
+  'UI/UX Design',
+  'Graphic Design',
+  'Video Editing',
+  'Content Writing',
+  'Copywriting',
+  'SEO',
+  'Digital Marketing',
+  'Social Media Management',
+  'Data Entry',
+  'Virtual Assistant',
+  'AI / Machine Learning',
+  'Automation',
+  'Cybersecurity',
+  'DevOps',
+  'Game Development',
+  'WordPress',
+  'Shopify',
+  'E-commerce',
+  'Customer Support',
+  'Sales',
+  'Business Research',
+  'Finance',
+  'Accounting',
   'Tutoring',
+  'Other',
 ];
 
 export const BUDGET_TYPES: BudgetType[] = ['fixed', 'hourly'];

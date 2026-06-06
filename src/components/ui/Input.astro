@@ -237,6 +237,12 @@ const classes = [
     -moz-appearance: none;
     padding-right: var(--space-xl);
     cursor: pointer;
+    /* Hint to the browser that the page surface is themed so the
+     * native dropdown list paints with the same palette. Without
+     * this, Firefox + Safari render the open <option> list on the
+     * UA-default light surface in dark mode and the text becomes
+     * invisible. */
+    color-scheme: light dark;
   }
 
   .ds-input__select-caret {
@@ -246,5 +252,14 @@ const classes = [
     transform: translateY(-50%);
     color: var(--color-mute);
     pointer-events: none;
+  }
+
+  /* The <option> elements inside a <select> are rendered by the
+   * browser on its own surface, not on the page. We can only style
+   * the closed-state caret and trigger; the open list picks up the
+   * `color-scheme` hint above. */
+  .ds-input option {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
   }
 </style>

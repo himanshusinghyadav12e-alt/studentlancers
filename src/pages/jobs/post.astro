@@ -72,20 +72,26 @@ import ThemeToggle from '../../components/ui/ThemeToggle.astro';
         >
           <div
             id="post-alert"
-            class="auth-alert"
-            role="alert"
+            class="post-alert"
+            role="status"
+            aria-live="polite"
             data-form-alert
             hidden
           >
-            <svg class="auth-alert__icon" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+            <svg class="post-alert__icon" viewBox="0 0 18 18" fill="none" aria-hidden="true">
               <circle cx="9" cy="9" r="7.5" stroke="currentColor" stroke-width="1.4" />
               <path d="M9 5.5v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
               <circle cx="9" cy="12.4" r="0.9" fill="currentColor" />
             </svg>
-            <div class="auth-alert__body">
-              <p class="auth-alert__title" data-form-alert-title>Please review the form.</p>
-              <p class="auth-alert__msg" data-form-alert-msg>Some required fields are missing.</p>
+            <div class="post-alert__body">
+              <p class="post-alert__title" data-form-alert-title>A few fields need attention.</p>
+              <p class="post-alert__msg" data-form-alert-msg>Check the highlighted fields below and try again.</p>
             </div>
+            <button type="button" class="post-alert__close" data-form-alert-close aria-label="Dismiss">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+              </svg>
+            </button>
           </div>
 
           {/* ── 1. Basics ──────────────────────────────────── */}
@@ -122,14 +128,33 @@ import ThemeToggle from '../../components/ui/ThemeToggle.astro';
                   data-field="category"
                 >
                   <option value="" disabled selected>Pick a category</option>
-                  <option value="design">Design</option>
-                  <option value="engineering">Engineering</option>
-                  <option value="marketing">Marketing</option>
-                  <option value="writing">Writing</option>
-                  <option value="research">Research</option>
-                  <option value="data">Data</option>
-                  <option value="video">Video</option>
+                  <option value="web-development">Web Development</option>
+                  <option value="mobile-development">Mobile Development</option>
+                  <option value="uiux-design">UI/UX Design</option>
+                  <option value="graphic-design">Graphic Design</option>
+                  <option value="video-editing">Video Editing</option>
+                  <option value="content-writing">Content Writing</option>
+                  <option value="copywriting">Copywriting</option>
+                  <option value="seo">SEO</option>
+                  <option value="digital-marketing">Digital Marketing</option>
+                  <option value="social-media-management">Social Media Management</option>
+                  <option value="data-entry">Data Entry</option>
+                  <option value="virtual-assistant">Virtual Assistant</option>
+                  <option value="ai-machine-learning">AI / Machine Learning</option>
+                  <option value="automation">Automation</option>
+                  <option value="cybersecurity">Cybersecurity</option>
+                  <option value="devops">DevOps</option>
+                  <option value="game-development">Game Development</option>
+                  <option value="wordpress">WordPress</option>
+                  <option value="shopify">Shopify</option>
+                  <option value="ecommerce">E-commerce</option>
+                  <option value="customer-support">Customer Support</option>
+                  <option value="sales">Sales</option>
+                  <option value="business-research">Business Research</option>
+                  <option value="finance">Finance</option>
+                  <option value="accounting">Accounting</option>
                   <option value="tutoring">Tutoring</option>
+                  <option value="other">Other</option>
                 </select>
                 <svg class="ds-input__select-caret" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
                   <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
@@ -488,6 +513,108 @@ import ThemeToggle from '../../components/ui/ThemeToggle.astro';
     display: flex;
     flex-direction: column;
     gap: var(--space-2xl);
+  }
+
+  /* Per-field inline error appended by post-form.ts. Visible in
+   * both light and dark mode because it consumes the token-driven
+   * --color-error / --color-error-deep pair. */
+  .post-form :global(.ds-field__error) {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    font-size: var(--text-caption);
+    line-height: var(--text-body-sm-line);
+    color: var(--color-error);
+    animation: post-fade-in 0.18s ease;
+  }
+  .post-form :global(.ds-field__error)::before {
+    content: "";
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+    background-color: var(--color-error);
+    -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13Zm0 3.5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 5Zm0 7.5a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8Z' fill='black'/></svg>")
+      center / contain no-repeat;
+    mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13Zm0 3.5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 5Zm0 7.5a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8Z' fill='black'/></svg>")
+      center / contain no-repeat;
+  }
+  .post-form :global(.ds-field__hint) {
+    font-size: var(--text-caption);
+    line-height: var(--text-caption-line);
+    color: var(--color-mute);
+  }
+
+  /* Inline form-level alert — compact, friendly, dismissible.
+   * Sits at the top of the form but takes the minimum vertical
+   * space so a validation pass never feels like a full-page
+   * error takeover. The first invalid field below still gets
+   * focus and its own per-field message. */
+  .post-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-xs);
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--color-error) 10%, var(--color-canvas));
+    color: var(--color-error-deep);
+    border: 1px solid color-mix(in srgb, var(--color-error) 25%, var(--color-hairline));
+    font-size: var(--text-body-sm);
+    line-height: var(--text-body-sm-line);
+    animation: post-fade-in 0.18s ease;
+  }
+  .post-alert[hidden] {
+    display: none;
+  }
+  .post-alert__icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: var(--color-error);
+  }
+  .post-alert__body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .post-alert__title {
+    margin: 0;
+    font-weight: var(--text-body-sm-strong-weight);
+    color: var(--color-ink);
+  }
+  .post-alert__msg {
+    margin: 0;
+    color: var(--color-error-deep);
+  }
+  .post-alert__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    border-radius: var(--radius-xs);
+    background: transparent;
+    border: 0;
+    color: var(--color-error);
+    cursor: pointer;
+    transition: background-color 0.12s ease, color 0.12s ease;
+  }
+  .post-alert__close:hover {
+    background: color-mix(in srgb, var(--color-error) 12%, transparent);
+    color: var(--color-error-deep);
+  }
+  .post-alert__close:focus-visible {
+    outline: 2px solid var(--color-link);
+    outline-offset: 1px;
+  }
+  @keyframes post-fade-in {
+    from { opacity: 0; transform: translateY(-2px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   .post-section {

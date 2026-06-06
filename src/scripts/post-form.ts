@@ -60,8 +60,10 @@ const VALIDATORS: Record<string, (value: string) => string | null> = {
 
 function setFieldError(field: HTMLElement | null, message: string | null) {
   if (!field) return;
-  const fieldEl = field.closest('.ds-field') as HTMLElement | null;
-  if (!fieldEl) return;
+  // Most fields live inside a .ds-field wrapper (Field component).
+  // The tag input does not — fall back to the field itself so we
+  // can still surface the error inline below it.
+  const fieldEl = (field.closest('.ds-field') as HTMLElement | null) ?? field;
   fieldEl.querySelectorAll('.ds-field__error[data-post-error]').forEach((n) => n.remove());
   const input = fieldEl.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('.ds-input, .post-tags');
   if (input && 'classList' in input) {
@@ -81,7 +83,7 @@ function setFieldError(field: HTMLElement | null, message: string | null) {
   }
 }
 
-function setFormAlert(alertEl: HTMLElement | null, message: string | null, title = 'Please review the form.') {
+function setFormAlert(alertEl: HTMLElement | null, message: string | null, title = 'A few fields need attention.') {
   if (!alertEl) return;
   if (!message) {
     alertEl.setAttribute('hidden', '');
@@ -135,14 +137,10 @@ function validateForm(form: HTMLFormElement, skills: string[]): string | null {
   if (skills.length < 3) {
     const tags = form.querySelector<HTMLElement>('[data-tags]');
     if (tags) {
-      const wrap = tags.closest('.post-section');
-      const existing = wrap?.querySelector<HTMLElement>('.ds-field__error[data-post-error]');
-      if (!existing) {
-        setFieldError(tags, 'Add at least 3 skills so students can find this brief.');
-        if (!firstInvalid) {
-          firstInvalid = tags;
-          firstMessage = 'Add at least 3 skills.';
-        }
+      setFieldError(tags, 'Add at least 3 skills so students can find this brief.');
+      if (!firstInvalid) {
+        firstInvalid = tags;
+        firstMessage = 'Add at least 3 skills so students can find this brief.';
       }
     }
   } else {
@@ -151,8 +149,23 @@ function validateForm(form: HTMLFormElement, skills: string[]): string | null {
 
   if (firstInvalid instanceof HTMLElement) {
     firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    if (firstInvalid instanceof HTMLElement && typeof firstInvalid.focus === 'function') {
-      firstInvalid.focus();
+    // Prefer focusing a real focusable target inside the invalid
+    // region — the tag input is a div wrapper around an <input>,
+    // so focusing the wrapper would do nothing. For Field-wrapped
+    // controls the first form control is the right focus target.
+    const focusTarget =
+      (firstInvalid.matches('input, textarea, select')
+        ? firstInvalid
+        : firstInvalid.querySelector<HTMLElement>('input, textarea, select')) || firstInvalid;
+    if (typeof focusTarget.focus === 'function') {
+      // Use preventScroll: the smooth scrollIntoView above already
+      // brought the field into view; calling focus() with default
+      // behavior would jump-scroll again.
+      try {
+        focusTarget.focus({ preventScroll: true });
+      } catch {
+        focusTarget.focus();
+      }
     }
     return firstMessage;
   }
@@ -378,13 +391,16 @@ async function fakeSubmit(_data: FormData): Promise<{ ok: true; id: string }> {
 /**
  * Real submit path: persists the brief to the local store. Returns
  * the generated brief id and brief record.
+ *
+ * Reads from a FormData snapshot taken before the form was disabled
+ * (disabled fields are excluded from FormData, so calling new
+ * FormData(form) after setLoading(true) returns empty).
  */
 import { store } from './store';
 async function persistBrief(
-  form: HTMLFormElement,
+  data: FormData,
   skills: string[],
 ): Promise<{ ok: true; id: string } | { ok: false; message: string }> {
-  const data = new FormData(form);
   const session = store.auth.current();
   if (!session || session.role !== 'company') {
     return { ok: false, message: 'You need to be signed in as a company to post a brief.' };
@@ -471,10 +487,21 @@ export function mountPostForm() {
   form.addEventListener('input', () => {
     saveDraft();
     renderSummary(form, getSkills());
+    // Hide the top-level alert as soon as the user starts fixing
+    // things — the per-field errors will still drive the rest of
+    // the experience, and a stale "X needs attention" banner that
+    // sits at the top of the form feels punitive.
+    const alertEl = form.querySelector<HTMLElement>('[data-form-alert]');
+    if (alertEl && !alertEl.hidden) setFormAlert(alertEl, null);
   });
   form.addEventListener('change', () => {
     saveDraft();
     renderSummary(form, getSkills());
+  });
+
+  // Wire the alert's dismiss button (rendered next to the message).
+  form.querySelector<HTMLButtonElement>('[data-form-alert-close]')?.addEventListener('click', () => {
+    setFormAlert(form.querySelector<HTMLElement>('[data-form-alert]'), null);
   });
 
   // Clear draft
@@ -513,7 +540,7 @@ export function mountPostForm() {
     const skillsSnapshot = getSkills();
     setLoading(form, true);
     try {
-      const result = await persistBrief(form, skillsSnapshot);
+      const result = await persistBrief(data, skillsSnapshot);
       if (!result.ok) {
         setFormAlert(form.querySelector<HTMLElement>('[data-form-alert]'), result.message);
         setLoading(form, false);

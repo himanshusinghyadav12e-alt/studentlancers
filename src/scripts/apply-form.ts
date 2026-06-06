@@ -136,10 +136,11 @@ import { store } from './store';
 import { getJobById } from '../data/jobs';
 
 async function persistApplication(
-  form: HTMLFormElement,
+  data: FormData,
   briefId: string,
 ): Promise<{ ok: true; id: string } | { ok: false; message: string }> {
-  const data = new FormData(form);
+  // Read from a snapshot taken before the form was disabled —
+  // disabled fields are excluded from FormData.
   const session = store.auth.current();
   if (!session) {
     return { ok: false, message: 'You need to be signed in to apply.' };
@@ -190,7 +191,10 @@ export function mountApplyForm() {
     }
     setLoading(form, true);
     try {
-      const result = await persistApplication(form, briefId);
+      // Capture the form values before setLoading disables every
+      // field — disabled inputs are excluded from FormData.
+      const data = new FormData(form);
+      const result = await persistApplication(data, briefId);
       if (!result.ok) {
         setFormAlert(form.querySelector<HTMLElement>('[data-form-alert]'), result.message);
         setLoading(form, false);
