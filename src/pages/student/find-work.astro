@@ -4,7 +4,6 @@ import Button from '../../components/ui/Button.astro';
 import Badge from '../../components/ui/Badge.astro';
 import ThemeToggle from '../../components/ui/ThemeToggle.astro';
 import {
-  JOBS,
   JOB_CATEGORIES,
   EXP_LEVELS,
   BUDGET_RANGES,
@@ -12,15 +11,18 @@ import {
   experienceLevelFor,
   estimatedTotalBudget,
 } from '../../data/jobs';
+import { listOpenJobs, type ListedJob } from '../../lib/api';
 
 /**
  * /student/find-work
  *
- * Student-facing job board. Static export renders every brief server-side
- * (the catalog is small and ships in the page bundle) and a small inline
- * script applies the URL query string filters on the client. The page is
- * bookmarkable, the result set survives a refresh, and the initial paint
- * is fully styled — no flash of unfiltered content.
+ * Student-facing job board. The server queries public.jobs (RLS
+ * already restricts the result to status='open' rows for student /
+ * anon callers) and renders every open brief. The static catalog in
+ * src/data/jobs.ts no longer powers this page — it is now the
+ * single-source-of-truth for category/recency/format helpers and
+ * the static "more like this" rail on the detail page. New briefs
+ * posted via /jobs/post show up here on the next request.
  *
  * Layout (Upwork-style):
  *   1. Top nav (sticky)
@@ -46,11 +48,19 @@ import {
  *     Apply CTA.
  */
 
-const totalCount = JOBS.length;
+let listedJobs: ListedJob[] = [];
+let loadError: string | null = null;
+try {
+  listedJobs = await listOpenJobs(Astro);
+} catch (err) {
+  loadError = err instanceof Error ? err.message : 'Could not load briefs.';
+}
+const totalCount = listedJobs.length;
 
 // Hours-per-week upper bound, derived from the band string. Mirrors
 // filterJobs() in /data/jobs.ts — keep these two in sync.
-function hoursUpperBound(band: string): number {
+function hoursUpperBound(band: string | null): number {
+  if (!band) return 999;
   const m = band.match(/(\d+)\s*[-–]\s*(\d+)/);
   if (m) return Number(m[2]);
   const single = band.match(/(\d+)/);
@@ -58,6 +68,80 @@ function hoursUpperBound(band: string): number {
   if (/20\+/i.test(band)) return 999;
   return 999;
 }
+
+// Project the live `ListedJob` row into the shape the filter helpers
+// in /data/jobs.ts expect. Only the duration / hours / budget fields
+// are read by the helpers we call; we cast the (DB-string) category
+// to the strict JobCategory union because the live jobs may use the
+// kebab-case slugs the post form stores ('web-development'), not the
+// pretty labels the static catalog uses. The helpers themselves
+// only read `duration`, `hours`, and `budget`, so the category cast
+// is safe.
+type HelperInput = {
+  id: string;
+  title: string;
+  company: string;
+  summary: string;
+  description: string;
+  category: string;
+  budget: { type: 'fixed' | 'hourly'; amount: number };
+  duration: string;
+  hours: string;
+  skills: string[];
+  postedAt: string;
+  location: string;
+  remote: boolean;
+  verified: boolean;
+};
+function projectForHelpers(job: ListedJob): HelperInput {
+  return {
+    id: job.id,
+    title: job.title,
+    company: job.company_name,
+    summary: job.summary,
+    description: job.description,
+    category: job.category,
+    budget: { type: job.budget_type, amount: job.budget_cents / 100 },
+    duration: job.duration ?? '—',
+    hours: job.hours ?? '—',
+    skills: job.skills,
+    postedAt: job.created_at.slice(0, 10),
+    location: 'US',
+    remote: true,
+    verified: false,
+  };
+}
+
+// Stamp per-card attributes once on the server so the client filter
+// pass stays a single data-attribute read per criterion. This is the
+// exact same shape the old static export produced.
+const cardData = listedJobs.map((job) => {
+  const projected = projectForHelpers(job);
+  // The helpers in /data/jobs.ts are typed against the static
+  // `Job` interface (which uses a closed `JobCategory` union). The
+  // live DB stores free-form category strings. The helpers we call
+  // only read `duration` / `hours` / `budget`, so the cast is
+  // confined to this file.
+  const helperInput = projected as unknown as Parameters<typeof experienceLevelFor>[0];
+  return {
+    job,
+    hoursUpper: hoursUpperBound(job.hours),
+    experience: experienceLevelFor(helperInput),
+    total: estimatedTotalBudget(helperInput),
+    postedDate: job.created_at.slice(0, 10),
+    keyword: [
+      job.title,
+      job.company_name,
+      job.summary,
+      job.skills.join(' '),
+      job.category,
+      job.duration ?? '',
+      job.hours ?? '',
+    ]
+      .join(' ')
+      .toLowerCase(),
+  };
+});
 ---
 
 <Layout
@@ -324,42 +408,41 @@ function hoursUpperBound(band: string): number {
       <div class="fw-chips" data-fw-chips hidden aria-live="polite"></div>
 
       <ul class="fw-list" role="list" data-fw-list>
-        {JOBS.map((job) => (
+        {cardData.map(({ job, hoursUpper, experience, total, postedDate, keyword }) => (
           <li
             data-fw-item
             data-fw-id={job.id}
             data-fw-cat={job.category}
-            data-fw-budget={job.budget.type}
-            data-fw-hours={hoursUpperBound(job.hours)}
-            data-fw-remote={job.remote ? '1' : '0'}
-            data-fw-experience={experienceLevelFor(job)}
-            data-fw-total={estimatedTotalBudget(job)}
-            data-fw-posted={job.postedAt}
-            data-fw-keyword={`${job.title} ${job.company} ${job.summary} ${job.skills.join(' ')} ${job.category} ${experienceLevelFor(job)} ${job.location}`.toLowerCase()}
+            data-fw-budget={job.budget_type}
+            data-fw-hours={hoursUpper}
+            data-fw-remote="1"
+            data-fw-experience={experience}
+            data-fw-total={total}
+            data-fw-posted={postedDate}
+            data-fw-keyword={keyword}
           >
             <a class="fw-card" href={`/jobs/${job.id}`} aria-label={`View ${job.title}`}>
               <div class="fw-card__head">
                 <div class="fw-card__head-main">
                   <div class="fw-card__chips">
                     <Badge variant="secondary" mono>{job.category}</Badge>
-                    {job.verified && <Badge variant="success" dot>Verified</Badge>}
-                    {job.remote && <Badge variant="cyan">Remote</Badge>}
+                    <Badge variant="cyan">Remote</Badge>
                   </div>
                   <h2 class="fw-card__title">{job.title}</h2>
                   <p class="fw-card__company">
-                    <span>{job.company}</span>
+                    <span>{job.company_name}</span>
                     <span class="fw-card__dot" aria-hidden="true">·</span>
-                    <span>{formatRelativeDate(job.postedAt)}</span>
+                    <span>{formatRelativeDate(postedDate)}</span>
                   </p>
                 </div>
                 <div class="fw-card__rate">
                   <span class="fw-card__rate-value">
-                    {job.budget.type === 'fixed'
-                      ? `$${job.budget.amount.toLocaleString()}`
-                      : `$${job.budget.amount}`}
+                    {job.budget_type === 'fixed'
+                      ? `$${Math.round(job.budget_cents / 100).toLocaleString()}`
+                      : `$${Math.round(job.budget_cents / 100)}`}
                   </span>
                   <span class="fw-card__rate-unit">
-                    {job.budget.type === 'fixed' ? 'fixed' : '/ hr'}
+                    {job.budget_type === 'fixed' ? 'fixed' : '/ hr'}
                   </span>
                 </div>
               </div>
@@ -372,14 +455,14 @@ function hoursUpperBound(band: string): number {
                     <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3" />
                     <path d="M7 4v3l2 1.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
                   </svg>
-                  {job.duration}
+                  {job.duration ?? '—'}
                 </span>
                 <span class="fw-card__meta-item">
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
                     <rect x="2" y="3" width="10" height="9" rx="1.4" stroke="currentColor" stroke-width="1.3" />
                     <path d="M5 1.5v3M9 1.5v3M2 6h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
                   </svg>
-                  {job.hours}
+                  {job.hours ?? '—'}
                 </span>
               </div>
 
@@ -434,8 +517,9 @@ function hoursUpperBound(band: string): number {
         </span>
         <h2 class="fw-empty__title" data-fw-empty-title>No briefs match those filters.</h2>
         <p class="fw-empty__body" data-fw-empty-body>
-          Try widening the hours or pay type, or clear the search to see the
-          full list of {totalCount} open briefs.
+          {loadError
+            ? loadError
+            : `Try widening the hours or pay type, or clear the search to see the full list of ${totalCount} open briefs.`}
         </p>
         <Button variant="primary" size="md" href="/student/find-work" data-fw-clear-button>Clear filters</Button>
       </div>

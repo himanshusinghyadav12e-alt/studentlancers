@@ -5,53 +5,60 @@ import Input from '../../../components/ui/Input.astro';
 import Field from '../../../components/ui/Field.astro';
 import BackLink from '../../../components/ui/BackLink.astro';
 import ThemeToggle from '../../../components/ui/ThemeToggle.astro';
-import { getAllJobIds, getJobById, formatBudget, type Job } from '../../../data/jobs';
+import { getListedJob } from '../../../lib/api';
+
+export const prerender = false;
 
 /**
  * /jobs/[id]/apply
  *
- * Application flow for a specific brief. The brief content is looked
- * up by the `id` route param from the shared jobs data source — the
- * same catalog that powers /student/find-work and /jobs/[id].
- *
- * The form captures:
+ * Application flow for a specific brief. The brief content is
+ * looked up by the `id` route param from public.jobs (the same
+ * table the listing writes to and reads from). The form captures:
  *   - Cover letter (required, 80+ chars)
  *   - Proposed rate (USD/hr or fixed, depending on brief budget_type)
  *   - Proposed timeline (free text)
  *   - Portfolio link (URL)
  *
- * On submit, the success state shows the application id and a
- * realistic timeline ("Most companies respond within 2 business
- * days" — not a fabricated number specific to this brief).
+ * The submit handler (src/scripts/apply-form.ts) posts the form to
+ * /api/applications, which inserts into public.applications.
+ *
+ * The form renders the same placeholder/fallback when the id is
+ * unknown, so a deep link to a never-existed brief does not 500.
  */
 
-export function getStaticPaths() {
-  return getAllJobIds().map((id) => ({ params: { id } }));
-}
-
 const { id } = Astro.params as { id: string };
-const job = getJobById(id);
 
-const fallback: Job = {
-  id,
-  title: 'Brief ' + id,
-  company: 'A company on StudentLancers',
-  summary:
-    'The full brief content is loaded from the API once you click through from a listing. You can still apply — your application will be sent to the company as soon as they finish posting.',
-  description: 'Full description will appear here once the brief is fully loaded.',
-  category: 'Project',
-  budget: { type: 'fixed', amount: 0 },
-  duration: '—',
-  hours: '—',
-  skills: [],
-  postedAt: '2026-06-05',
-  location: 'US',
-  remote: true,
-  verified: false,
-};
+const liveJob = await getListedJob(Astro, id).catch(() => null);
 
-const view = job ?? fallback;
-const budgetLabel = formatBudget(view);
+const view = liveJob
+  ? {
+      id: liveJob.id,
+      title: liveJob.title,
+      company: liveJob.company_name,
+      summary: liveJob.summary,
+      description: liveJob.description,
+      category: liveJob.category,
+      budgetType: liveJob.budget_type,
+      budgetCents: liveJob.budget_cents,
+      duration: liveJob.duration ?? '—',
+      hours: liveJob.hours ?? '—',
+      skills: liveJob.skills,
+    }
+  : {
+      id,
+      title: 'Brief ' + id,
+      company: 'A company on StudentLancers',
+      summary:
+        'The full brief content is loaded from the API once you click through from a listing. You can still apply — your application will be sent to the company as soon as they finish posting.',
+      description: 'Full description will appear here once the brief is fully loaded.',
+      category: 'Project',
+      budgetType: 'fixed' as const,
+      budgetCents: 0,
+      duration: '—',
+      hours: '—',
+      skills: [] as string[],
+    };
 ---
 
 <Layout title={`Apply · ${view.title}`} description={`Apply to ${view.title}.`} pageAuth="student">
@@ -148,9 +155,9 @@ const budgetLabel = formatBudget(view);
 
             <div class="post-grid-2">
               <Field
-                label={view.budget.type === 'hourly' ? 'Your hourly rate (USD)' : 'Your fixed price (USD)'}
+                label={view.budgetType === 'hourly' ? 'Your hourly rate (USD)' : 'Your fixed price (USD)'}
                 for="apply-rate"
-                hint={view.budget.type === 'hourly' ? `Posted budget: $${view.budget.amount}/hr` : `Posted budget: $${view.budget.amount.toLocaleString()}`}
+                hint={view.budgetType === 'hourly' ? `Posted budget: $${Math.round(view.budgetCents / 100)}/hr` : `Posted budget: $${Math.round(view.budgetCents / 100).toLocaleString()}`}
               >
                 <Input
                   type="number"
@@ -159,7 +166,7 @@ const budgetLabel = formatBudget(view);
                   size="lg"
                   min="5"
                   step="1"
-                  placeholder={view.budget.type === 'hourly' ? 'e.g. 35' : 'e.g. 1100'}
+                  placeholder={view.budgetType === 'hourly' ? 'e.g. 35' : 'e.g. 1100'}
                   required
                   data-field="rate"
                 />
@@ -214,7 +221,11 @@ const budgetLabel = formatBudget(view);
                 {view.summary}
               </p>
               <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-                <span class="dash-pill">{budgetLabel}</span>
+                <span class="dash-pill">
+                  {view.budgetType === 'fixed'
+                    ? `$${Math.round(view.budgetCents / 100).toLocaleString()} fixed`
+                    : `$${Math.round(view.budgetCents / 100)}/hr`}
+                </span>
                 <span class="dash-pill">{view.duration}</span>
                 <span class="dash-pill">{view.hours}</span>
               </div>

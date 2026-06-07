@@ -4,66 +4,82 @@ import Button from '../../../components/ui/Button.astro';
 import Badge from '../../../components/ui/Badge.astro';
 import BackLink from '../../../components/ui/BackLink.astro';
 import ThemeToggle from '../../../components/ui/ThemeToggle.astro';
-import {
-  JOBS,
-  getAllJobIds,
-  getJobById,
-  formatBudget,
-  formatRelativeDate,
-  type Job,
-} from '../../../data/jobs';
+import { formatRelativeDate } from '../../../data/jobs';
+import { getListedJob, listOpenJobs } from '../../../lib/api';
+
+export const prerender = false;
 
 /**
  * /jobs/[id]
  *
- * Single-brief detail page. Source of truth is the shared jobs data
- * module, so the same record powers the listing and this view. The
- * page exposes a primary Apply CTA that links to /jobs/[id]/apply,
- * a sticky sidebar with the metadata pill cluster, and a small
- * "more like this" rail drawn from the same catalog.
+ * Single-brief detail page. Source of truth is now public.jobs —
+ * the same Supabase table the listing and the post-a-brief flow
+ * write to. This route is server-rendered (no `getStaticPaths`)
+ * so newly posted briefs show up here as soon as the company hits
+ * Publish, with no rebuild.
  *
- * No fake activity — no "X students have applied" or "Viewed N times
- * today". The only meta we render is the brief's own attributes
- * (budget, duration, hours) plus a verified-email indicator.
+ * Falls back to a "Brief not found" stub when the id doesn't match
+ * a row the caller can read (RLS limits anon/student callers to
+ * status='open' rows; closed, filled, and never-existed ids all
+ * land here).
+ *
+ * Related briefs: same category as the current brief, excluding
+ * itself, capped at 3. Pulled from the same live query the listing
+ * uses.
  */
 
-export function getStaticPaths() {
-  return getAllJobIds().map((id) => ({ params: { id } }));
-}
-
 const { id } = Astro.params as { id: string };
-const job: Job | undefined = getJobById(id);
 
-// Fallback for unknown slugs — Astro is configured to pre-render only
-// the known IDs above, but server fallback keeps the page resilient.
-const fallback: Job = {
-  id: id,
-  title: 'Brief not found',
-  company: 'A company on StudentLancers',
-  summary: 'The brief you are looking for is no longer available.',
-  description:
-    'This brief may have been closed, withdrawn, or the link is incorrect. Browse all open briefs to find one that fits.',
-  category: 'Design',
-  budget: { type: 'fixed', amount: 0 },
-  duration: '—',
-  hours: '—',
-  skills: [],
-  postedAt: '2026-06-05',
-  location: 'US',
-  remote: true,
-  verified: false,
-};
+const liveJob = await getListedJob(Astro, id).catch(() => null);
 
-const view = job ?? fallback;
-const isFallback = !job;
+const view = liveJob
+  ? {
+      id: liveJob.id,
+      title: liveJob.title,
+      company: liveJob.company_name,
+      summary: liveJob.summary,
+      description: liveJob.description,
+      category: liveJob.category,
+      budgetType: liveJob.budget_type,
+      budgetCents: liveJob.budget_cents,
+      duration: liveJob.duration ?? '—',
+      hours: liveJob.hours ?? '—',
+      skills: liveJob.skills,
+      postedAt: liveJob.created_at.slice(0, 10),
+      remote: true,
+    }
+  : {
+      id,
+      title: 'Brief not found',
+      company: 'A company on StudentLancers',
+      summary: 'The brief you are looking for is no longer available.',
+      description:
+        'This brief may have been closed, withdrawn, or the link is incorrect. Browse all open briefs to find one that fits.',
+      category: 'Design',
+      budgetType: 'fixed' as const,
+      budgetCents: 0,
+      duration: '—',
+      hours: '—',
+      skills: [] as string[],
+      postedAt: '2026-06-05',
+      remote: true,
+    };
 
-const budgetLabel = formatBudget(view);
+const isFallback = !liveJob;
 const postedLabel = formatRelativeDate(view.postedAt);
 
 // Related: same category, excluding the current brief, capped at 3.
-const related = JOBS.filter(
-  (j) => j.id !== view.id && j.category === view.category
-).slice(0, 3);
+const allOpen = await listOpenJobs(Astro).catch(() => []);
+const related = allOpen
+  .filter((j) => j.id !== view.id && j.category === view.category)
+  .slice(0, 3)
+  .map((j) => ({
+    id: j.id,
+    title: j.title,
+    summary: j.summary,
+    budgetType: j.budget_type,
+    budgetCents: j.budget_cents,
+  }));
 
 // Description rendered as plain text with paragraph breaks preserved.
 const descriptionParagraphs = view.description.split(/\n\s*\n/);
@@ -123,7 +139,6 @@ const descriptionParagraphs = view.description.split(/\n\s*\n/);
           <header class="jd-head">
             <div class="jd-head__chips">
               <Badge variant="secondary" mono>{view.category}</Badge>
-              {view.verified && <Badge variant="success" dot>Verified company</Badge>}
               {view.remote && <Badge variant="cyan">Remote</Badge>}
             </div>
             <h1 class="jd-head__title">{view.title}</h1>
@@ -132,6 +147,10 @@ const descriptionParagraphs = view.description.split(/\n\s*\n/);
               <span class="jd-head__dot" aria-hidden="true">·</span>
               <span>{postedLabel}</span>
             </p>
+            {/* verified badge reserved for the future — Supabase-backed
+                briefs always have owner_id set, so we don't yet have
+                a reliable "verified" signal. Render a Remote chip
+                instead so the meta row stays meaningful. */}
             <p class="jd-head__summary">{view.summary}</p>
           </header>
 
@@ -204,9 +223,9 @@ const descriptionParagraphs = view.description.split(/\n\s*\n/);
                       <div class="jd-related__head">
                         <h3 class="jd-related__title">{r.title}</h3>
                         <span class="jd-related__rate">
-                          {r.budget.type === 'fixed'
-                            ? `$${r.budget.amount.toLocaleString()}`
-                            : `$${r.budget.amount}/hr`}
+                          {r.budgetType === 'fixed'
+                            ? `$${Math.round(r.budgetCents / 100).toLocaleString()}`
+                            : `$${Math.round(r.budgetCents / 100)}/hr`}
                         </span>
                       </div>
                       <p class="jd-related__summary">{r.summary}</p>
@@ -228,12 +247,12 @@ const descriptionParagraphs = view.description.split(/\n\s*\n/);
           <div class="jd-apply">
             <div class="jd-apply__rate">
               <span class="jd-apply__rate-value">
-                {view.budget.type === 'fixed'
-                  ? `$${view.budget.amount.toLocaleString()}`
-                  : `$${view.budget.amount}`}
+                {view.budgetType === 'fixed'
+                  ? `$${Math.round(view.budgetCents / 100).toLocaleString()}`
+                  : `$${Math.round(view.budgetCents / 100)}`}
               </span>
               <span class="jd-apply__rate-unit">
-                {view.budget.type === 'fixed' ? 'fixed price' : 'per hour'}
+                {view.budgetType === 'fixed' ? 'fixed price' : 'per hour'}
               </span>
             </div>
 
@@ -261,9 +280,7 @@ const descriptionParagraphs = view.description.split(/\n\s*\n/);
               </div>
               <div class="jd-apply__fact">
                 <dt>Location</dt>
-                <dd>
-                  {view.remote ? 'Remote' : `On-site · ${view.location}`}
-                </dd>
+                <dd>Remote</dd>
               </div>
               <div class="jd-apply__fact">
                 <dt>Posted</dt>
