@@ -79,12 +79,13 @@ export interface DbApplication {
 /**
  * Application shape used in the rest of the UI. Built by joining
  * `applications` with `jobs` and `users` so list pages can render in
- * a single round-trip.
+ * a single round-trip. The `job` and `applicant` sub-objects are
+ * populated by the select() in src/lib/api.ts; they are non-null
+ * because we always select them together.
  */
 export interface ApplicationWithJob extends DbApplication {
-  job_title: string;
-  applicant_name: string;
-  applicant_email: string;
+  job: Pick<DbJob, 'id' | 'title' | 'owner_id' | 'budget_type' | 'budget_cents'>;
+  applicant: { id: string; name: string; email: string };
 }
 
 /**
