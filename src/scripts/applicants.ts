@@ -82,13 +82,37 @@ function applyFilter() {
   });
 }
 
-function setActiveFilter(value: 'all' | ApplicationStatus) {
+function setActiveFilter(value: 'all' | ApplicationStatus, opts: { push?: boolean } = {}) {
   state.activeFilter = value;
   findFilters().forEach((chip) => {
     const isActive = chip.getAttribute('data-filter') === value;
     chip.setAttribute('aria-pressed', isActive ? 'true' : 'false');
   });
   applyFilter();
+  // Mirror the active filter into the URL so a Back from a brief
+  // detail returns to the same view, and the page is shareable.
+  try {
+    const url = new URL(window.location.href);
+    if (value === 'all') url.searchParams.delete('status');
+    else url.searchParams.set('status', value);
+    // replaceState keeps the back stack clean — chip clicks are
+    // presentation, not navigation. Forward navigation from a deep
+    // link still lands on the right filter.
+    window.history.replaceState(null, '', url.toString());
+  } catch {
+    // ignore
+  }
+}
+
+function readFilterFromURL(): 'all' | ApplicationStatus {
+  try {
+    const sp = new URLSearchParams(window.location.search);
+    const v = sp.get('status');
+    if (v === 'new' || v === 'shortlisted' || v === 'hired' || v === 'rejected') return v;
+  } catch {
+    // ignore
+  }
+  return 'all';
 }
 
 function wireFilters() {
@@ -306,5 +330,14 @@ export function mountApplicants() {
   wireFilters();
   wireManageToggles();
   wireActions();
-  applyFilter();
+  // Restore the filter from the URL on load so a deep link or
+  // browser Back lands on the right slice of the inbox. The
+  // call uses replaceState=false so we don't pollute the back
+  // stack with the initial sync.
+  setActiveFilter(readFilterFromURL());
+  // Also react to browser Back/Forward that lands on this page
+  // with a different ?status= value in the URL.
+  window.addEventListener('popstate', () => {
+    setActiveFilter(readFilterFromURL());
+  });
 }

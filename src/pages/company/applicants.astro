@@ -3,6 +3,7 @@ import DashboardLayout, { type NavItem } from '../../layouts/DashboardLayout.ast
 import Button from '../../components/ui/Button.astro';
 import Badge from '../../components/ui/Badge.astro';
 import SubPageShell from '../../components/SubPageShell.astro';
+import BackLink from '../../components/ui/BackLink.astro';
 import { store, type ApplicationStatus } from '../../scripts/store';
 
 /**
@@ -109,6 +110,7 @@ const statusPillClass: Record<ApplicationStatus, string> = {
     >
       <header class="dash-page-head">
         <div class="dash-page-head__copy">
+          <BackLink href="/company/dashboard" label="Back to overview" />
           <span class="dash-page-head__eyebrow">Applicants</span>
           <h1 class="dash-page-head__title">Review ranked proposals</h1>
           <p class="dash-page-head__lead">

@@ -3,6 +3,7 @@ import Layout from '../../../layouts/Layout.astro';
 import Button from '../../../components/ui/Button.astro';
 import Input from '../../../components/ui/Input.astro';
 import Field from '../../../components/ui/Field.astro';
+import BackLink from '../../../components/ui/BackLink.astro';
 import ThemeToggle from '../../../components/ui/ThemeToggle.astro';
 import { getAllJobIds, getJobById, formatBudget, type Job } from '../../../data/jobs';
 
@@ -74,6 +75,7 @@ const budgetLabel = formatBudget(view);
       </nav>
       <div class="post-top__right">
         <ThemeToggle size="md" />
+        <BackLink href={`/jobs/${id}`} label="Back to brief" variant="pill" />
         <Button variant="secondary-sm" size="md" href="/student/dashboard">Save & exit</Button>
       </div>
     </div>

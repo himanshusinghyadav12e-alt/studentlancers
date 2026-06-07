@@ -2,6 +2,7 @@
 import Layout from '../../../layouts/Layout.astro';
 import Button from '../../../components/ui/Button.astro';
 import Badge from '../../../components/ui/Badge.astro';
+import BackLink from '../../../components/ui/BackLink.astro';
 import ThemeToggle from '../../../components/ui/ThemeToggle.astro';
 import {
   JOBS,
@@ -102,7 +103,7 @@ const descriptionParagraphs = view.description.split(/\n\s*\n/);
       </nav>
       <div class="jd-top__right">
         <ThemeToggle size="md" />
-        <Button variant="secondary-sm" size="md" href="/student/find-work">Back to briefs</Button>
+        <BackLink href="/student/find-work" label="Back to briefs" variant="pill" />
       </div>
     </div>
   </header>

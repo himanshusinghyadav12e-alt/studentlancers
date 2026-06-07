@@ -5,6 +5,7 @@ import Badge from '../../components/ui/Badge.astro';
 import Field from '../../components/ui/Field.astro';
 import Input from '../../components/ui/Input.astro';
 import SubPageShell from '../../components/SubPageShell.astro';
+import BackLink from '../../components/ui/BackLink.astro';
 import { store } from '../../scripts/store';
 
 /**
@@ -65,6 +66,7 @@ const showShell = !isCompany;
     >
       <header class="dash-page-head">
         <div class="dash-page-head__copy">
+          <BackLink href="/company/dashboard" label="Back to overview" />
           <span class="dash-page-head__eyebrow">Company profile</span>
           <h1 class="dash-page-head__title">How students see you</h1>
           <p class="dash-page-head__lead">

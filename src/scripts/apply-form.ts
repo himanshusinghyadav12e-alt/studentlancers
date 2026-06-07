@@ -5,6 +5,10 @@
  *   - Inline + form-level validation
  *   - Loading state on submit
  *   - Success state with a generated application id
+ *   - Per-brief draft autosave to localStorage so a refresh or
+ *     accidental Back doesn't lose what the student typed
+ *   - beforeunload guard when the draft is dirty, so the browser
+ *     asks before navigating away
  */
 
 const VALIDATORS: Record<string, (value: string) => string | null> = {
@@ -39,6 +43,14 @@ const VALIDATORS: Record<string, (value: string) => string | null> = {
     return null;
   },
 };
+
+function debounce<T extends (...args: never[]) => void>(fn: T, ms: number) {
+  let handle: ReturnType<typeof setTimeout> | null = null;
+  return (...args: Parameters<T>) => {
+    if (handle) clearTimeout(handle);
+    handle = setTimeout(() => fn(...args), ms);
+  };
+}
 
 function setFieldError(field: HTMLElement | null, message: string | null) {
   if (!field) return;
@@ -182,6 +194,68 @@ export function mountApplyForm() {
   // ['jobs', '<id>', 'apply']
   const briefId = pathParts.length >= 2 ? pathParts[pathParts.length - 2] : '';
 
+  /* ─── Per-brief draft autosave ───────────────────────────────
+   *
+   * The form has no real submit endpoint yet, so a refresh or a
+   * Back click would otherwise lose the cover letter, rate, and
+   * portfolio link. Key the draft by brief id so applying to one
+   * brief does not bleed into another. The draft is cleared the
+   * moment a submission succeeds. */
+  const DRAFT_KEY = `sl-apply-draft-v1:${briefId}`;
+  let draftDirty = false;
+
+  function readDraft(): Record<string, string> {
+    const data = new FormData(form);
+    const obj: Record<string, string> = {};
+    for (const [k, v] of data.entries()) obj[k] = String(v);
+    return obj;
+  }
+
+  function applyDraft(draft: Record<string, string>) {
+    for (const [name, value] of Object.entries(draft)) {
+      const el = form.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[name="${name}"]`);
+      if (el && value) el.value = value;
+    }
+  }
+
+  function saveDraft() {
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(readDraft()));
+      draftDirty = true;
+    } catch {
+      // ignore quota / disabled storage
+    }
+  }
+
+  const saveDraftDebounced = debounce(saveDraft, 250);
+
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (raw) {
+      const draft = JSON.parse(raw) as Record<string, string>;
+      if (draft && typeof draft === 'object') applyDraft(draft);
+    }
+  } catch {
+    // ignore
+  }
+
+  form.addEventListener('input', saveDraftDebounced);
+  form.addEventListener('change', saveDraftDebounced);
+
+  // Browser-level guard: if the student is mid-application and tries
+  // to navigate away, ask the browser to confirm. We do not block
+  // the in-app "Back to brief" pill (it lives on this same page) and
+  // we never block when the form is empty.
+  const beforeUnload = (event: BeforeUnloadEvent) => {
+    const empty = !readDraft().cover && !readDraft().rate && !readDraft().timeline && !readDraft().portfolio;
+    if (empty || !draftDirty) return;
+    event.preventDefault();
+    // Modern browsers ignore the custom string; setting returnValue
+    // is the documented way to trigger the prompt.
+    event.returnValue = '';
+  };
+  window.addEventListener('beforeunload', beforeUnload);
+
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     clearAllErrors(form);
@@ -208,6 +282,15 @@ export function mountApplyForm() {
       if (main) main.setAttribute('hidden', '');
       if (success) success.removeAttribute('hidden');
       if (idEl) idEl.textContent = result.id;
+      // Submission succeeded — clear the draft and the unload guard
+      // so a forward navigation does not trigger a "leave site?" prompt.
+      try {
+        localStorage.removeItem(DRAFT_KEY);
+      } catch {
+        // ignore
+      }
+      draftDirty = false;
+      window.removeEventListener('beforeunload', beforeUnload);
       window.scrollTo({ top: 0, behavior: 'smooth' });
       toast.success(
         'Application sent',

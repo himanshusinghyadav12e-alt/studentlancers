@@ -115,6 +115,16 @@ const {
 			mountSessionBar();
 			import { mountAuthGuards } from '../scripts/auth-guards';
 			mountAuthGuards();
+
+			// Explicit scroll restoration policy: when the user lands on
+			// a fresh entry (Forward, deep link, refresh) we start at the
+			// top; on Back we let the browser restore the previous scroll
+			// position. The default is "auto" which is what we want, but
+			// setting it explicitly keeps a future contributor from
+			// accidentally turning it off.
+			if ('scrollRestoration' in window.history) {
+				window.history.scrollRestoration = 'auto';
+			}
 		</script>
 	</body>
 </html>

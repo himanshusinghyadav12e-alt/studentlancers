@@ -1,0 +1,156 @@
+---
+/**
+ * BackLink
+ *
+ * A small "← Back" affordance for detail pages and sub-pages. Prefers
+ * the browser's history (history.back()) so the user returns to the
+ * exact previous page — including scroll position and any filter
+ * state — but falls back to `href` when the user landed on the page
+ * directly (history length is 1, or the referrer is on a different
+ * origin, or JS is disabled).
+ *
+ * Visual variants:
+ *   - inline  → text+arrow, for breadcrumbs and sticky sidebars
+ *   - pill    → compact pill, for top-nav and toolbar slots
+ *
+ * No JS by default. The `data-back-link` hook opts in to the
+ * history.back() path; absent it, the link is a plain anchor.
+ */
+export interface Props {
+  /** Fallback destination if there's no history to pop. */
+  href: string;
+  /** Short label, e.g. "Back to briefs". */
+  label?: string;
+  /** Visual treatment. */
+  variant?: 'inline' | 'pill';
+  /** Use history.back() when a previous entry exists. */
+  useHistory?: boolean;
+  class?: string;
+}
+
+const {
+  href,
+  label = 'Back',
+  variant = 'inline',
+  useHistory = true,
+  class: className = '',
+} = Astro.props as Props;
+---
+
+<a
+  href={href}
+  class:list={['sl-back', `sl-back--${variant}`, className]}
+  data-back-link={useHistory ? '' : undefined}
+  rel="prev"
+>
+  <svg
+    class="sl-back__arrow"
+    width="14"
+    height="14"
+    viewBox="0 0 14 14"
+    fill="none"
+    aria-hidden="true"
+  >
+    <path
+      d="M8.5 3.5L4.5 7l4 3.5"
+      stroke="currentColor"
+      stroke-width="1.6"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </svg>
+  <span class="sl-back__label">{label}</span>
+</a>
+
+<script is:inline>
+  /**
+   * Wire every [data-back-link] anchor to history.back() if a real
+   * prior entry exists; otherwise let the href handle it.
+   *
+   * Inline + dependency-free so the wiring is in place before the
+   * first click and survives any module-load race on static pages.
+   */
+  (function () {
+    function wireBackLinks() {
+      var links = document.querySelectorAll('a[data-back-link]');
+      for (var i = 0; i < links.length; i++) {
+        (function (link) {
+          link.addEventListener('click', function (event) {
+            // Respect modifier keys — let the user open in a new tab.
+            var e = event;
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+            var canGoBack =
+              window.history.length > 1 &&
+              document.referrer.indexOf(window.location.origin) === 0;
+            if (canGoBack) {
+              event.preventDefault();
+              window.history.back();
+            }
+            // Otherwise let the link's href be the navigation target.
+          });
+        })(links[i]);
+      }
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', wireBackLinks, { once: true });
+    } else {
+      wireBackLinks();
+    }
+  })();
+</script>
+
+<style>
+  .sl-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--color-body);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    line-height: var(--text-body-sm-line);
+    text-decoration: none;
+    transition: color 0.15s ease, background-color 0.15s ease;
+  }
+  .sl-back:hover {
+    color: var(--color-ink);
+  }
+  .sl-back:focus-visible {
+    outline: 2px solid var(--color-link);
+    outline-offset: 3px;
+    border-radius: var(--radius-xs);
+  }
+  .sl-back__arrow {
+    flex-shrink: 0;
+    transition: transform 0.15s ease;
+  }
+  .sl-back:hover .sl-back__arrow {
+    transform: translateX(-2px);
+  }
+  .sl-back__label {
+    text-underline-offset: 3px;
+  }
+  .sl-back:hover .sl-back__label {
+    text-decoration: underline;
+  }
+
+  /* Inline: bare link for breadcrumbs / sticky aside */
+  .sl-back--inline {
+    color: var(--color-body);
+  }
+
+  /* Pill: compact, sits in toolbars */
+  .sl-back--pill {
+    height: 32px;
+    padding: 0 var(--space-sm);
+    border-radius: var(--radius-pill-sm);
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    border: 1px solid var(--color-hairline);
+    font-size: var(--text-body-sm);
+    font-weight: 500;
+  }
+  .sl-back--pill:hover {
+    background: var(--color-canvas-soft);
+    color: var(--color-ink);
+  }
+</style>

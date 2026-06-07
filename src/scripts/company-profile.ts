@@ -267,8 +267,19 @@ export function mountCompanyProfile() {
   const form = document.querySelector<HTMLFormElement>('[data-company-profile-form]');
   if (!form) return;
 
+  // Track whether the form has unsaved edits — a leave-page prompt
+  // only fires when true, and is cleared the moment save succeeds.
+  let isDirty = false;
+  const beforeUnload = (event: BeforeUnloadEvent) => {
+    if (!isDirty) return;
+    event.preventDefault();
+    event.returnValue = '';
+  };
+  window.addEventListener('beforeunload', beforeUnload);
+
   // Live preview + counter on every input
   form.addEventListener('input', () => {
+    isDirty = true;
     refreshPreview(form);
     refreshCount(form);
   });
@@ -292,6 +303,8 @@ export function mountCompanyProfile() {
         return;
       }
       setFormAlert(form.querySelector<HTMLElement>('[data-form-alert]'), null);
+      isDirty = false;
+      window.removeEventListener('beforeunload', beforeUnload);
       showSaved(form);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Network error. Please try again.';
