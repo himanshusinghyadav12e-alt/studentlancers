@@ -20,7 +20,7 @@ import ThemeToggle from '../components/ui/ThemeToggle.astro';
 const trustPillars = [
   'Built for college hiring',
   'Verified .edu enrollment',
-  'Escrow on every engagement',
+  'Choose your own payment method and terms',
   'No card to join',
 ];
 
@@ -39,8 +39,8 @@ const features = [
   },
   {
     eyebrow: '03 — Pay',
-    title: 'Escrow that protects both sides.',
-    body: 'Funds are held securely until work is approved. Students get paid on a predictable schedule; companies get a money-back guarantee.',
+    title: 'Pay on your own terms.',
+    body: 'Students and companies are free to choose their preferred payment method and payment terms. Stripe Connect is supported in most regions.',
     icon: 'pay',
   },
   {
@@ -81,8 +81,8 @@ const steps = [
   },
   {
     n: '04',
-    title: 'Pay with confidence.',
-    body: 'Approve deliverables, release escrow, and leave a review. Both sides walk away with a paper trail.',
+    title: 'Pay on your own terms.',
+    body: 'Approve deliverables, agree on payment method, and leave a review. Both sides walk away with a clear paper trail.',
   },
 ];
 
@@ -94,7 +94,7 @@ const benefits = [
       'Build a portfolio that pays.',
       'Get matched with real companies.',
       'Set your own rates and hours.',
-      'Get paid through secure escrow.',
+      'Get paid on the schedule you choose.',
       'Receive reviews that travel with you.',
     ],
     cta: 'Start freelancing',
@@ -139,12 +139,12 @@ const faqs = [
   {
     cat: 'Payments',
     q: 'Is payment secure?',
-    a: 'Yes. Funds are held in escrow from the moment a project starts. They are released to the student only when the company approves the deliverable. Disputes are mediated by our support team.',
+    a: 'Yes. All payments flow through Stripe Connect. Students and companies are free to choose their preferred payment method and payment terms. Disputes are mediated by our support team.',
   },
   {
     cat: 'Trust',
     q: 'What happens if a project goes off the rails?',
-    a: 'Our support team mediates disputes in under 4 hours during business days. If a student disappears or a deliverable is off-brief, escrow can be refunded in full. Both sides walk away with a paper trail.',
+    a: 'Our support team mediates disputes in under 4 hours during business days. If a student disappears or a deliverable is off-brief, we step in to help both sides reach a fair resolution. Both sides walk away with a paper trail.',
   },
 ];
 
@@ -232,8 +232,8 @@ const faqCategories = Array.from(new Set(faqs.map((f) => f.cat)));
 
         <p class="hero__lead">
           The marketplace where students land real paid work and companies hire
-          affordable, ambitious talent. Briefs in minutes, escrow on day one,
-          payouts that actually arrive.
+          affordable, ambitious talent. Briefs in minutes, payouts that actually
+          arrive, and payment terms you control.
         </p>
 
         <div class="hero__cta">
@@ -243,7 +243,7 @@ const faqCategories = Array.from(new Set(faqs.map((f) => f.cat)));
 
         <ul class="hero__meta" role="list">
           <li><span>Verified</span> .edu enrollment</li>
-          <li><span>Escrow</span> on every gig</li>
+          <li><span>Your</span> payment terms</li>
           <li><span>Free</span> to join · no card</li>
         </ul>
 
@@ -492,7 +492,7 @@ const faqCategories = Array.from(new Set(faqs.map((f) => f.cat)));
           <Badge mono variant="secondary">Built for both sides</Badge>
           <h2 class="testimonials__title">A marketplace that earns trust on day one.</h2>
           <p class="testimonials__lead">
-            Verified .edu enrollment, escrow on every engagement, and a review
+            Verified .edu enrollment, transparent payment terms, and a review
             trail for both sides — built into the platform, not bolted on.
           </p>
         </div>
@@ -552,11 +552,11 @@ const faqCategories = Array.from(new Set(faqs.map((f) => f.cat)));
                 />
               </svg>
             </div>
-            <p class="testimonial-card__quote-text">Funds are held in escrow from the moment a project starts and released only when you approve the work.</p>
+            <p class="testimonial-card__quote-text">Students and companies are free to choose their preferred payment method and payment terms.</p>
             <div slot="footer" class="testimonial-card__person">
               <span class="testimonial-card__avatar" aria-hidden="true">$</span>
               <div class="testimonial-card__person-info">
-                <strong>Escrow on day one</strong>
+                <strong>Pay on your terms</strong>
                 <em>Approve, then payout</em>
               </div>
             </div>
@@ -670,7 +670,7 @@ const faqCategories = Array.from(new Set(faqs.map((f) => f.cat)));
               </li>
               <li>
                 <span class="cta__bullet-dot" aria-hidden="true"></span>
-                Escrow protection on day one
+                Payment terms you control
               </li>
             </ul>
           </div>

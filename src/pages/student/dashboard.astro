@@ -166,13 +166,13 @@ const recent = myApps.slice(0, 3);
   <section class="dash-card dash-card--inverted" aria-label="How payments work">
     <div class="dash-card__head">
       <h2 class="dash-card__title">How payouts work</h2>
-      <Badge mono variant="success" dot>Escrow</Badge>
+      <Badge mono variant="success" dot>Paid out</Badge>
     </div>
     <div class="dash-card__body dash-payout-grid">
       <div>
-        <span class="dash-pill dash-pill--cyan" style="background: var(--inverted-surface-soft); color: var(--inverted-fg); border-color: var(--inverted-border);">01 · Funded</span>
+        <span class="dash-pill dash-pill--cyan" style="background: var(--inverted-surface-soft); color: var(--inverted-fg); border-color: var(--inverted-border);">01 · Matched</span>
         <p style="margin: 8px 0 0; color: var(--inverted-fg-muted); font-size: var(--text-body-sm);">
-          The company funds the brief when the contract is signed. Money sits in escrow, not in your account or theirs.
+          The company accepts your proposal. You and the company agree on payment method and terms — direct transfer, Stripe, or anything else that works for both sides.
         </p>
       </div>
       <div>
@@ -184,7 +184,7 @@ const recent = myApps.slice(0, 3);
       <div>
         <span class="dash-pill dash-pill--success" style="background: var(--inverted-surface-soft); color: var(--inverted-fg); border-color: var(--inverted-border);">03 · Paid</span>
         <p style="margin: 8px 0 0; color: var(--inverted-fg-muted); font-size: var(--text-body-sm);">
-          On approval, escrow releases to your payout method — Stripe Connect in supported regions.
+          On approval, the company pays you through whatever method you agreed on — most students use Stripe Connect in supported regions.
         </p>
       </div>
     </div>

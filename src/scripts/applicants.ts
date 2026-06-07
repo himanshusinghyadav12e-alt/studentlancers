@@ -219,7 +219,7 @@ function applyAction(action: 'shortlist' | 'hire' | 'reject', applicantId: strin
       `${name} hired`,
       extra > 0
         ? `Other ${extra} application${extra === 1 ? '' : 's'} on this brief were auto-rejected.`
-        : 'Funds will be held in escrow until you approve the work.',
+        : 'You can now message the student and agree on payment terms.',
     );
   } else {
     const target: ApplicationStatus = action === 'shortlist' ? 'shortlisted' : 'rejected';
