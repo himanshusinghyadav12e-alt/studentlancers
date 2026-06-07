@@ -12,9 +12,12 @@
  * a signed-in company account, so this script is a no-op in that
  * case. The data-attribute mount keeps the import safe from any
  * dashboard page.
+ *
+ * The form renders the current profile values on the server. The
+ * submit handler posts a JSON patch to /api/company-profile, which
+ * writes to public.company_profiles. The legacy localStorage path
+ * was removed when we wired the editor up to Supabase.
  */
-
-import { store } from './store';
 
 const BLURB_MAX = 600;
 const BLURB_MIN = 40;
@@ -238,19 +241,32 @@ function refreshCount(form: HTMLFormElement) {
 /* ─── Submit ────────────────────────────────────────────────── */
 
 async function persistProfile(form: HTMLFormElement): Promise<{ ok: true } | { ok: false; message: string }> {
-  const session = store.auth.current();
-  if (!session) return { ok: false, message: 'You need to be signed in to save a profile.' };
-  if (session.role !== 'company') {
-    return { ok: false, message: 'Only company accounts have a company profile.' };
-  }
   const data = new FormData(form);
   const patch = {
     logoUrl: String(data.get('logoUrl') || '').trim(),
     website: String(data.get('website') || '').trim(),
     blurb: String(data.get('blurb') || '').trim(),
   };
-  const result = store.companies.updateProfile(session.userId, patch);
-  if (!result) return { ok: false, message: 'We could not find your account. Try signing in again.' };
+  let res: Response;
+  try {
+    res = await fetch('/api/company-profile', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(patch),
+    });
+  } catch (err) {
+    return { ok: false, message: err instanceof Error ? err.message : 'Network error.' };
+  }
+  if (!res.ok) {
+    let msg = `Save failed (HTTP ${res.status}).`;
+    try {
+      const body = (await res.json()) as { error?: string };
+      if (body.error) msg = body.error;
+    } catch {
+      // ignore
+    }
+    return { ok: false, message: msg };
+  }
   return { ok: true };
 }
 

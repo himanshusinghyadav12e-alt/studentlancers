@@ -1,7 +1,21 @@
 ---
 import SubPageShell from '../../components/SubPageShell.astro';
-import { store } from '../../scripts/store';
-import type { NavItem } from '../../layouts/DashboardLayout.astro';
+import DashboardLayout, { type NavItem } from '../../layouts/DashboardLayout.astro';
+import Button from '../../components/ui/Button.astro';
+import Badge from '../../components/ui/Badge.astro';
+import Field from '../../components/ui/Field.astro';
+import Input from '../../components/ui/Input.astro';
+import BackLink from '../../components/ui/BackLink.astro';
+
+/**
+ * /student/profile
+ *
+ * Editor for the signed-in student's public profile. Renders the
+ * current values as the form's default state, and submits the patch
+ * to /api/student-profile. The data is also rendered on the page so
+ * it survives without JS — Astro hydrates the form for a smooth
+ * editing experience.
+ */
 
 const nav: NavItem[] = [
   { href: '/student/dashboard', label: 'Overview', icon: 'home' },
@@ -12,19 +26,279 @@ const nav: NavItem[] = [
   { href: '/student/profile', label: 'Profile', icon: 'profile', current: true },
   { href: '/student/settings', label: 'Settings', icon: 'settings' },
 ];
-const session = store.auth.current();
-const name = session?.name ?? 'Your name';
+
+const user = Astro.locals.user;
+const profile = Astro.locals.studentProfile;
+const session = Astro.locals.session;
+
+const isStudent = user?.role === 'student';
+const showShell = !isStudent;
+const name = user?.name ?? 'Your name';
+const email = user?.email ?? '';
+const skillsList = (profile?.skills ?? []).join(', ');
+const hourlyRate = profile?.hourly_rate_cents != null ? String(profile.hourly_rate_cents / 100) : '';
+const graduationYear =
+  profile?.graduation_year != null ? String(profile.graduation_year) : '';
 ---
-<SubPageShell
-  title="Profile · StudentLancers"
-  description="Edit your StudentLancers student profile."
-  name={name}
-  role="Student"
-  nav={nav}
-  eyebrow="Profile"
-  heading="Your public profile"
-  body="A complete profile ranks higher in matching. The fields you can edit: name, school, major, graduation year, skills, hourly rate, portfolio links, and a short bio. The full editor is coming soon — for now, find a brief to apply to and we'll capture the rest during onboarding."
-  ctaLabel="Find a brief to apply to"
-  ctaHref="/student/find-work"
-  badge="Onboarding"
-/>
+
+{
+  showShell ? (
+    <SubPageShell
+      title="Profile · StudentLancers"
+      description="Edit your StudentLancers student profile."
+      name={name}
+      role="Student"
+      nav={nav}
+      eyebrow="Profile"
+      heading="Sign in as a student to edit your profile"
+      body="This page edits the public profile of a student account. Sign in with the student account you used to apply to briefs, or create one to get started."
+      ctaLabel={session ? 'Switch account' : 'Sign in'}
+      ctaHref={session ? '/login' : '/signup'}
+      badge="Sign in required"
+    />
+  ) : (
+    <DashboardLayout
+      title="Profile · StudentLancers"
+      description="Edit your StudentLancers student profile."
+      name={name}
+      role="Student"
+      nav={nav}
+    >
+      <header class="dash-page-head">
+        <div class="dash-page-head__copy">
+          <BackLink href="/student/dashboard" label="Back to overview" />
+          <span class="dash-page-head__eyebrow">Profile</span>
+          <h1 class="dash-page-head__title">How students see you</h1>
+          <p class="dash-page-head__lead">
+            A complete profile ranks higher in matching. Name, school,
+            major, graduation year, skills, hourly rate, portfolio link,
+            and a short bio.
+          </p>
+        </div>
+        <div class="dash-page-head__actions">
+          <Badge mono variant="cyan">Synced to Supabase</Badge>
+        </div>
+      </header>
+
+      <form
+        class="prof"
+        data-student-profile-form
+        novalidate
+        aria-label="Edit student profile"
+      >
+        <div
+          class="prof__alert"
+          data-form-alert
+          role="alert"
+          aria-live="polite"
+          hidden
+        >
+          <strong data-form-alert-title>Please review the form.</strong>
+          <span data-form-alert-msg></span>
+        </div>
+
+        <section class="dash-card" aria-labelledby="prof-identity">
+          <div class="dash-card__head">
+            <h2 class="dash-card__title" id="prof-identity">Identity</h2>
+            <span class="dash-card__hint">Your name + email are part of your public profile</span>
+          </div>
+          <div class="dash-card__body">
+            <Field label="Display name" for="stu-name">
+              <Input
+                type="text"
+                id="stu-name"
+                name="name"
+                size="lg"
+                value={name}
+                data-field="name"
+                autocomplete="name"
+              />
+            </Field>
+            <Field label="Email" for="stu-email" hint="Read-only — managed by your account.">
+              <Input
+                type="email"
+                id="stu-email"
+                name="email"
+                size="lg"
+                value={email}
+                readonly
+              />
+            </Field>
+            <Field label="Portfolio URL" for="stu-portfolio" hint="GitHub, personal site, or Dribbble.">
+              <Input
+                type="url"
+                id="stu-portfolio"
+                name="portfolioUrl"
+                size="lg"
+                value={profile?.portfolio_url ?? ''}
+                placeholder="https://github.com/your-handle"
+                data-field="portfolioUrl"
+                autocomplete="url"
+              />
+            </Field>
+          </div>
+        </section>
+
+        <section class="dash-card" aria-labelledby="prof-school">
+          <div class="dash-card__head">
+            <h2 class="dash-card__title" id="prof-school">School</h2>
+            <span class="dash-card__hint">Helps companies filter by your year</span>
+          </div>
+          <div class="dash-card__body">
+            <Field label="University" for="stu-university">
+              <Input
+                type="text"
+                id="stu-university"
+                name="university"
+                size="lg"
+                value={profile?.university ?? ''}
+                placeholder="UCLA"
+                data-field="university"
+                autocomplete="organization"
+              />
+            </Field>
+            <Field label="Major" for="stu-major">
+              <Input
+                type="text"
+                id="stu-major"
+                name="major"
+                size="lg"
+                value={profile?.major ?? ''}
+                placeholder="Computer Science"
+                data-field="major"
+              />
+            </Field>
+            <Field label="Graduation year" for="stu-grad" hint="Four-digit year. e.g. 2027">
+              <Input
+                type="number"
+                id="stu-grad"
+                name="graduationYear"
+                size="lg"
+                min="2024"
+                max="2040"
+                step="1"
+                value={graduationYear}
+                data-field="graduationYear"
+              />
+            </Field>
+          </div>
+        </section>
+
+        <section class="dash-card" aria-labelledby="prof-rates">
+          <div class="dash-card__head">
+            <h2 class="dash-card__title" id="prof-rates">Rate &amp; skills</h2>
+            <span class="dash-card__hint">USD per hour, comma-separated skills</span>
+          </div>
+          <div class="dash-card__body">
+            <Field label="Hourly rate (USD)" for="stu-rate" hint="Companies can still negotiate.">
+              <Input
+                type="number"
+                id="stu-rate"
+                name="hourlyRate"
+                size="lg"
+                min="5"
+                step="1"
+                value={hourlyRate}
+                placeholder="45"
+                data-field="hourlyRate"
+              />
+            </Field>
+            <Field label="Skills" for="stu-skills" hint="Comma-separated. e.g. Python, Figma, SEO">
+              <Input
+                type="text"
+                id="stu-skills"
+                name="skills"
+                size="lg"
+                value={skillsList}
+                placeholder="Python, Figma, SEO"
+                data-field="skills"
+              />
+            </Field>
+          </div>
+        </section>
+
+        <section class="dash-card" aria-labelledby="prof-bio">
+          <div class="dash-card__head">
+            <h2 class="dash-card__title" id="prof-bio">Bio</h2>
+            <span class="dash-card__hint">40–600 characters</span>
+          </div>
+          <div class="dash-card__body">
+            <Field label="Short bio" for="stu-bio" hint="One short paragraph about the work you do.">
+              <Input
+                as="textarea"
+                id="stu-bio"
+                name="bio"
+                size="lg"
+                rows={5}
+                value={profile?.bio ?? ''}
+                placeholder="I'm a junior at UCLA studying CS. I do React + Python work for early-stage startups."
+                data-field="bio"
+              />
+            </Field>
+            <div class="prof__count" data-bio-count>
+              {(profile?.bio ?? '').length} / 600
+            </div>
+          </div>
+        </section>
+
+        <div class="prof__actions">
+          <Button variant="primary" size="lg" type="submit" data-submit>
+            <span data-submit-label>Save profile</span>
+          </Button>
+          <span class="prof__saved" data-saved hidden>Saved.</span>
+        </div>
+      </form>
+    </DashboardLayout>
+  )
+}
+
+<style>
+  .prof {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+  }
+
+  .prof__alert {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: var(--space-md) var(--space-lg);
+    background: var(--color-error-soft);
+    color: var(--color-error-deep);
+    border: 1px solid color-mix(in srgb, var(--color-error) 22%, transparent);
+    border-radius: var(--radius-md);
+    font-size: var(--text-body-sm);
+  }
+  .prof__alert[hidden] {
+    display: none;
+  }
+
+  .prof__count {
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: var(--color-mute);
+    text-align: right;
+  }
+  .prof__count[data-over='true'] {
+    color: var(--color-error);
+  }
+
+  .prof__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+  }
+  .prof__saved {
+    font-size: var(--text-body-sm);
+    color: var(--color-link-deep);
+  }
+  .prof__saved[hidden] {
+    display: none;
+  }
+</style>
+
+<script>
+  import { mountStudentProfile } from '../../scripts/student-profile';
+  mountStudentProfile();
+</script>

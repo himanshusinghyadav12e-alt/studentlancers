@@ -6,7 +6,6 @@ import Field from '../../components/ui/Field.astro';
 import Input from '../../components/ui/Input.astro';
 import SubPageShell from '../../components/SubPageShell.astro';
 import BackLink from '../../components/ui/BackLink.astro';
-import { store } from '../../scripts/store';
 
 /**
  * /company/profile
@@ -31,14 +30,19 @@ const companyNav: NavItem[] = [
   { href: '/company/settings', label: 'Settings', icon: 'settings' },
 ];
 
-const session = store.auth.current();
-const isCompany = session?.role === 'company';
-const profile = isCompany && session ? store.companies.getProfile(session.userId) : {};
+const user = Astro.locals.user;
+const session = Astro.locals.session;
+const isCompany = user?.role === 'company';
+// Astro.locals.companyProfile is populated by the middleware from
+// public.company_profiles. Fall back to an empty record so the form
+// renders placeholders on first run.
+const profile = Astro.locals.companyProfile ?? ({} as NonNullable<typeof Astro.locals.companyProfile>);
 
 // The shell prompt is shown for signed-out visitors and for students
 // who wander to /company/profile via a stale link. The form path is
 // only rendered for a signed-in company account.
 const showShell = !isCompany;
+const displayName = user?.name ?? 'Your company';
 ---
 
 {
@@ -46,21 +50,21 @@ const showShell = !isCompany;
     <SubPageShell
       title="Company profile · StudentLancers"
       description="Edit the way your company appears to students."
-      name={session?.name ?? 'Your company'}
+      name={displayName}
       role="Company"
       nav={companyNav}
       eyebrow="Company profile"
       heading="Sign in as a company to edit your profile"
       body="This page edits the public profile of a company account. Sign in with the company account you used to post briefs, or create one to get started."
       ctaLabel={session ? 'Switch account' : 'Sign in'}
-      ctaHref={session ? '/login' : '/login'}
+      ctaHref="/login"
       badge="Sign in required"
     />
   ) : (
     <DashboardLayout
       title="Company profile · StudentLancers"
       description="Edit the way your company appears to students."
-      name={session!.name}
+      name={displayName}
       role="Company"
       nav={companyNav}
     >
@@ -76,7 +80,7 @@ const showShell = !isCompany;
           </p>
         </div>
         <div class="dash-page-head__actions">
-          <Badge mono variant="cyan">Live preview</Badge>
+          <Badge mono variant="cyan">Synced to Supabase</Badge>
         </div>
       </header>
 
@@ -181,11 +185,11 @@ const showShell = !isCompany;
             <article class="prof-card" data-profile-preview>
               <div class="prof-card__logo" data-preview-logo aria-hidden="true">
                 <span data-preview-logo-text>
-                  {session!.name.split(' ').map((p) => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '·'}
+                  {displayName.split(' ').map((p) => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '·'}
                 </span>
               </div>
               <div class="prof-card__main">
-                <h3 class="prof-card__name">{session!.name}</h3>
+                <h3 class="prof-card__name">{displayName}</h3>
                 <a
                   class="prof-card__website"
                   href={profile.website || '#'}
