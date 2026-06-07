@@ -277,8 +277,22 @@ function redirectAfterAuth(role: 'student' | 'company'): void {
   // the role's home if no next is set.
   const params = new URLSearchParams(window.location.search);
   const rawNext = params.get('next');
+  // Same-origin absolute path only — drop protocol-relative and
+  // external URLs to prevent open-redirects.
+  const isSafe =
+    !!rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//');
+  // Do not bounce back to another auth page — that would just
+  // re-trigger the guest-only guard and loop the user back here.
+  const isAuthPage =
+    isSafe &&
+    (rawNext === '/login' ||
+      rawNext === '/signup' ||
+      rawNext === '/forgot-password' ||
+      rawNext.startsWith('/login?') ||
+      rawNext.startsWith('/signup?') ||
+      rawNext.startsWith('/forgot-password?'));
   const next =
-    rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//')
+    isSafe && !isAuthPage
       ? rawNext
       : role === 'company'
         ? '/company/dashboard'
@@ -407,6 +421,80 @@ function attachGoogleStub(form: HTMLFormElement) {
   });
 }
 
+/**
+ * When a guest is bounced from a protected page, the URL has a safe
+ * `?next=/some/path`. Surface that as an inline "Please sign in to
+ * continue" notice so the redirect is not silent. Skipped on the
+ * forgot-password page (no auth required) and on /login if there is
+ * no `?next=`.
+ */
+function attachNextNotice(form: HTMLFormElement, kind: FormContext['kind']) {
+  if (kind === 'forgot') return;
+  const params = new URLSearchParams(window.location.search);
+  const rawNext = params.get('next');
+  if (!rawNext) return;
+  if (!rawNext.startsWith('/') || rawNext.startsWith('//')) return;
+
+  // Human-friendly destination label for the banner. Falls back to
+  // the raw path if we do not know the route.
+  const dest = describeNextPath(rawNext);
+
+  const note = document.createElement('div');
+  note.className = 'auth-alert auth-alert--info';
+  note.setAttribute('data-next-notice', '');
+  note.setAttribute('role', 'status');
+  note.innerHTML = `
+    <span class="auth-alert__icon" aria-hidden="true">
+      <svg viewBox="0 0 18 18" fill="none">
+        <circle cx="9" cy="9" r="7.5" stroke="currentColor" stroke-width="1.4" />
+        <path d="M9 5.5v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+        <circle cx="9" cy="12.4" r="0.9" fill="currentColor" />
+      </svg>
+    </span>
+    <div class="auth-alert__body">
+      <p class="auth-alert__title">Sign in to continue</p>
+      <p class="auth-alert__msg"></p>
+    </div>
+  `;
+  // Build the message with textContent so the destination label is
+  // never interpreted as HTML (defense-in-depth — the path is
+  // already validated as a same-origin absolute path).
+  const msg = note.querySelector<HTMLElement>('.auth-alert__msg');
+  if (msg) {
+    msg.append('You need an account to open ');
+    const strong = document.createElement('strong');
+    strong.textContent = dest;
+    msg.append(strong, '. We will take you back there after you sign in.');
+  }
+  // Insert above any existing alert / demo banner so it's the first
+  // thing the user sees inside the form.
+  form.insertBefore(note, form.firstChild);
+}
+
+/** Map a known protected path to a short human label for the banner. */
+function describeNextPath(path: string): string {
+  const known: Record<string, string> = {
+    '/student/find-work': 'Find work',
+    '/student/dashboard': 'your student dashboard',
+    '/student/applications': 'your applications',
+    '/student/profile': 'your student profile',
+    '/student/settings': 'your student settings',
+    '/student/earnings': 'your earnings',
+    '/student/reviews': 'your reviews',
+    '/company/dashboard': 'your company dashboard',
+    '/company/applicants': 'your applicants',
+    '/company/hires': 'your hires',
+    '/company/profile': 'your company profile',
+    '/company/billing': 'your billing',
+    '/company/settings': 'your company settings',
+    '/jobs/post': 'Post a brief',
+  };
+  if (known[path]) return known[path];
+  // Brief detail (e.g. /jobs/abc123) — fall back to a friendly generic.
+  if (path.startsWith('/jobs/') && path !== '/jobs/post') return 'that brief';
+  return path;
+}
+
 /** Pre-fill demo credentials on the auth pages to make testing painless. */
 function attachDemoFill(form: HTMLFormElement, kind: FormContext['kind']) {
   if (kind === 'forgot') return;
@@ -465,6 +553,7 @@ export function mountAuthForms() {
     attachStrengthMeter(form);
     attachLiveValidation(form);
     attachGoogleStub(form);
+    attachNextNotice(form, kind);
     attachDemoFill(form, kind);
     if (kind === 'forgot') attachForgotFlow(form);
     attachSubmit(form, kind);

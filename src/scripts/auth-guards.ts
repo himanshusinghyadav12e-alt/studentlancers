@@ -91,9 +91,18 @@ function routeDecision(
     if (session) {
       // If the URL has a safe ?next=, prefer it (so e.g. "Already have
       // an account? Log in" on a deep-linked page can still go back).
+      // Don't bounce to another auth page — that would re-trigger
+      // guest-only and loop the user back here.
       const params = new URLSearchParams(window.location.search);
       const next = safeNext(params.get('next'));
-      return { ok: false, redirectTo: next ?? ROLE_DASHBOARD[session.role] };
+      const isAuthPage =
+        next === '/login' ||
+        next === '/signup' ||
+        next === '/forgot-password';
+      return {
+        ok: false,
+        redirectTo: next && !isAuthPage ? next : ROLE_DASHBOARD[session.role],
+      };
     }
     return { ok: true };
   }

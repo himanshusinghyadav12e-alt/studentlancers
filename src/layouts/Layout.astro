@@ -70,7 +70,14 @@ const {
 					if (pageAuth === 'guest-only') {
 						if (session) {
 							var params = new URLSearchParams(window.location.search);
-							var next = safeNext(params.get('next')) || dash(session.role);
+							var rawNext = safeNext(params.get('next'));
+							// Don't bounce a signed-in user back to another auth
+							// page — that would re-trigger guest-only and loop.
+							var isAuth =
+								rawNext === '/login' ||
+								rawNext === '/signup' ||
+								rawNext === '/forgot-password';
+							var next = (rawNext && !isAuth) ? rawNext : dash(session.role);
 							window.location.replace(next);
 						}
 						return;
