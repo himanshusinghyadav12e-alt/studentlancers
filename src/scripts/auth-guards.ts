@@ -33,6 +33,7 @@
  */
 
 import { store, type Role } from './store';
+import { SESSION_STORAGE_KEY, type AppSession } from '../lib/types';
 
 type AuthMode = 'public' | 'guest-only' | 'student' | 'company';
 
@@ -40,6 +41,24 @@ const ROLE_DASHBOARD: Record<Role, string> = {
   student: '/student/dashboard',
   company: '/company/dashboard',
 };
+
+/**
+ * Read the session. Prefers the mirror cookie / localStorage entry the
+ * middleware writes (so we don't make a Supabase round-trip on every
+ * page load). Falls back to the legacy `store.auth` mock for any
+ * pages that haven't been migrated yet.
+ */
+function readSession(): AppSession | null {
+  if (typeof localStorage === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+    if (raw) return JSON.parse(raw) as AppSession;
+  } catch {
+    // ignore
+  }
+  // Back-compat with the old mock store.
+  return store.auth.current();
+}
 
 function currentPath(): string {
   return window.location.pathname || '/';
@@ -64,7 +83,7 @@ function loginFor(next: string): string {
  * `document.documentElement.dataset.auth` to adapt without waiting
  * for a redirect to finish.
  */
-function applyDocumentMode(session: ReturnType<typeof store.auth.current>) {
+function applyDocumentMode(session: AppSession | null) {
   const root = document.documentElement;
   if (session) {
     root.dataset.auth = 'signed-in';
@@ -81,7 +100,7 @@ function applyDocumentMode(session: ReturnType<typeof store.auth.current>) {
  */
 function routeDecision(
   mode: AuthMode,
-  session: ReturnType<typeof store.auth.current>,
+  session: AppSession | null,
 ): { ok: true } | { ok: false; redirectTo: string } {
   const path = currentPath();
 
@@ -126,7 +145,7 @@ function runGuards(): void {
   const body = document.body;
   if (!body) return;
   const mode = (body.getAttribute('data-page-auth') as AuthMode | null) ?? 'public';
-  const session = store.auth.current();
+  const session = readSession();
   applyDocumentMode(session);
 
   const decision = routeDecision(mode, session);
@@ -146,7 +165,7 @@ export function mountAuthGuards(): void {
   // Cross-tab sync: if the user signs out in tab A, tab B should
   // re-evaluate its guard (e.g. to redirect off a dashboard).
   window.addEventListener('storage', (event) => {
-    if (event.key === 'sl-session') runGuards();
+    if (event.key === SESSION_STORAGE_KEY || event.key === 'sl-session') runGuards();
   });
 
   // Back/forward cache (Safari) restores pages with `persisted=true`.

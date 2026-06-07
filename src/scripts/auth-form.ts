@@ -15,11 +15,41 @@
  * `Session` shape.
  */
 
-import { store } from './store';
+import { getBrowserSupabase } from '../lib/supabase-browser';
+import { SESSION_STORAGE_KEY, type AppSession, type Role } from '../lib/types';
 
 interface FormContext {
   form: HTMLFormElement;
   kind: 'login' | 'signup' | 'forgot';
+}
+
+function mapAuthError(err: { message: string } | null): string {
+  if (!err) return 'Something went wrong. Please try again.';
+  const msg = err.message.toLowerCase();
+  // Friendly copy for the most common failure modes.
+  if (msg.includes('invalid login credentials')) return 'That email and password do not match.';
+  if (msg.includes('email not confirmed')) {
+    return 'Check your inbox to confirm your email, then sign in.';
+  }
+  if (msg.includes('user already registered')) {
+    return 'An account with that email already exists. Try logging in.';
+  }
+  if (msg.includes('password should be')) {
+    return 'Password must be at least 8 characters.';
+  }
+  if (msg.includes('rate limit')) {
+    return 'Too many attempts. Wait a moment and try again.';
+  }
+  return err.message;
+}
+
+function storeSession(session: AppSession) {
+  try {
+    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+  } catch {
+    // localStorage unavailable; the middleware-mirrored cookie still
+    // drives the pre-paint redirect.
+  }
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -218,6 +248,11 @@ function attachStrengthMeter(form: HTMLFormElement) {
   update();
 }
 
+/** Wait helper to simulate network latency in the mock. */
+function wait(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
 function setLoading(form: HTMLFormElement, loading: boolean) {
   const submit = form.querySelector<HTMLElement>('[data-submit]');
   const label = form.querySelector<HTMLElement>('[data-submit-label]');
@@ -230,11 +265,6 @@ function setLoading(form: HTMLFormElement, loading: boolean) {
     if (el instanceof HTMLButtonElement && el.hasAttribute('data-password-toggle')) return;
     el.toggleAttribute('disabled', loading);
   });
-}
-
-/** Wait helper to simulate network latency in the mock. */
-function wait(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
 }
 
 function attachForgotFlow(form: HTMLFormElement) {
@@ -258,15 +288,22 @@ function attachForgotFlow(form: HTMLFormElement) {
     resendBtn.addEventListener('click', async () => {
       const email = (form.querySelector<HTMLInputElement>('[data-field="email"]')?.value) ?? '';
       setLoading(form, true);
-      await wait(500);
-      setLoading(form, false);
-      const result = store.auth.forgotPassword({ email });
-      if (result.ok) {
-        resendBtn.textContent = 'Resent ✓';
-        window.setTimeout(() => {
-          resendBtn.textContent = 'Didn’t get it? Resend';
-        }, 2400);
+      // Re-issue the password-reset email. The Supabase rate limiter
+      // (default 1 req / 60s) is the only thing that can fail this
+      // call; we deliberately swallow that case so the UI still
+      // shows a friendly "Resent" state and the user can wait.
+      try {
+        await getBrowserSupabase().auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/auth/callback?next=/student/settings`,
+        });
+      } catch {
+        // ignore — handled by the optimistic UI below.
       }
+      setLoading(form, false);
+      resendBtn.textContent = 'Resent ✓';
+      window.setTimeout(() => {
+        resendBtn.textContent = 'Didn’t get it? Resend';
+      }, 2400);
     });
   }
 }
@@ -315,59 +352,106 @@ function attachSubmit(form: HTMLFormElement, kind: FormContext['kind']) {
 
     const data = new FormData(form);
     setLoading(form, true);
+    const supabase = getBrowserSupabase();
     try {
       if (kind === 'login') {
-        const result = store.auth.signIn({
-          email: String(data.get('email') ?? ''),
-          password: String(data.get('password') ?? ''),
+        const email = String(data.get('email') ?? '').trim();
+        const password = String(data.get('password') ?? '');
+        const { data: signInData, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
         });
-        if (!result.ok) {
-          setFormAlert(form.querySelector<HTMLElement>('[data-form-alert]'), result.message);
+        if (error || !signInData.user) {
+          setFormAlert(form.querySelector<HTMLElement>('[data-form-alert]'), mapAuthError(error));
           setLoading(form, false);
           return;
         }
+        // Pull our public.users row so we know the role and display name.
+        const { data: profile } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', signInData.user.id)
+          .maybeSingle();
+        const session: AppSession = {
+          userId: signInData.user.id,
+          email: signInData.user.email ?? email,
+          name: (profile as { name?: string } | null)?.name ?? email.split('@')[0],
+          role: ((profile as { role?: Role } | null)?.role ?? 'student') as Role,
+          signedInAt: new Date().toISOString(),
+        };
+        storeSession(session);
         setFormAlert(
           form.querySelector<HTMLElement>('[data-form-alert]'),
-          `Welcome back, ${result.session.name.split(' ')[0]}. Redirecting…`,
+          `Welcome back, ${session.name.split(' ')[0]}. Redirecting…`,
           'Signed in',
           'success',
         );
-        redirectAfterAuth(result.session.role);
+        redirectAfterAuth(session.role);
         return;
       }
 
       if (kind === 'signup') {
         const accountType = String(data.get('account_type') ?? 'student');
-        const role: 'student' | 'company' = accountType === 'company' ? 'company' : 'student';
-        const result = store.auth.signUp({
-          email: String(data.get('email') ?? ''),
-          password: String(data.get('password') ?? ''),
-          name: String(data.get('name') ?? ''),
-          role,
+        const role: Role = accountType === 'company' ? 'company' : 'student';
+        const email = String(data.get('email') ?? '').trim();
+        const password = String(data.get('password') ?? '');
+        const name = String(data.get('name') ?? '').trim();
+        const { data: signUpData, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { role, name },
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+          },
         });
-        if (!result.ok) {
-          setFormAlert(form.querySelector<HTMLElement>('[data-form-alert]'), result.message);
+        if (error || !signUpData.user) {
+          setFormAlert(form.querySelector<HTMLElement>('[data-form-alert]'), mapAuthError(error));
           setLoading(form, false);
           return;
         }
+        // If email confirmation is required, `session` is null and the
+        // user has to click the link in their inbox. The trigger we
+        // installed in 0001_initial_schema.sql still creates their
+        // public.users / profile row on insert into auth.users.
+        if (!signUpData.session) {
+          setFormAlert(
+            form.querySelector<HTMLElement>('[data-form-alert]'),
+            'Check your inbox to confirm your email, then sign in.',
+            'Confirm your email',
+            'success',
+          );
+          setLoading(form, false);
+          return;
+        }
+        const session: AppSession = {
+          userId: signUpData.user.id,
+          email: signUpData.user.email ?? email,
+          name,
+          role,
+          signedInAt: new Date().toISOString(),
+        };
+        storeSession(session);
         setFormAlert(
           form.querySelector<HTMLElement>('[data-form-alert]'),
           `Account ready. Taking you to the ${role === 'company' ? 'company' : 'student'} dashboard…`,
-          `Welcome, ${result.session.name.split(' ')[0]}`,
+          `Welcome, ${name.split(' ')[0]}`,
           'success',
         );
-        redirectAfterAuth(result.session.role);
+        redirectAfterAuth(role);
         return;
       }
 
       if (kind === 'forgot') {
-        const result = store.auth.forgotPassword({ email: String(data.get('email') ?? '') });
+        const email = String(data.get('email') ?? '').trim();
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/auth/callback?next=/student/settings`,
+        });
         setLoading(form, false);
-        if (!result.ok) {
-          setFormAlert(form.querySelector<HTMLElement>('[data-form-alert]'), result.message);
+        if (error) {
+          setFormAlert(form.querySelector<HTMLElement>('[data-form-alert]'), mapAuthError(error));
           return;
         }
-        form.dispatchEvent(new CustomEvent('auth:success', { detail: { email: result.email } }));
+        form.dispatchEvent(new CustomEvent('auth:success', { detail: { email } }));
         return;
       }
     } catch (err) {

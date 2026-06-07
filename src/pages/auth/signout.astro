@@ -1,0 +1,15 @@
+---
+/**
+ * /auth/signout
+ *
+ * Server-side sign-out. The dashboard's "Switch account" link posts
+ * here (GET) so we can clear Supabase's HTTP-only refresh-token
+ * cookie and then send the user to /login with a one-shot toast.
+ */
+import { getSupabase } from '../../lib/supabase';
+
+const supabase = getSupabase(Astro);
+await supabase.auth.signOut();
+
+return Astro.redirect('/?signedOut=1', 303);
+---

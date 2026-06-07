@@ -242,18 +242,8 @@ const pageAuth = role.toLowerCase() === 'company' ? 'company' : 'student';
       signoutLinks.forEach((a) => {
         a.addEventListener('click', async (event) => {
           event.preventDefault();
-          const { store } = await import('../scripts/store');
-          const name = store.auth.current()?.name;
-          store.auth.signOut();
-          try {
-            sessionStorage.setItem('sl-toast-once', JSON.stringify({
-              variant: 'info',
-              title: name ? `Signed out — see you soon, ${name.split(' ')[0]}` : 'Signed out',
-            }));
-          } catch {
-            // ignore
-          }
-          window.location.href = '/login';
+          const { signOut } = await import('../scripts/session-bar');
+          void signOut();
         });
       });
     </script>

@@ -16,6 +16,59 @@
 
 import { store } from './store';
 import { toast } from './toast';
+import { getBrowserSupabase } from '../lib/supabase-browser';
+import { SESSION_STORAGE_KEY, type AppSession } from '../lib/types';
+
+/**
+ * Read the active session. Prefers the mirror localStorage entry the
+ * middleware writes; falls back to the legacy mock store so the rest
+ * of the UI keeps working.
+ */
+function readSession(): AppSession | null {
+  if (typeof localStorage === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+    if (raw) return JSON.parse(raw) as AppSession;
+  } catch {
+    // ignore
+  }
+  return store.auth.current();
+}
+
+async function signOut() {
+  const name = readSession()?.name;
+  // Clear the local mirror first so other tabs / the next paint
+  // don't see a logged-in user.
+  try {
+    localStorage.removeItem(SESSION_STORAGE_KEY);
+    localStorage.removeItem('sl-session');
+  } catch {
+    // ignore
+  }
+  // Best-effort: tell Supabase to revoke the session. If the request
+  // fails (offline, expired token) we still redirect — the server
+  // will drop the cookie on the next request.
+  try {
+    const supabase = getBrowserSupabase();
+    await supabase.auth.signOut();
+  } catch {
+    // ignore
+  }
+  try {
+    sessionStorage.setItem(
+      'sl-toast-once',
+      JSON.stringify({
+        variant: 'info',
+        title: name ? `Signed out — see you soon, ${name.split(' ')[0]}` : 'Signed out',
+      }),
+    );
+  } catch {
+    // ignore
+  }
+  // Hard navigation so middleware re-runs and the page renders for
+  // the signed-out user.
+  window.location.replace('/auth/signout');
+}
 
 function initials(name: string): string {
   return (
@@ -32,7 +85,7 @@ function initials(name: string): string {
 function replaceNavCta(scope: ParentNode = document) {
   const hosts = scope.querySelectorAll<HTMLElement>('[data-session-aware]');
   hosts.forEach((host) => {
-    const session = store.auth.current();
+    const session = readSession();
     if (!session) return;
     const signedInHref =
       session.role === 'company' ? '/company/dashboard' : '/student/find-work';
@@ -46,21 +99,9 @@ function replaceNavCta(scope: ParentNode = document) {
       </button>
     `;
     const logout = host.querySelector<HTMLButtonElement>('[data-logout]');
-    logout?.addEventListener('click', () => {
-      const name = store.auth.current()?.name;
-      store.auth.signOut();
-      try {
-        // Hand off a one-time toast for the home page to render.
-        sessionStorage.setItem('sl-toast-once', JSON.stringify({
-          variant: 'info',
-          title: name ? `Signed out — see you soon, ${name.split(' ')[0]}` : 'Signed out',
-        }));
-      } catch {
-        // ignore
-      }
-      // replace() so the back button doesn't dump the user back on the
-      // page they were just signed out of.
-      window.location.replace('/');
+    logout?.addEventListener('click', (e) => {
+      e.preventDefault();
+      void signOut();
     });
   });
 }
@@ -82,7 +123,7 @@ function attachAvatarMenu() {
   menu.hidden = true;
   wrap.appendChild(menu);
 
-  const session = store.auth.current();
+  const session = readSession();
   const dashboardHref = session
     ? session.role === 'company'
       ? '/company/dashboard'
@@ -103,7 +144,7 @@ function attachAvatarMenu() {
   `;
 
   const refreshMenu = () => {
-    const s = store.auth.current();
+    const s = readSession();
     if (!s) {
       menu.innerHTML = `
         <a href="/login" role="menuitem">Log in</a>
@@ -126,21 +167,12 @@ function attachAvatarMenu() {
       <hr />
       <button type="button" role="menuitem" data-logout>Log out</button>
     `;
-    menu.querySelector<HTMLButtonElement>('[data-logout]')?.addEventListener('click', () => {
-      const name = store.auth.current()?.name;
-      store.auth.signOut();
-      try {
-        sessionStorage.setItem('sl-toast-once', JSON.stringify({
-          variant: 'info',
-          title: name ? `Signed out — see you soon, ${name.split(' ')[0]}` : 'Signed out',
-        }));
-      } catch {
-        // ignore
-      }
-      // replace() so the back button doesn't dump the user back on the
-      // page they were just signed out of.
-      window.location.replace('/');
-    });
+    menu
+      .querySelector<HTMLButtonElement>('[data-logout]')
+      ?.addEventListener('click', (e) => {
+        e.preventDefault();
+        void signOut();
+      });
   };
   refreshMenu();
 
@@ -162,6 +194,8 @@ function attachAvatarMenu() {
     }
   });
 }
+
+export { signOut };
 
 export function mountSessionBar() {
   replaceNavCta();

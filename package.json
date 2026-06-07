@@ -9,9 +9,17 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "start": "node ./dist/server/entry.mjs",
+    "smoke": "tsx scripts/smoke-test-signup.ts",
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/node": "^10.1.3",
+    "@supabase/ssr": "^0.5.2",
+    "@supabase/supabase-js": "^2.45.4",
     "astro": "^6.4.4"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2"
   }
 }
