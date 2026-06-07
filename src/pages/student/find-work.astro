@@ -625,10 +625,20 @@ function hoursUpperBound(band: string): number {
 
       applyTabSort();
 
+      // Effective count reflects the current tab:
+      //   - 'best' / 'recent' show every brief that passes the filters
+      //   - 'saved'   shows saved briefs that also pass the filters
+      // The meta line, the empty-state check, and the count label all
+      // read from the same number so they never disagree.
+      const effectiveVisible =
+        currentTab === 'saved'
+          ? items.filter((it) => it.dataset.fwMatch === '1' && it.dataset.fwSaved === '1').length
+          : visible;
+
       // Meta count + active-filter chips
       const count = document.querySelector<HTMLElement>('[data-fw-count]');
       if (count) {
-        count.textContent = `${visible} ${visible === 1 ? 'brief' : 'briefs'}`;
+        count.textContent = `${effectiveVisible} ${effectiveVisible === 1 ? 'brief' : 'briefs'}`;
       }
       const chipsEl = document.querySelector<HTMLElement>('[data-fw-chips]');
       if (chipsEl) {
@@ -649,10 +659,6 @@ function hoursUpperBound(band: string): number {
       const emptyTitle = document.querySelector<HTMLElement>('[data-fw-empty-title]');
       const emptyBody = document.querySelector<HTMLElement>('[data-fw-empty-body]');
       if (empty && list) {
-        const effectiveVisible =
-          currentTab === 'saved'
-            ? items.filter((it) => it.dataset.fwMatch === '1' && it.dataset.fwSaved === '1').length
-            : visible;
         if (effectiveVisible === 0) {
           empty.hidden = false;
           list.hidden = true;
@@ -666,7 +672,7 @@ function hoursUpperBound(band: string): number {
             if (emptyTitle) emptyTitle.textContent = 'No briefs match those filters.';
             if (emptyBody) {
               emptyBody.textContent =
-                `Try widening the hours or pay type, or clear the search to see the full list of ${visible + 0} open briefs.`;
+                `Try widening the hours or pay type, or clear the search to see the full list of ${visible} open briefs.`;
             }
           }
         } else {
