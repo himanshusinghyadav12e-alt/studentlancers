@@ -2,14 +2,16 @@
 import DashboardLayout, { type NavItem } from '../../layouts/DashboardLayout.astro';
 import Button from '../../components/ui/Button.astro';
 import Badge from '../../components/ui/Badge.astro';
-import { store } from '../../scripts/store';
+import { listApplicationsForOwner, listJobsForOwner } from '../../lib/api';
+import type { ApplicationWithJob, DbJob } from '../../lib/types';
 
 /**
  * /company/dashboard
  *
  * The company side of the marketplace. Mirrors the student dashboard
  * structure — same primitives, no fake metrics. Lists show real
- * activity (briefs posted, applicants received) from the local store.
+ * activity (briefs posted, applicants received) pulled from
+ * public.jobs and public.applications.
  */
 
 const companyNav: NavItem[] = [
@@ -22,13 +24,25 @@ const companyNav: NavItem[] = [
   { href: '/company/settings', label: 'Settings', icon: 'settings' },
 ];
 
-const session = store.auth.current();
-const companyName = session?.name ?? 'Your company';
-const greeting = session ? `Welcome back, ${companyName.split(' ')[0]}` : 'Welcome back';
+const user = Astro.locals.user;
+const companyName = user?.name ?? 'Your company';
+const greeting = user ? `Welcome back, ${companyName.split(' ')[0]}` : 'Welcome back';
 
-const myBriefs = session ? store.briefs.listByOwner(session.userId) : [];
-const myBriefIds = new Set(myBriefs.map((b) => b.id));
-const appsForMine = store.applications.list().filter((a) => myBriefIds.has(a.briefId));
+let myBriefs: DbJob[] = [];
+let appsForMine: ApplicationWithJob[] = [];
+if (user && user.role === 'company') {
+  try {
+    [myBriefs, appsForMine] = await Promise.all([
+      listJobsForOwner(Astro),
+      listApplicationsForOwner(Astro),
+    ]);
+  } catch {
+    // Render an empty dashboard; the page already shows zeros and
+    // empty states when there is no data.
+    myBriefs = [];
+    appsForMine = [];
+  }
+}
 const openBriefsCount = myBriefs.length;
 const applicantsCount = appsForMine.length;
 const activeHiresCount = appsForMine.filter((a) => a.status === 'hired').length;
@@ -121,13 +135,13 @@ const recentBriefs = myBriefs.slice(0, 3);
         ) : (
           <ul class="dash-list" role="list">
             {recentBriefs.map((b) => {
-              const count = appsForMine.filter((a) => a.briefId === b.id).length;
+              const count = appsForMine.filter((a) => a.job_id === b.id).length;
               return (
                 <li class="dash-list__item">
                   <span class="dash-list-avatar" data-color="link" aria-hidden="true">B</span>
                   <div class="dash-list__main">
                     <span class="dash-list__title">{b.title}</span>
-                    <span class="dash-list__sub">{b.category} · {b.budgetType === 'fixed' ? `$${b.budget.toLocaleString()} fixed` : `$${b.budget}/hr`}</span>
+                    <span class="dash-list__sub">{b.category} · {b.budget_type === 'fixed' ? `$${Math.round(b.budget_cents / 100).toLocaleString()} fixed` : `$${Math.round(b.budget_cents / 100)}/hr`}</span>
                   </div>
                   <Badge variant="cyan">{count} {count === 1 ? 'applicant' : 'applicants'}</Badge>
                 </li>

@@ -2,14 +2,16 @@
 import DashboardLayout, { type NavItem } from '../../layouts/DashboardLayout.astro';
 import Button from '../../components/ui/Button.astro';
 import Badge from '../../components/ui/Badge.astro';
-import { store } from '../../scripts/store';
+import { listApplicationsForApplicant } from '../../lib/api';
+import type { ApplicationWithJob } from '../../lib/types';
 
 /**
  * /student/dashboard
  *
  * The student side of the marketplace. Reads the signed-in session
- * from the local store and surfaces real activity (or an explicit
- * empty state) for every list and stat. No fabricated numbers.
+ * from the Supabase-backed middleware locals and surfaces real
+ * activity (or an explicit empty state) for every list and stat. No
+ * fabricated numbers.
  */
 
 const studentNav: NavItem[] = [
@@ -22,11 +24,18 @@ const studentNav: NavItem[] = [
   { href: '/student/settings', label: 'Settings', icon: 'settings' },
 ];
 
-const session = store.auth.current();
-const studentName = session?.name ?? 'there';
-const greeting = session ? `Welcome back, ${studentName.split(' ')[0]}` : 'Welcome';
+const user = Astro.locals.user;
+const studentName = user?.name ?? 'there';
+const greeting = user ? `Welcome back, ${studentName.split(' ')[0]}` : 'Welcome';
 
-const myApps = session ? store.applications.listByApplicant(session.userId) : [];
+let myApps: ApplicationWithJob[] = [];
+if (user && user.role === 'student') {
+  try {
+    myApps = await listApplicationsForApplicant(Astro);
+  } catch {
+    myApps = [];
+  }
+}
 const appsCount = myApps.length;
 const recent = myApps.slice(0, 3);
 ---
@@ -108,10 +117,13 @@ const recent = myApps.slice(0, 3);
               <li class="dash-list__item">
                 <span class="dash-list-avatar" data-color="cyan" aria-hidden="true">A</span>
                 <div class="dash-list__main">
-                  <span class="dash-list__title">{a.briefTitle}</span>
-                  <span class="dash-list__sub">Proposed ${a.rate} · {a.timeline}</span>
+                  <span class="dash-list__title">{a.job.title}</span>
+                  <span class="dash-list__sub">
+                    {a.rate_cents != null ? `Proposed $${Math.round(a.rate_cents / 100)}` : 'Proposed rate'}
+                    {a.timeline ? ` · ${a.timeline}` : ''}
+                  </span>
                 </div>
-                <Badge variant="cyan">In review</Badge>
+                <Badge variant="cyan">{a.status === 'hired' ? 'Hired' : a.status === 'shortlisted' ? 'Shortlisted' : a.status === 'rejected' ? 'Rejected' : 'In review'}</Badge>
               </li>
             ))}
             {appsCount > recent.length && (

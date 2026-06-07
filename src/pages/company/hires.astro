@@ -1,20 +1,21 @@
 ---
 import DashboardLayout, { type NavItem } from '../../layouts/DashboardLayout.astro';
 import Button from '../../components/ui/Button.astro';
-import Badge from '../../components/ui/Badge.astro';
 import SubPageShell from '../../components/SubPageShell.astro';
-import { store, type Application } from '../../scripts/store';
+import { listApplicationsForOwner, listJobsForOwner } from '../../lib/api';
+import type { ApplicationWithJob, DbJob } from '../../lib/types';
 
 /**
  * /company/hires
  *
  * Lists every student the signed-in company has hired, grouped by
- * the brief they were hired on. Pulls from Application.status ===
- * 'hired' on briefs the company owns; falls back to a SubPageShell
- * when there are none.
+ * the brief they were hired on. Pulls from public.applications
+ * (status = 'hired') joined with public.jobs, then filtered to the
+ * signed-in company's briefs. Falls back to a SubPageShell when
+ * there are no hires.
  *
  * The page is intentionally read-only. The current data model
- * captures the hire itself (status + hiredAt) but does not model
+ * captures the hire itself (status + hired_at) but does not model
  * milestones, files, or a message thread — those would be a separate
  * "engagement" surface and are out of scope here. The "Hired" pill
  * and the brief/applicant links are the real, honest shape of an
@@ -31,11 +32,25 @@ const companyNav: NavItem[] = [
   { href: '/company/settings', label: 'Settings', icon: 'settings' },
 ];
 
-const session = store.auth.current();
-const isCompany = session?.role === 'company';
-const myBriefs = isCompany && session ? store.briefs.listByOwner(session.userId) : [];
-const allApps = isCompany && session ? store.applications.listByOwner(session.userId) : [];
-const hires: Application[] = allApps.filter((a) => a.status === 'hired');
+const user = Astro.locals.user;
+const isCompany = user?.role === 'company';
+const companyName = user?.name ?? 'Your company';
+
+let myBriefs: DbJob[] = [];
+let hires: ApplicationWithJob[] = [];
+let loadError: string | null = null;
+if (isCompany) {
+  try {
+    const [jobs, allApps] = await Promise.all([
+      listJobsForOwner(Astro),
+      listApplicationsForOwner(Astro),
+    ]);
+    myBriefs = jobs;
+    hires = allApps.filter((a) => a.status === 'hired');
+  } catch (err) {
+    loadError = err instanceof Error ? err.message : 'Could not load hires.';
+  }
+}
 
 /**
  * Format an ISO date as a build-time-stable relative phrase. We never
@@ -69,33 +84,26 @@ function formatHiredAt(iso: string | undefined): string {
 
 const totalHires = hires.length;
 
-// Sort hires by hiredAt desc (most recent first), with createdAt as
-// a tiebreaker for backfilled rows where hiredAt === createdAt.
+// Sort hires by hired_at desc, with created_at as a tiebreaker for
+// rows where hired_at is null.
 const sortedHires = [...hires].sort((a, b) => {
-  const at = a.hiredAt ?? a.createdAt;
-  const bt = b.hiredAt ?? b.createdAt;
+  const at = a.hired_at ?? a.created_at;
+  const bt = b.hired_at ?? b.created_at;
   return bt.localeCompare(at);
 });
 
-// Group by brief. Briefs with no hires are dropped (they will not
-// exist in the filter step below anyway, but we use briefs as the
-// iteration source so the order is stable).
+// Group by brief. Briefs with no hires are dropped.
 const myBriefById = new Map(myBriefs.map((b) => [b.id, b]));
 const byBrief = sortedHires
-  .map((h) => ({ brief: myBriefById.get(h.briefId), hire: h }))
-  .filter((row): row is { brief: NonNullable<typeof row.brief>; hire: Application } => Boolean(row.brief));
+  .map((h) => ({ brief: myBriefById.get(h.job_id), hire: h }))
+  .filter((row): row is { brief: DbJob; hire: ApplicationWithJob } => Boolean(row.brief));
 
-// Briefs also sorted by most recent hire.
-const briefOrder: string[] = [];
-byBrief.forEach((row) => {
-  if (!briefOrder.includes(row.brief.id)) briefOrder.push(row.brief.id);
-});
-byBrief.sort((a, b) => briefOrder.indexOf(a.brief.id) - briefOrder.indexOf(b.brief.id));
+const briefOrder = Array.from(new Set(byBrief.map((r) => r.brief.id)));
 briefOrder.sort((a, b) => {
-  const aHire = sortedHires.find((h) => h.briefId === a);
-  const bHire = sortedHires.find((h) => h.briefId === b);
-  const at = aHire?.hiredAt ?? aHire?.createdAt ?? '';
-  const bt = bHire?.hiredAt ?? bHire?.createdAt ?? '';
+  const aHire = sortedHires.find((h) => h.job_id === a);
+  const bHire = sortedHires.find((h) => h.job_id === b);
+  const at = aHire?.hired_at ?? aHire?.created_at ?? '';
+  const bt = bHire?.hired_at ?? bHire?.created_at ?? '';
   return bt.localeCompare(at);
 });
 
@@ -107,7 +115,7 @@ const showShell = !isCompany;
     <SubPageShell
       title="Active hires · StudentLancers"
       description="Students you have hired on StudentLancers."
-      name={session?.name ?? 'Your company'}
+      name={companyName}
       role="Company"
       nav={companyNav}
       eyebrow="Active hires"
@@ -117,11 +125,25 @@ const showShell = !isCompany;
       ctaHref="/login"
       badge="Sign in required"
     />
+  ) : loadError ? (
+    <SubPageShell
+      title="Active hires · StudentLancers"
+      description="Students you have hired on StudentLancers."
+      name={companyName}
+      role="Company"
+      nav={companyNav}
+      eyebrow="Active hires"
+      heading="We could not load your hires"
+      body={loadError}
+      ctaLabel="Try again"
+      ctaHref="/company/hires"
+      badge="Error"
+    />
   ) : totalHires === 0 ? (
     <SubPageShell
       title="Active hires · StudentLancers"
       description="Students you have hired on StudentLancers."
-      name={session!.name}
+      name={companyName}
       role="Company"
       nav={companyNav}
       eyebrow="Active hires"
@@ -135,7 +157,7 @@ const showShell = !isCompany;
     <DashboardLayout
       title="Active hires · StudentLancers"
       description="Students you have hired on StudentLancers."
-      name={session!.name}
+      name={companyName}
       role="Company"
       nav={companyNav}
     >
@@ -164,7 +186,7 @@ const showShell = !isCompany;
                 <div>
                   <h2 class="hires__group-title">{brief.title}</h2>
                   <span class="hires__group-meta">
-                    {rows.length} {rows.length === 1 ? 'hire' : 'hires'} · {brief.budgetType === 'hourly' ? `$${brief.budget}/hr` : `$${brief.budget.toLocaleString()} fixed`}
+                    {rows.length} {rows.length === 1 ? 'hire' : 'hires'} · {brief.budget_type === 'hourly' ? `$${Math.round(brief.budget_cents / 100)}/hr` : `$${Math.round(brief.budget_cents / 100).toLocaleString()} fixed`}
                   </span>
                 </div>
                 <a class="hires__brief-link" href={`/jobs/${brief.id}`} target="_blank" rel="noopener noreferrer">
@@ -177,25 +199,29 @@ const showShell = !isCompany;
                     <div class="hires__row">
                       <div class="hires__identity">
                         <span class="dash-list-avatar" data-color="link" aria-hidden="true">
-                          {hire.applicantName.split(' ').map((p) => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '·'}
+                          {hire.applicant.name.split(' ').map((p) => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '·'}
                         </span>
                         <div class="hires__main">
-                          <div class="hires__name">{hire.applicantName}</div>
-                          <a class="hires__email" href={`mailto:${hire.applicantEmail}`}>{hire.applicantEmail}</a>
+                          <div class="hires__name">{hire.applicant.name}</div>
+                          <a class="hires__email" href={`mailto:${hire.applicant.email}`}>{hire.applicant.email}</a>
                         </div>
                       </div>
                       <div class="hires__numbers">
-                        <span class="hires__rate">${hire.rate} <em>proposed</em></span>
-                        <span class="hires__timeline">{hire.timeline}</span>
+                        {hire.rate_cents != null && (
+                          <span class="hires__rate">${Math.round(hire.rate_cents / 100)} <em>proposed</em></span>
+                        )}
+                        {hire.timeline && <span class="hires__timeline">{hire.timeline}</span>}
                       </div>
                       <div class="hires__status">
                         <span class="dash-pill dash-pill--success">Hired</span>
-                        <span class="hires__date">{formatHiredAt(hire.hiredAt ?? hire.createdAt)}</span>
+                        <span class="hires__date">{formatHiredAt(hire.hired_at ?? hire.created_at)}</span>
                       </div>
                     </div>
                     <div class="hires__foot">
-                      <a class="hires__link" href={hire.portfolio} target="_blank" rel="noopener noreferrer">View portfolio →</a>
-                      <span class="hires__id">Application <code>{hire.id}</code></span>
+                      {hire.portfolio_url && (
+                        <a class="hires__link" href={hire.portfolio_url} target="_blank" rel="noopener noreferrer">View portfolio →</a>
+                      )}
+                      <span class="hires__id">Application <code>{hire.id.slice(0, 8)}</code></span>
                       <a class="hires__back" href={`/company/applicants#applicant-${hire.id}`}>View in applicants →</a>
                     </div>
                   </li>
