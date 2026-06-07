@@ -3,16 +3,16 @@ import DashboardLayout, { type NavItem } from '../../layouts/DashboardLayout.ast
 import Button from '../../components/ui/Button.astro';
 import Badge from '../../components/ui/Badge.astro';
 import SubPageShell from '../../components/SubPageShell.astro';
-import { store } from '../../scripts/store';
-import { JOBS } from '../../data/jobs';
+import { listApplicationsForApplicant } from '../../lib/api';
+import type { ApplicationStatus } from '../../lib/types';
 
 /**
  * /student/applications
  *
  * Lists every application the signed-in student has submitted. Pulls
- * straight from the local mock store so the dashboard reflects what
- * the user has actually done. If nothing has been submitted, falls
- * back to the shared empty state via SubPageShell.
+ * from public.applications via the API helper so the dashboard
+ * reflects what the user has actually done. If nothing has been
+ * submitted, falls back to the shared empty state via SubPageShell.
  */
 
 const studentNav: NavItem[] = [
@@ -25,33 +25,37 @@ const studentNav: NavItem[] = [
   { href: '/student/settings', label: 'Settings', icon: 'settings' },
 ];
 
-const session = store.auth.current();
-const studentName = session?.name ?? 'Your name';
-const applications = session
-  ? store.applications.listByApplicant(session.userId)
-  : [];
+const session = Astro.locals.session;
+const user = Astro.locals.user;
+const studentName = user?.name ?? 'Your name';
 
-// Resolve brief metadata from the static catalog so we can show the
-// category, budget, and a thumbnail. If a brief was posted by a
-// company in this session it would live in store.briefs — but the
-// static catalog covers the seeded case.
-const enriched = applications.map((a) => {
-  const job = JOBS.find((j) => j.id === a.briefId);
-  return {
-    ...a,
-    briefCategory: job?.category ?? 'General',
-    briefBudget: job ? job.budget : null,
-    briefDuration: job?.duration ?? '—',
-    briefHours: job?.hours ?? '—',
-    briefCompany: job?.company ?? 'A company on StudentLancers',
-  };
-});
+let applications: Awaited<ReturnType<typeof listApplicationsForApplicant>> = [];
+let loadError: string | null = null;
+if (user && user.role === 'student') {
+  try {
+    applications = await listApplicationsForApplicant(Astro);
+  } catch (err) {
+    loadError = err instanceof Error ? err.message : 'Could not load applications.';
+  }
+}
 
-const submitted = enriched;
+const statusLabel: Record<ApplicationStatus, string> = {
+  new: 'In review',
+  shortlisted: 'Shortlisted',
+  hired: 'Hired',
+  rejected: 'Rejected',
+};
+
+const statusPill: Record<ApplicationStatus, string> = {
+  new: 'dash-pill dash-pill--cyan',
+  shortlisted: 'dash-pill dash-pill--violet',
+  hired: 'dash-pill dash-pill--success',
+  rejected: 'dash-pill dash-pill--warning',
+};
 ---
 
 {
-  submitted.length === 0 ? (
+  applications.length === 0 ? (
     <SubPageShell
       title="My applications · StudentLancers"
       description="Track every brief you have applied to on StudentLancers."
@@ -59,11 +63,15 @@ const submitted = enriched;
       role="Student"
       nav={studentNav}
       eyebrow="Applications"
-      heading="Your applications"
-      body="When you apply to a brief, it shows up here with its current status — in review, invited to interview, or hired. Until you submit your first one, the list is empty."
+      heading={loadError ? 'We could not load your applications' : 'Your applications'}
+      body={
+        loadError
+          ? loadError
+          : 'When you apply to a brief, it shows up here with its current status — in review, invited to interview, or hired. Until you submit your first one, the list is empty.'
+      }
       ctaLabel="Find a brief to apply to"
       ctaHref="/student/find-work"
-      badge="Empty"
+      badge={loadError ? 'Error' : 'Empty'}
     />
   ) : (
     <DashboardLayout
@@ -78,7 +86,7 @@ const submitted = enriched;
           <span class="dash-page-head__eyebrow">Applications</span>
           <h1 class="dash-page-head__title">Your applications</h1>
           <p class="dash-page-head__lead">
-            {submitted.length} {submitted.length === 1 ? 'application' : 'applications'} sent. Most companies respond within two business days.
+            {applications.length} {applications.length === 1 ? 'application' : 'applications'} sent. Most companies respond within two business days.
           </p>
         </div>
         <div class="dash-page-head__actions">
@@ -88,26 +96,28 @@ const submitted = enriched;
 
       <section class="apps" aria-label="Submitted applications">
         <ul class="apps__list" role="list">
-          {submitted.map((a) => (
+          {applications.map((a) => (
             <li class="apps__item">
               <div class="apps__head">
                 <div class="apps__chips">
-                  <Badge variant="secondary" mono>{a.briefCategory}</Badge>
-                  <Badge variant="cyan">Applied</Badge>
+                  <span class={statusPill[a.status]} data-applicant-status-pill>
+                    {statusLabel[a.status]}
+                  </span>
                 </div>
                 <span class="apps__date">
-                  {new Date(a.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  {new Date(a.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                 </span>
               </div>
               <h2 class="apps__title">
-                <a href={`/jobs/${a.briefId}`}>{a.briefTitle}</a>
+                <a href={`/jobs/${a.job_id}`}>{a.job.title}</a>
               </h2>
-              <p class="apps__company">{a.briefCompany} · {a.briefDuration} · {a.briefHours}</p>
               <p class="apps__excerpt">{a.cover.slice(0, 180)}{a.cover.length > 180 ? '…' : ''}</p>
               <div class="apps__meta">
-                <span>Proposed rate: <strong>${a.rate}</strong></span>
-                <span>Timeline: <strong>{a.timeline}</strong></span>
-                <span>Application <code>{a.id}</code></span>
+                {a.rate_cents != null && (
+                  <span>Proposed rate: <strong>${(a.rate_cents / 100).toFixed(0)}</strong></span>
+                )}
+                {a.timeline && <span>Timeline: <strong>{a.timeline}</strong></span>}
+                <span>Application <code>{a.id.slice(0, 8)}</code></span>
               </div>
             </li>
           ))}
@@ -170,11 +180,6 @@ const submitted = enriched;
   }
   .apps__title a:hover {
     color: var(--color-link);
-  }
-  .apps__company {
-    margin: 0;
-    font-size: var(--text-body-sm);
-    color: var(--color-body);
   }
   .apps__excerpt {
     margin: 0;

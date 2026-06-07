@@ -138,29 +138,12 @@ function setLoading(form: HTMLFormElement, loading: boolean) {
   });
 }
 
-async function fakeSubmit(_data: FormData): Promise<{ ok: true; id: string }> {
-  await new Promise((r) => setTimeout(r, 700));
-  const id = 'APP-' + Math.random().toString(36).slice(2, 8).toUpperCase();
-  return { ok: true, id };
-}
-
-import { store } from './store';
-import { getJobById } from '../data/jobs';
-import { toast } from './toast';
-
 async function persistApplication(
   data: FormData,
   briefId: string,
 ): Promise<{ ok: true; id: string } | { ok: false; message: string }> {
   // Read from a snapshot taken before the form was disabled —
   // disabled fields are excluded from FormData.
-  const session = store.auth.current();
-  if (!session) {
-    return { ok: false, message: 'You need to be signed in to apply.' };
-  }
-  if (session.role !== 'student') {
-    return { ok: false, message: 'Only student accounts can apply to briefs.' };
-  }
   const cover = String(data.get('cover') || '').trim();
   const rate = Number(data.get('rate') || 0);
   const timeline = String(data.get('timeline') || '').trim();
@@ -168,20 +151,34 @@ async function persistApplication(
   if (!cover || !timeline || !portfolio || !rate) {
     return { ok: false, message: 'Please fill in every required field.' };
   }
-  const job = getJobById(briefId);
-  const title = job ? job.title : briefId;
-  const app = store.applications.create({
-    briefId,
-    briefTitle: title,
-    applicantId: session.userId,
-    applicantName: session.name,
-    applicantEmail: session.email,
-    cover,
-    rate,
-    timeline,
-    portfolio,
-  });
-  return { ok: true, id: app.id };
+  let res: Response;
+  try {
+    res = await fetch('/api/applications', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        jobId: briefId,
+        cover,
+        rate,
+        timeline,
+        portfolio,
+      }),
+    });
+  } catch (err) {
+    return { ok: false, message: err instanceof Error ? err.message : 'Network error.' };
+  }
+  if (!res.ok) {
+    let msg = `Could not send (HTTP ${res.status}).`;
+    try {
+      const body = (await res.json()) as { error?: string };
+      if (body.error) msg = body.error;
+    } catch {
+      // ignore
+    }
+    return { ok: false, message: msg };
+  }
+  const body = (await res.json()) as { id: string };
+  return { ok: true, id: body.id };
 }
 
 export function mountApplyForm() {

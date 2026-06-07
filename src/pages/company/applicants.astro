@@ -1,10 +1,10 @@
 ---
 import DashboardLayout, { type NavItem } from '../../layouts/DashboardLayout.astro';
 import Button from '../../components/ui/Button.astro';
-import Badge from '../../components/ui/Badge.astro';
 import SubPageShell from '../../components/SubPageShell.astro';
 import BackLink from '../../components/ui/BackLink.astro';
-import { store, type ApplicationStatus } from '../../scripts/store';
+import { listApplicationsForOwner, listJobsForOwner } from '../../lib/api';
+import type { ApplicationStatus, DbJob } from '../../lib/types';
 
 /**
  * /company/applicants
@@ -13,7 +13,7 @@ import { store, type ApplicationStatus } from '../../scripts/store';
  * company has posted, grouped by brief, with a status filter, a
  * per-applicant action row (Shortlist / Hire / Reject), and summary
  * counts in the header. Action buttons are wired by
- * src/scripts/applicants.ts, which writes through to the store and
+ * src/scripts/applicants.ts, which PATCHes /api/applications and
  * updates the DOM in place — no full page reload.
  *
  * The page renders honest empty states at two levels: no applications
@@ -31,27 +31,38 @@ const companyNav: NavItem[] = [
   { href: '/company/settings', label: 'Settings', icon: 'settings' },
 ];
 
-const session = store.auth.current();
-const companyName = session?.name ?? 'Your company';
+const user = Astro.locals.user;
+const companyName = user?.name ?? 'Your company';
 
-const myBriefs = session ? store.briefs.listByOwner(session.userId) : [];
-const apps = session ? store.applications.listByOwner(session.userId) : [];
+let myBriefs: DbJob[] = [];
+let apps: Awaited<ReturnType<typeof listApplicationsForOwner>> = [];
+let loadError: string | null = null;
+if (user && user.role === 'company') {
+  try {
+    [myBriefs, apps] = await Promise.all([
+      listJobsForOwner(Astro),
+      listApplicationsForOwner(Astro),
+    ]);
+  } catch (err) {
+    loadError = err instanceof Error ? err.message : 'Could not load applicants.';
+  }
+}
 
 // Group by brief. We sort briefs by most-recent activity (most recent
 // application) so the inbox reads like an email thread, not a brief
 // list.
 const lastActivity = new Map<string, string>();
 for (const a of apps) {
-  const prev = lastActivity.get(a.briefId);
-  if (!prev || a.createdAt > prev) lastActivity.set(a.briefId, a.createdAt);
+  const prev = lastActivity.get(a.job_id);
+  if (!prev || a.created_at > prev) lastActivity.set(a.job_id, a.created_at);
 }
 const sortedBriefs = [...myBriefs].sort((a, b) => {
-  const aa = lastActivity.get(a.id) ?? a.createdAt;
-  const bb = lastActivity.get(b.id) ?? b.createdAt;
+  const aa = lastActivity.get(a.id) ?? a.created_at;
+  const bb = lastActivity.get(b.id) ?? b.created_at;
   return bb.localeCompare(aa);
 });
 const byBrief = sortedBriefs
-  .map((b) => ({ brief: b, apps: apps.filter((a) => a.briefId === b.id) }))
+  .map((b) => ({ brief: b, apps: apps.filter((a) => a.job_id === b.id) }))
   .filter((row) => row.apps.length > 0);
 
 const counts = {
@@ -94,11 +105,15 @@ const statusPillClass: Record<ApplicationStatus, string> = {
       role="Company"
       nav={companyNav}
       eyebrow="Applicants"
-      heading="Review applicants"
-      body="Ranked proposals land here once you post a brief. Until then, the inbox is empty."
+      heading={loadError ? 'We could not load applicants' : 'Review applicants'}
+      body={
+        loadError
+          ? loadError
+          : 'Ranked proposals land here once you post a brief. Until then, the inbox is empty.'
+      }
       ctaLabel="Post your first brief"
       ctaHref="/jobs/post"
-      badge="Empty"
+      badge={loadError ? 'Error' : 'Empty'}
     />
   ) : (
     <DashboardLayout
@@ -162,7 +177,7 @@ const statusPillClass: Record<ApplicationStatus, string> = {
               <div>
                 <h2 class="apps__group-title">{brief.title}</h2>
                 <span class="apps__group-meta">
-                  {apps.length} {apps.length === 1 ? 'applicant' : 'applicants'} · {brief.budgetType === 'hourly' ? `$${brief.budget}/hr` : `$${brief.budget} fixed`}
+                  {apps.length} {apps.length === 1 ? 'applicant' : 'applicants'} · {brief.budget_type === 'hourly' ? `$${Math.round(brief.budget_cents / 100)}/hr` : `$${Math.round(brief.budget_cents / 100)} fixed`}
                 </span>
               </div>
               <a class="apps__brief-link" href={`/jobs/${brief.id}`} target="_blank" rel="noopener noreferrer">
@@ -181,16 +196,18 @@ const statusPillClass: Record<ApplicationStatus, string> = {
                   <div class="apps__row">
                     <div class="apps__identity">
                       <span class="dash-list-avatar" aria-hidden="true" data-color={a.status === 'hired' ? 'link' : a.status === 'shortlisted' ? 'violet' : a.status === 'rejected' ? 'ink' : 'cyan'}>
-                        {a.applicantName.split(' ').map((p) => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '·'}
+                        {a.applicant.name.split(' ').map((p) => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '·'}
                       </span>
                       <div class="apps__main">
-                        <div class="apps__name">{a.applicantName}</div>
-                        <a class="apps__email" href={`mailto:${a.applicantEmail}`}>{a.applicantEmail}</a>
+                        <div class="apps__name">{a.applicant.name}</div>
+                        <a class="apps__email" href={`mailto:${a.applicant.email}`}>{a.applicant.email}</a>
                       </div>
                     </div>
                     <div class="apps__numbers">
-                      <span class="apps__rate">${a.rate} <em>proposed</em></span>
-                      <span class="apps__timeline">{a.timeline}</span>
+                      {a.rate_cents != null && (
+                        <span class="apps__rate">${Math.round(a.rate_cents / 100)} <em>proposed</em></span>
+                      )}
+                      {a.timeline && <span class="apps__timeline">{a.timeline}</span>}
                     </div>
                     <div class="apps__status">
                       <span class={statusPillClass[a.status]} data-applicant-status-pill>
@@ -207,53 +224,55 @@ const statusPillClass: Record<ApplicationStatus, string> = {
                     <p class="apps__cover-body">{a.cover}</p>
                   </details>
 
-                  <div class="apps__foot">
-                    <a class="apps__link" href={a.portfolio} target="_blank" rel="noopener noreferrer">View portfolio →</a>
-                    <span class="apps__id">Application <code>{a.id}</code></span>
-                    <div class="apps__manage" data-applicant-manage>
-                      <button
-                        type="button"
-                        class="ds-btn ds-btn--tab ds-btn--size-md"
-                        aria-expanded="false"
-                        data-manage-toggle
-                        aria-controls={`manage-row-${a.id}`}
-                      >
-                        Manage
-                      </button>
-                      <div
-                        class="apps__manage-row"
-                        id={`manage-row-${a.id}`}
-                        role="group"
-                        aria-label={`Manage ${a.applicantName}'s application`}
-                        hidden
-                      >
+                  {a.portfolio_url && (
+                    <div class="apps__foot">
+                      <a class="apps__link" href={a.portfolio_url} target="_blank" rel="noopener noreferrer">View portfolio →</a>
+                      <span class="apps__id">Application <code>{a.id.slice(0, 8)}</code></span>
+                      <div class="apps__manage" data-applicant-manage>
                         <button
                           type="button"
-                          class="ds-btn ds-btn--ghost ds-btn--size-md"
-                          data-action="shortlist"
-                          data-applicant-id={a.id}
+                          class="ds-btn ds-btn--tab ds-btn--size-md"
+                          aria-expanded="false"
+                          data-manage-toggle
+                          aria-controls={`manage-row-${a.id}`}
                         >
-                          Shortlist
+                          Manage
                         </button>
-                        <button
-                          type="button"
-                          class="ds-btn ds-btn--primary-sm ds-btn--size-md"
-                          data-action="hire"
-                          data-applicant-id={a.id}
+                        <div
+                          class="apps__manage-row"
+                          id={`manage-row-${a.id}`}
+                          role="group"
+                          aria-label={`Manage ${a.applicant.name}'s application`}
+                          hidden
                         >
-                          Hire
-                        </button>
-                        <button
-                          type="button"
-                          class="ds-btn ds-btn--ghost ds-btn--size-md apps__action-reject"
-                          data-action="reject"
-                          data-applicant-id={a.id}
-                        >
-                          Reject
-                        </button>
+                          <button
+                            type="button"
+                            class="ds-btn ds-btn--ghost ds-btn--size-md"
+                            data-action="shortlist"
+                            data-applicant-id={a.id}
+                          >
+                            Shortlist
+                          </button>
+                          <button
+                            type="button"
+                            class="ds-btn ds-btn--primary-sm ds-btn--size-md"
+                            data-action="hire"
+                            data-applicant-id={a.id}
+                          >
+                            Hire
+                          </button>
+                          <button
+                            type="button"
+                            class="ds-btn ds-btn--ghost ds-btn--size-md apps__action-reject"
+                            data-action="reject"
+                            data-applicant-id={a.id}
+                          >
+                            Reject
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </li>
               ))}
             </ul>

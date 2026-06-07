@@ -5,10 +5,11 @@
  *   - Status filter chips: hide applicant cards whose data-applicant-status
  *     does not match the active filter.
  *   - Manage button: toggles the action row open/closed.
- *   - Action buttons (Shortlist / Hire / Reject): write through to
- *     `store.applications.updateStatus` (or `.hire` for the hire case,
- *     which auto-rejects the rest of the brief), then update the DOM
- *     in place — no full page reload, no flash.
+ *   - Action buttons (Shortlist / Hire / Reject): PATCH
+ *     /api/applications?id=… with the new status. The server updates
+ *     public.applications and (for Hire) auto-rejects the rest of
+ *     the brief and closes the job, then we update the DOM in place
+ *     — no full page reload, no flash.
  *   - Reject uses an inline confirm pattern: clicking "Reject" morphs
  *     the button to "Confirm reject?" for 3 seconds. A second click
  *     commits; otherwise it reverts.
@@ -17,7 +18,7 @@
  * marker, so it's safe to import from any dashboard page.
  */
 
-import { store, type Application, type ApplicationStatus } from './store';
+import type { ApplicationStatus } from '../lib/types';
 import { toast } from './toast';
 
 const STATUS_LABELS: Record<ApplicationStatus, string> = {
@@ -217,47 +218,78 @@ function refreshHeaderCounts() {
   });
 }
 
-function applyAction(action: 'shortlist' | 'hire' | 'reject', applicantId: string) {
+interface PatchResult {
+  ok: true;
+  application: { id: string; status: ApplicationStatus; applicant_id: string; job_id: string };
+  autoRejected: { id: string; status: ApplicationStatus }[];
+}
+
+async function patchStatus(
+  id: string,
+  status: ApplicationStatus,
+): Promise<PatchResult | { ok: false; message: string }> {
+  let res: Response;
+  try {
+    res = await fetch(`/api/applications?id=${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+  } catch (err) {
+    return { ok: false, message: err instanceof Error ? err.message : 'Network error.' };
+  }
+  if (!res.ok) {
+    let msg = `Update failed (HTTP ${res.status}).`;
+    try {
+      const body = (await res.json()) as { error?: string };
+      if (body.error) msg = body.error;
+    } catch {
+      // ignore
+    }
+    return { ok: false, message: msg };
+  }
+  return (await res.json()) as PatchResult;
+}
+
+function applicantName(card: HTMLElement): string {
+  const name = card.querySelector<HTMLElement>('.apps__name')?.textContent ?? 'Applicant';
+  return name;
+}
+
+async function applyAction(action: 'shortlist' | 'hire' | 'reject', applicantId: string) {
   const card = document.querySelector<HTMLElement>(`[data-applicant-card][data-applicant-id="${CSS.escape(applicantId)}"]`);
   if (!card) return;
 
-  if (action === 'hire') {
-    // store.hire auto-rejects every other open application on the
-    // same brief; we mirror that in the DOM so the user sees the
-    // whole brief settle, not just the one card.
-    const result = store.applications.hire(applicantId);
-    if (!result.hired) {
-      toast.error('Could not hire applicant', 'Please refresh and try again.');
-      return;
-    }
-    setCardStatus(card, 'hired');
-    result.autoRejected.forEach((rejected: Application) => {
-      const other = document.querySelector<HTMLElement>(
-        `[data-applicant-card][data-applicant-id="${CSS.escape(rejected.id)}"]`,
-      );
-      if (other) setCardStatus(other, 'rejected');
-    });
-    const name = result.hired.applicantName;
-    const extra = result.autoRejected.length;
+  const targetStatus: ApplicationStatus =
+    action === 'hire' ? 'hired' : action === 'shortlist' ? 'shortlisted' : 'rejected';
+  const result = await patchStatus(applicantId, targetStatus);
+  if (!result.ok) {
+    toast.error('Could not update applicant', result.message);
+    return;
+  }
+
+  // The server auto-rejects other applications on the same brief
+  // when we hire. Mirror that in the DOM so the user sees the whole
+  // brief settle, not just the one card.
+  setCardStatus(card, targetStatus);
+  result.autoRejected.forEach((rejected) => {
+    const other = document.querySelector<HTMLElement>(
+      `[data-applicant-card][data-applicant-id="${CSS.escape(rejected.id)}"]`,
+    );
+    if (other) setCardStatus(other, rejected.status);
+  });
+
+  if (targetStatus === 'hired') {
     toast.success(
-      `${name} hired`,
-      extra > 0
-        ? `Other ${extra} application${extra === 1 ? '' : 's'} on this brief were auto-rejected.`
+      `${applicantName(card)} hired`,
+      result.autoRejected.length > 0
+        ? `Other ${result.autoRejected.length} application${result.autoRejected.length === 1 ? '' : 's'} on this brief were auto-rejected.`
         : 'You can now message the student and agree on payment terms.',
     );
+  } else if (targetStatus === 'shortlisted') {
+    toast.info(`Shortlisted ${applicantName(card)}`, 'They will see the change next time they sign in.');
   } else {
-    const target: ApplicationStatus = action === 'shortlist' ? 'shortlisted' : 'rejected';
-    const updated = store.applications.updateStatus(applicantId, target);
-    if (!updated) {
-      toast.error('Could not update applicant', 'Please refresh and try again.');
-      return;
-    }
-    setCardStatus(card, target);
-    if (target === 'shortlisted') {
-      toast.info(`Shortlisted ${updated.applicantName}`, 'They will see the change next time they sign in.');
-    } else {
-      toast.info(`Rejected ${updated.applicantName}`, 'They will be notified by email.');
-    }
+    toast.info(`Rejected ${applicantName(card)}`, 'They will be notified by email.');
   }
 
   refreshHeaderCounts();

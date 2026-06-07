@@ -382,30 +382,18 @@ function setLoading(form: HTMLFormElement, loading: boolean) {
   });
 }
 
-async function fakeSubmit(_data: FormData): Promise<{ ok: true; id: string }> {
-  await new Promise((r) => setTimeout(r, 700));
-  const id = 'BR-' + Math.random().toString(36).slice(2, 8).toUpperCase();
-  return { ok: true, id };
-}
-
 /**
- * Real submit path: persists the brief to the local store. Returns
- * the generated brief id and brief record.
- *
- * Reads from a FormData snapshot taken before the form was disabled
- * (disabled fields are excluded from FormData, so calling new
- * FormData(form) after setLoading(true) returns empty).
+ * Real submit path: posts the brief to /api/jobs, which inserts into
+ * public.jobs. Reads from a FormData snapshot taken before the form
+ * was disabled (disabled fields are excluded from FormData, so calling
+ * new FormData(form) after setLoading(true) returns empty).
  */
-import { store } from './store';
 import { toast } from './toast';
+
 async function persistBrief(
   data: FormData,
   skills: string[],
 ): Promise<{ ok: true; id: string } | { ok: false; message: string }> {
-  const session = store.auth.current();
-  if (!session || session.role !== 'company') {
-    return { ok: false, message: 'You need to be signed in as a company to post a brief.' };
-  }
   const title = String(data.get('title') || '').trim();
   const category = String(data.get('category') || '').trim();
   const summary = String(data.get('summary') || '').trim();
@@ -423,21 +411,39 @@ async function persistBrief(
     return { ok: false, message: 'Add at least 3 skills.' };
   }
 
-  const brief = store.briefs.create({
-    title,
-    category,
-    summary,
-    description,
-    budgetType,
-    budget,
-    duration,
-    hours,
-    skills,
-    links,
-    ownerId: session.userId,
-    ownerName: session.name,
-  });
-  return { ok: true, id: brief.id };
+  let res: Response;
+  try {
+    res = await fetch('/api/jobs', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        title,
+        category,
+        summary,
+        description,
+        budgetType,
+        budget,
+        duration,
+        hours,
+        skills,
+        links,
+      }),
+    });
+  } catch (err) {
+    return { ok: false, message: err instanceof Error ? err.message : 'Network error.' };
+  }
+  if (!res.ok) {
+    let msg = `Could not publish (HTTP ${res.status}).`;
+    try {
+      const body = (await res.json()) as { error?: string };
+      if (body.error) msg = body.error;
+    } catch {
+      // ignore
+    }
+    return { ok: false, message: msg };
+  }
+  const body = (await res.json()) as { id: string };
+  return { ok: true, id: body.id };
 }
 
 function setDraftStatus(form: HTMLFormElement, text: string) {
