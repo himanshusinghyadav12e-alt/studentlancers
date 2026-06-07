@@ -6,7 +6,12 @@ import ThemeToggle from '../../components/ui/ThemeToggle.astro';
 import {
   JOBS,
   JOB_CATEGORIES,
+  EXP_LEVELS,
+  BUDGET_RANGES,
   formatRelativeDate,
+  experienceLevelFor,
+  estimatedTotalBudget,
+  matchesRecency,
 } from '../../data/jobs';
 
 /**
@@ -151,13 +156,13 @@ function hoursUpperBound(band: string): number {
 
         <form class="fw-filters__form" data-fw-form>
           <div class="fw-filters__grid">
-            <label class="fw-filters__field">
+            <label class="fw-filters__field fw-filters__field--wide">
               <span class="fw-filters__label">Search</span>
               <input
                 type="search"
                 name="q"
                 class="fw-filters__input"
-                placeholder="e.g. Figma, tutor, SEO"
+                placeholder="Search by title, skill, or keyword (e.g. Figma, tutor, SEO)"
                 autocomplete="off"
                 data-fw-search
               />
@@ -170,6 +175,21 @@ function hoursUpperBound(band: string): number {
                   <option value="All">All categories</option>
                   {JOB_CATEGORIES.map((c) => (
                     <option value={c}>{c}</option>
+                  ))}
+                </select>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
+            </label>
+
+            <label class="fw-filters__field">
+              <span class="fw-filters__label">Budget range</span>
+              <span class="fw-filters__select-wrap">
+                <select name="range" class="fw-filters__select" data-fw-range>
+                  <option value="All">Any budget</option>
+                  {BUDGET_RANGES.map((b) => (
+                    <option value={b.value}>{b.label}</option>
                   ))}
                 </select>
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
@@ -193,6 +213,35 @@ function hoursUpperBound(band: string): number {
             </label>
 
             <label class="fw-filters__field">
+              <span class="fw-filters__label">Experience level</span>
+              <span class="fw-filters__select-wrap">
+                <select name="experience" class="fw-filters__select" data-fw-experience>
+                  <option value="All">Any level</option>
+                  {EXP_LEVELS.map((lvl) => (
+                    <option value={lvl}>{lvl}</option>
+                  ))}
+                </select>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
+            </label>
+
+            <label class="fw-filters__field">
+              <span class="fw-filters__label">Recently posted</span>
+              <span class="fw-filters__select-wrap">
+                <select name="recency" class="fw-filters__select" data-fw-recency>
+                  <option value="any">Any time</option>
+                  <option value="7">Last 7 days</option>
+                  <option value="30">Last 30 days</option>
+                </select>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
+            </label>
+
+            <label class="fw-filters__field">
               <span class="fw-filters__label">Max hrs / week</span>
               <span class="fw-filters__select-wrap">
                 <select name="hours" class="fw-filters__select" data-fw-hours>
@@ -207,15 +256,18 @@ function hoursUpperBound(band: string): number {
               </span>
             </label>
 
-            <label class="fw-filters__check">
-              <input
-                type="checkbox"
-                name="remote"
-                value="1"
-                class="fw-filters__checkbox"
-                data-fw-remote
-              />
-              <span class="fw-filters__check-label">Remote only</span>
+            <label class="fw-filters__field fw-filters__field--inline">
+              <span class="fw-filters__label">Location</span>
+              <label class="fw-filters__check fw-filters__check--inline">
+                <input
+                  type="checkbox"
+                  name="remote"
+                  value="1"
+                  class="fw-filters__checkbox"
+                  data-fw-remote
+                />
+                <span class="fw-filters__check-label">Remote only</span>
+              </label>
             </label>
           </div>
 
@@ -231,6 +283,8 @@ function hoursUpperBound(band: string): number {
         <a class="fw-meta__clear" href="/student/find-work" data-fw-clear-meta hidden>Reset</a>
       </div>
 
+      <div class="fw-chips" data-fw-chips hidden aria-live="polite"></div>
+
       <ul class="fw-list" role="list" data-fw-list>
         {JOBS.map((job) => (
           <li
@@ -239,7 +293,10 @@ function hoursUpperBound(band: string): number {
             data-fw-budget={job.budget.type}
             data-fw-hours={hoursUpperBound(job.hours)}
             data-fw-remote={job.remote ? '1' : '0'}
-            data-fw-keyword={`${job.title} ${job.company} ${job.summary} ${job.skills.join(' ')}`.toLowerCase()}
+            data-fw-experience={experienceLevelFor(job)}
+            data-fw-total={estimatedTotalBudget(job)}
+            data-fw-posted={job.postedAt}
+            data-fw-keyword={`${job.title} ${job.company} ${job.summary} ${job.skills.join(' ')} ${job.category} ${experienceLevelFor(job)} ${job.location}`.toLowerCase()}
           >
             <a class="fw-card" href={`/jobs/${job.id}`} aria-label={`View ${job.title}`}>
               <div class="fw-card__head">
@@ -335,46 +392,136 @@ function hoursUpperBound(band: string): number {
 
   <script>
     /**
-     * Filter pass. Reads ?q, ?category, ?budget, ?hours, ?remote from the
-     * URL on load, sets the form controls to match, and toggles the
-     * [hidden] attribute on every <li data-fw-item> that doesn't match.
+     * Filter pass. Reads ?q, ?category, ?range, ?budget, ?experience,
+     * ?recency, ?hours, ?remote from the URL on load, sets the form
+     * controls to match, and toggles the [hidden] attribute on every
+     * <li data-fw-item> that doesn't match.
      *
-     * Submits update the URL via history.replaceState and re-run the
-     * filter; clicking a track chip navigates the browser (full reload),
-     * which also re-runs the pass from the fresh URL.
+     * The seven inputs compose: every active criterion must pass for a
+     * brief to remain visible. Submits update the URL via
+     * history.replaceState and re-run the filter; the search input also
+     * runs live (120 ms debounce) so typing is responsive.
+     *
+     * Notes:
+     *   - Budget range is bucketed server-side via estimatedTotalBudget
+     *     and exposed as a numeric `data-fw-total` so the client passes
+     *     a single integer comparison per brief. The reference date for
+     *     recency matches the rest of the page (2026-06-05) so the
+     *     "Last 7 days" bucket is stable across renders.
      */
     type Filter = {
       q: string;
       category: string;
+      range: string;
       budget: string;
+      experience: string;
+      recency: string;
       hours: string;
       remote: boolean;
     };
+
+    const RANGE_UPPER: Record<string, number> = {
+      'under-500': 500,
+      '500-1500': 1500,
+      '1500-5000': 5000,
+      'over-5000': Number.POSITIVE_INFINITY,
+    };
+
+    const RECENCY_DAYS: Record<string, number> = {
+      '7': 7,
+      '30': 30,
+    };
+
+    // Reference date mirrors formatRelativeDate in /data/jobs.ts. Kept
+    // inline so the script is self-contained.
+    const REFERENCE_ISO = '2026-06-05';
 
     function readFiltersFromURL(): Filter {
       const sp = new URLSearchParams(location.search);
       return {
         q: (sp.get('q') ?? '').trim().toLowerCase(),
         category: sp.get('category') ?? 'All',
+        range: sp.get('range') ?? 'All',
         budget: sp.get('budget') ?? 'All',
+        experience: sp.get('experience') ?? 'All',
+        recency: sp.get('recency') ?? 'any',
         hours: sp.get('hours') ?? '',
         remote: sp.get('remote') === '1',
       };
     }
 
+    function daysSince(iso: string): number {
+      const ref = new Date(REFERENCE_ISO + 'T00:00:00Z').getTime();
+      const posted = new Date(iso + 'T00:00:00Z').getTime();
+      return Math.round((ref - posted) / (1000 * 60 * 60 * 24));
+    }
+
     function passes(item: HTMLElement, f: Filter): boolean {
       if (f.category !== 'All' && item.dataset.fwCat !== f.category) return false;
       if (f.budget !== 'All' && item.dataset.fwBudget !== f.budget) return false;
+      if (f.experience !== 'All' && item.dataset.fwExperience !== f.experience) return false;
       if (f.hours) {
         const max = Number(item.dataset.fwHours ?? '999');
         if (max > Number(f.hours)) return false;
       }
       if (f.remote && item.dataset.fwRemote !== '1') return false;
+      if (f.range !== 'All') {
+        const total = Number(item.dataset.fwTotal ?? '0');
+        const upper = RANGE_UPPER[f.range];
+        if (upper === undefined) return false;
+        if (f.range === 'over-5000') {
+          if (total < 5000) return false;
+        } else {
+          // Each range is [<lower>, <upper>); "under-500" is [0, 500).
+          const lower = f.range === 'under-500' ? 0
+            : f.range === '500-1500' ? 500
+            : 1500;
+          if (total < lower || total >= upper) return false;
+        }
+      }
+      if (f.recency !== 'any') {
+        const posted = item.dataset.fwPosted;
+        const days = RECENCY_DAYS[f.recency];
+        if (posted === undefined || days === undefined) return false;
+        if (daysSince(posted) > days) return false;
+      }
       if (f.q) {
+        // Split the query into space-separated tokens; every token must
+        // appear somewhere in the brief's keyword haystack. This lets
+        // "react tutor" find briefs that match either word, but
+        // "react native bug" find briefs that match all three.
+        const tokens = f.q.split(/\s+/).filter(Boolean);
         const haystack = item.dataset.fwKeyword ?? '';
-        if (!haystack.includes(f.q)) return false;
+        for (const t of tokens) {
+          if (!haystack.includes(t)) return false;
+        }
       }
       return true;
+    }
+
+    function activeFilterChips(f: Filter): string[] {
+      const chips: string[] = [];
+      if (f.q) chips.push(`"${f.q}"`);
+      if (f.category !== 'All') chips.push(f.category);
+      if (f.range !== 'All') {
+        const found = ['under-500', '500-1500', '1500-5000', 'over-5000'].find(
+          (v) => v === f.range,
+        );
+        const label: Record<string, string> = {
+          'under-500': 'Under $500',
+          '500-1500': '$500 – $1,500',
+          '1500-5000': '$1,500 – $5,000',
+          'over-5000': '$5,000+',
+        };
+        if (found) chips.push(label[found]);
+      }
+      if (f.budget !== 'All') chips.push(f.budget === 'fixed' ? 'Fixed price' : 'Hourly');
+      if (f.experience !== 'All') chips.push(`${f.experience} level`);
+      if (f.recency === '7') chips.push('Last 7 days');
+      else if (f.recency === '30') chips.push('Last 30 days');
+      if (f.hours) chips.push(`≤ ${f.hours} hrs / wk`);
+      if (f.remote) chips.push('Remote only');
+      return chips;
     }
 
     function applyFilters(f: Filter) {
@@ -385,16 +532,23 @@ function hoursUpperBound(band: string): number {
         it.hidden = !show;
         if (show) visible++;
       }
-      const total = items.length;
 
-      // Meta count
+      // Meta count + active-filter chips
       const count = document.querySelector<HTMLElement>('[data-fw-count]');
       if (count) {
-        if (f.category !== 'All' || f.q) {
-          count.textContent = `${visible} ${visible === 1 ? 'brief' : 'briefs'} · ${f.category !== 'All' ? f.category : 'matching'}`;
-        } else {
-          count.textContent = `${visible} ${visible === 1 ? 'brief' : 'briefs'}`;
+        count.textContent = `${visible} ${visible === 1 ? 'brief' : 'briefs'}`;
+      }
+      const chipsEl = document.querySelector<HTMLElement>('[data-fw-chips]');
+      if (chipsEl) {
+        const chips = activeFilterChips(f);
+        chipsEl.innerHTML = '';
+        for (const c of chips) {
+          const tag = document.createElement('span');
+          tag.className = 'fw-chip';
+          tag.textContent = c;
+          chipsEl.appendChild(tag);
         }
+        chipsEl.hidden = chips.length === 0;
       }
 
       // Empty state
@@ -420,11 +574,19 @@ function hoursUpperBound(band: string): number {
 
       // Filters hint + clear buttons
       const hint = document.querySelector<HTMLElement>('[data-fw-hint]');
-      const hasFilter = f.category !== 'All' || f.budget !== 'All' || f.hours || f.remote || f.q;
+      const hasFilter =
+        f.q !== '' ||
+        f.category !== 'All' ||
+        f.range !== 'All' ||
+        f.budget !== 'All' ||
+        f.experience !== 'All' ||
+        f.recency !== 'any' ||
+        f.hours !== '' ||
+        f.remote;
       if (hint) {
         hint.textContent = hasFilter
           ? `${visible} match${visible === 1 ? '' : 'es'} · tap to edit`
-          : 'Tap to filter by hours, pay type, or remote-only';
+          : 'Tap to filter by hours, pay type, budget, experience, or recency';
       }
       const details = document.querySelector<HTMLElement>('[data-fw-filters]');
       if (details && hasFilter) details.setAttribute('open', '');
@@ -437,12 +599,18 @@ function hoursUpperBound(band: string): number {
     function syncFormToFilters(f: Filter) {
       const search = document.querySelector<HTMLInputElement>('[data-fw-search]');
       const category = document.querySelector<HTMLSelectElement>('[data-fw-category]');
+      const range = document.querySelector<HTMLSelectElement>('[data-fw-range]');
       const budget = document.querySelector<HTMLSelectElement>('[data-fw-budget]');
+      const experience = document.querySelector<HTMLSelectElement>('[data-fw-experience]');
+      const recency = document.querySelector<HTMLSelectElement>('[data-fw-recency]');
       const hours = document.querySelector<HTMLSelectElement>('[data-fw-hours]');
       const remote = document.querySelector<HTMLInputElement>('[data-fw-remote]');
       if (search) search.value = f.q;
       if (category) category.value = f.category;
+      if (range) range.value = f.range;
       if (budget) budget.value = f.budget;
+      if (experience) experience.value = f.experience;
+      if (recency) recency.value = f.recency;
       if (hours) hours.value = f.hours;
       if (remote) remote.checked = f.remote;
     }
@@ -451,7 +619,10 @@ function hoursUpperBound(band: string): number {
       const sp = new URLSearchParams();
       if (f.q) sp.set('q', f.q);
       if (f.category !== 'All') sp.set('category', f.category);
+      if (f.range !== 'All') sp.set('range', f.range);
       if (f.budget !== 'All') sp.set('budget', f.budget);
+      if (f.experience !== 'All') sp.set('experience', f.experience);
+      if (f.recency !== 'any') sp.set('recency', f.recency);
       if (f.hours) sp.set('hours', f.hours);
       if (f.remote) sp.set('remote', '1');
       const qs = sp.toString();
@@ -461,13 +632,19 @@ function hoursUpperBound(band: string): number {
     function readFiltersFromForm(): Filter {
       const search = document.querySelector<HTMLInputElement>('[data-fw-search]');
       const category = document.querySelector<HTMLSelectElement>('[data-fw-category]');
+      const range = document.querySelector<HTMLSelectElement>('[data-fw-range]');
       const budget = document.querySelector<HTMLSelectElement>('[data-fw-budget]');
+      const experience = document.querySelector<HTMLSelectElement>('[data-fw-experience]');
+      const recency = document.querySelector<HTMLSelectElement>('[data-fw-recency]');
       const hours = document.querySelector<HTMLSelectElement>('[data-fw-hours]');
       const remote = document.querySelector<HTMLInputElement>('[data-fw-remote]');
       return {
         q: search?.value.trim() ?? '',
         category: category?.value ?? 'All',
+        range: range?.value ?? 'All',
         budget: budget?.value ?? 'All',
+        experience: experience?.value ?? 'All',
+        recency: recency?.value ?? 'any',
         hours: hours?.value ?? '',
         remote: remote?.checked ?? false,
       };
@@ -502,13 +679,26 @@ function hoursUpperBound(band: string): number {
       });
     }
 
-    // Clear buttons navigate to the bare URL
-    document.querySelectorAll<HTMLElement>('[data-fw-clear], [data-fw-clear-meta], [data-fw-clear-button]').forEach((el) => {
-      el.addEventListener('click', (e) => {
-        // Anchor href handles the navigation; we just want a clean reload.
-        // No preventDefault here — the link is the source of truth.
+    // Any select change → re-apply immediately (no submit required).
+    document.querySelectorAll<HTMLSelectElement>('.fw-filters__select').forEach((sel) => {
+      sel.addEventListener('change', () => {
+        const f = readFiltersFromForm();
+        history.replaceState(null, '', buildURL(f));
+        applyFilters(f);
       });
     });
+    // Remote checkbox toggles the same way.
+    const remoteBox = document.querySelector<HTMLInputElement>('[data-fw-remote]');
+    if (remoteBox) {
+      remoteBox.addEventListener('change', () => {
+        const f = readFiltersFromForm();
+        history.replaceState(null, '', buildURL(f));
+        applyFilters(f);
+      });
+    }
+
+    // Clear buttons navigate to the bare URL; nothing to do here since
+    // the anchor href is the source of truth.
   </script>
 </Layout>
 
@@ -736,18 +926,44 @@ function hoursUpperBound(band: string): number {
   }
   .fw-filters__grid {
     display: grid;
-    grid-template-columns: 1.4fr 1fr 1fr 1fr auto;
+    /* Search is wide (2 cols), then five 1-col selects, then the
+     * inline remote cell — eight columns total at desktop. */
+    grid-template-columns: 2fr repeat(5, 1fr) 1fr;
     gap: var(--space-md);
     align-items: end;
   }
-  @media (max-width: 900px) {
+  .fw-filters__field--wide {
+    grid-column: span 2;
+  }
+  .fw-filters__field--inline {
+    /* Remote cell: label on top, checkbox below, height matches the
+     * other rows so the grid lines up. */
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  @media (max-width: 1100px) {
+    .fw-filters__grid {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+    .fw-filters__field--wide {
+      grid-column: span 3;
+    }
+  }
+  @media (max-width: 720px) {
     .fw-filters__grid {
       grid-template-columns: 1fr 1fr;
     }
+    .fw-filters__field--wide {
+      grid-column: span 2;
+    }
   }
-  @media (max-width: 500px) {
+  @media (max-width: 480px) {
     .fw-filters__grid {
       grid-template-columns: 1fr;
+    }
+    .fw-filters__field--wide {
+      grid-column: span 1;
     }
   }
   .fw-filters__field {
@@ -816,6 +1032,11 @@ function hoursUpperBound(band: string): number {
     cursor: pointer;
     user-select: none;
   }
+  .fw-filters__check--inline {
+    /* The remote-only control lives in a flex-column field, so it
+     * stretches to fill the cell — no need for an explicit height. */
+    height: 40px;
+  }
   .fw-filters__checkbox {
     width: 16px;
     height: 16px;
@@ -861,6 +1082,25 @@ function hoursUpperBound(band: string): number {
     color: var(--color-body);
     text-decoration: underline;
     text-underline-offset: 3px;
+  }
+
+  /* ─── Active filter chips ───────────────────────────────── */
+  .fw-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .fw-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    background: var(--color-canvas-soft);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-full);
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: var(--color-ink);
+    white-space: nowrap;
   }
 
   .fw-list {
