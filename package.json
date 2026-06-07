@@ -11,6 +11,8 @@
     "preview": "astro preview",
     "start": "node ./dist/server/entry.mjs",
     "smoke": "tsx scripts/smoke-test-signup.ts",
+    "e2e": "tsx scripts/e2e-flow.ts",
+    "e2e:find-work": "tsx scripts/e2e-find-work.ts",
     "astro": "astro"
   },
   "dependencies": {
@@ -20,6 +22,8 @@
     "astro": "^6.4.4"
   },
   "devDependencies": {
-    "tsx": "^4.19.2"
+    "@astrojs/check": "^0.9.9",
+    "tsx": "^4.19.2",
+    "typescript": "^6.0.3"
   }
 }
