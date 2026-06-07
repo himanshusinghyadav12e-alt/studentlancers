@@ -397,6 +397,7 @@ async function fakeSubmit(_data: FormData): Promise<{ ok: true; id: string }> {
  * FormData(form) after setLoading(true) returns empty).
  */
 import { store } from './store';
+import { toast } from './toast';
 async function persistBrief(
   data: FormData,
   skills: string[],
@@ -543,6 +544,7 @@ export function mountPostForm() {
       const result = await persistBrief(data, skillsSnapshot);
       if (!result.ok) {
         setFormAlert(form.querySelector<HTMLElement>('[data-form-alert]'), result.message);
+        toast.error('Could not publish brief', result.message);
         setLoading(form, false);
         return;
       }
@@ -574,9 +576,20 @@ export function mountPostForm() {
         `;
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      toast.success(
+        'Brief published',
+        `${result.id} is live. Redirecting to your dashboard…`,
+        3200,
+      );
+      // Auto-redirect to the dashboard after a short dwell so the user
+      // sees the success state but does not get stuck on it.
+      window.setTimeout(() => {
+        window.location.href = '/company/dashboard';
+      }, 2400);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Network error. Please try again.';
       setFormAlert(form.querySelector<HTMLElement>('[data-form-alert]'), message);
+      toast.error('Could not publish brief', message);
     } finally {
       setLoading(form, false);
     }

@@ -34,6 +34,26 @@ body {
   min-height: 100%;
 }
 
+/* Prevent horizontal page-level overflow caused by a single
+ * misbehaving descendant (long URL in a code block, an oversized
+ * image, etc.). Acts as a safety net so the global layout never
+ * scrolls sideways on mobile even if a child forgets min-width: 0. */
+html,
+body {
+  overflow-x: hidden;
+}
+
+/* Long unbroken strings (long URLs, raw ids) shouldn't push the
+ * layout sideways inside text content. */
+p,
+li,
+dd,
+.ds-input--textarea,
+code {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 body {
   background-color: var(--color-canvas-soft);
   color: var(--color-ink);

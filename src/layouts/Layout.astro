@@ -1,16 +1,34 @@
 ---
 import '../styles/tokens.css';
 import '../styles/global.css';
+import '../styles/toast.css';
 import ThemeBoot from '../components/ui/ThemeBoot.astro';
+
+/**
+ * Layout
+ *
+ * Base layout. Pages can override `pageAuth` to opt in to one of:
+ *   - "public"     — never redirect (default)
+ *   - "guest-only" — redirect signed-in users to their dashboard
+ *   - "student"    — require an authenticated student
+ *   - "company"    — require an authenticated company
+ *
+ * A small inline script runs in <head> before paint to apply the
+ * matching redirect immediately — this prevents the flash of the
+ * "wrong" page on refresh, which would otherwise be visible until
+ * the auth-guards module loaded on `DOMContentLoaded`.
+ */
 
 interface Props {
   title?: string;
   description?: string;
+  pageAuth?: 'public' | 'guest-only' | 'student' | 'company';
 }
 
 const {
   title = 'StudentLancers — Hire college talent. Earn while you learn.',
   description = 'The freelance marketplace built for college students and the companies that hire them. Find affordable student talent or land gigs that fit your schedule.',
+  pageAuth = 'public',
 } = Astro.props as Props;
 ---
 
@@ -18,13 +36,60 @@ const {
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="icon" href="/favicon.ico" />
 		<meta name="generator" content={Astro.generator} />
 		<meta name="description" content={description} />
 		<title>{title}</title>
 		<ThemeBoot />
+		{/*
+		 * Pre-paint auth redirect. Runs synchronously in <head> so a
+		 * user refreshing /login while signed in does not flash the
+		 * login form, and an unauthenticated user refreshing a
+		 * protected page is redirected before any pixels paint.
+		 *
+		 * Intentionally inline and dependency-free so it ships in
+		 * the document HTML and never blocks on a module import.
+		 */}
+		<script is:inline define:vars={{ pageAuth }}>
+			(function () {
+				try {
+					if (pageAuth === 'public') return;
+					var raw = localStorage.getItem('sl-session');
+					var session = raw ? JSON.parse(raw) : null;
+					var path = window.location.pathname || '/';
+					function safeNext(n) {
+						if (!n || typeof n !== 'string') return null;
+						if (!n.startsWith('/') || n.startsWith('//')) return null;
+						return n;
+					}
+					var dash = function (role) {
+						return role === 'company' ? '/company/dashboard' : '/student/dashboard';
+					};
+					if (pageAuth === 'guest-only') {
+						if (session) {
+							var params = new URLSearchParams(window.location.search);
+							var next = safeNext(params.get('next')) || dash(session.role);
+							window.location.replace(next);
+						}
+						return;
+					}
+					if (pageAuth === 'student' || pageAuth === 'company') {
+						if (!session) {
+							window.location.replace('/login?next=' + encodeURIComponent(path));
+							return;
+						}
+						if (session.role !== pageAuth) {
+							window.location.replace(dash(session.role));
+							return;
+						}
+					}
+				} catch (e) {
+					// Storage unavailable — let the client-side guard handle it.
+				}
+			})();
+		</script>
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 		<link
@@ -32,8 +97,10 @@ const {
 			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap"
 		/>
 	</head>
-	<body data-page-auth="public">
+	<body data-page-auth={pageAuth}>
 		<slot />
+		{/* Toast root — populated by the toast utility */}
+		<div class="sl-toast-root" data-toast-root role="region" aria-live="polite" aria-label="Notifications"></div>
 		<script>
 			import { mountThemeToggle } from '../scripts/theme-toggle';
 			mountThemeToggle();

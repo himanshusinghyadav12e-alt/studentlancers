@@ -26,7 +26,7 @@ import ThemeToggle from '../../components/ui/ThemeToggle.astro';
  */
 ---
 
-<Layout title="Post a brief · StudentLancers" description="Post a paid brief and start receiving ranked student proposals.">
+<Layout title="Post a brief · StudentLancers" description="Post a paid brief and start receiving ranked student proposals." pageAuth="company">
   <a class="skip-link" href="#post-main">Skip to content</a>
 
   <header class="post-top" data-post-top>
@@ -382,8 +382,11 @@ import ThemeToggle from '../../components/ui/ThemeToggle.astro';
           published. Students can apply right away and you'll see ranked
           applicants in your dashboard.
         </p>
+        <p class="post-success__redirect" data-success-redirect>
+          Taking you to your dashboard in a moment…
+        </p>
         <div class="post-success__actions">
-          <Button variant="primary" size="md" href="/company/dashboard">View applicants</Button>
+          <Button variant="primary" size="md" href="/company/dashboard">Go to dashboard now</Button>
           <Button variant="secondary" size="md" href="/jobs/post">Post another</Button>
         </div>
       </div>
@@ -833,6 +836,13 @@ import ThemeToggle from '../../components/ui/ThemeToggle.astro';
     padding: 2px 8px;
     border-radius: var(--radius-sm);
     color: var(--color-ink);
+  }
+  .post-success__redirect {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: var(--color-mute);
+    letter-spacing: 0.04em;
   }
   .post-success__actions {
     display: flex;

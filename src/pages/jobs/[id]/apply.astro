@@ -53,7 +53,7 @@ const view = job ?? fallback;
 const budgetLabel = formatBudget(view);
 ---
 
-<Layout title={`Apply · ${view.title}`} description={`Apply to ${view.title}.`}>
+<Layout title={`Apply · ${view.title}`} description={`Apply to ${view.title}.`} pageAuth="student">
   <a class="skip-link" href="#apply-main">Skip to content</a>
 
   <header class="post-top" data-post-top>

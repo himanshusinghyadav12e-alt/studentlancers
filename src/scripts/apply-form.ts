@@ -134,6 +134,7 @@ async function fakeSubmit(_data: FormData): Promise<{ ok: true; id: string }> {
 
 import { store } from './store';
 import { getJobById } from '../data/jobs';
+import { toast } from './toast';
 
 async function persistApplication(
   data: FormData,
@@ -197,6 +198,7 @@ export function mountApplyForm() {
       const result = await persistApplication(data, briefId);
       if (!result.ok) {
         setFormAlert(form.querySelector<HTMLElement>('[data-form-alert]'), result.message);
+        toast.error('Could not send application', result.message);
         setLoading(form, false);
         return;
       }
@@ -207,9 +209,15 @@ export function mountApplyForm() {
       if (success) success.removeAttribute('hidden');
       if (idEl) idEl.textContent = result.id;
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      toast.success(
+        'Application sent',
+        `${result.id} — most companies respond within 2 business days.`,
+        4500,
+      );
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Network error. Please try again.';
       setFormAlert(form.querySelector<HTMLElement>('[data-form-alert]'), message);
+      toast.error('Could not send application', message);
     } finally {
       setLoading(form, false);
     }

@@ -18,6 +18,7 @@
  */
 
 import { store, type Application, type ApplicationStatus } from './store';
+import { toast } from './toast';
 
 const STATUS_LABELS: Record<ApplicationStatus, string> = {
   new: 'New',
@@ -201,7 +202,10 @@ function applyAction(action: 'shortlist' | 'hire' | 'reject', applicantId: strin
     // same brief; we mirror that in the DOM so the user sees the
     // whole brief settle, not just the one card.
     const result = store.applications.hire(applicantId);
-    if (!result.hired) return;
+    if (!result.hired) {
+      toast.error('Could not hire applicant', 'Please refresh and try again.');
+      return;
+    }
     setCardStatus(card, 'hired');
     result.autoRejected.forEach((rejected: Application) => {
       const other = document.querySelector<HTMLElement>(
@@ -209,11 +213,27 @@ function applyAction(action: 'shortlist' | 'hire' | 'reject', applicantId: strin
       );
       if (other) setCardStatus(other, 'rejected');
     });
+    const name = result.hired.applicantName;
+    const extra = result.autoRejected.length;
+    toast.success(
+      `${name} hired`,
+      extra > 0
+        ? `Other ${extra} application${extra === 1 ? '' : 's'} on this brief were auto-rejected.`
+        : 'Funds will be held in escrow until you approve the work.',
+    );
   } else {
     const target: ApplicationStatus = action === 'shortlist' ? 'shortlisted' : 'rejected';
     const updated = store.applications.updateStatus(applicantId, target);
-    if (!updated) return;
+    if (!updated) {
+      toast.error('Could not update applicant', 'Please refresh and try again.');
+      return;
+    }
     setCardStatus(card, target);
+    if (target === 'shortlisted') {
+      toast.info(`Shortlisted ${updated.applicantName}`, 'They will see the change next time they sign in.');
+    } else {
+      toast.info(`Rejected ${updated.applicantName}`, 'They will be notified by email.');
+    }
   }
 
   refreshHeaderCounts();

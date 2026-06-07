@@ -15,6 +15,7 @@
  */
 
 import { store } from './store';
+import { toast } from './toast';
 
 function initials(name: string): string {
   return (
@@ -46,7 +47,17 @@ function replaceNavCta(scope: ParentNode = document) {
     `;
     const logout = host.querySelector<HTMLButtonElement>('[data-logout]');
     logout?.addEventListener('click', () => {
+      const name = store.auth.current()?.name;
       store.auth.signOut();
+      try {
+        // Hand off a one-time toast for the home page to render.
+        sessionStorage.setItem('sl-toast-once', JSON.stringify({
+          variant: 'info',
+          title: name ? `Signed out — see you soon, ${name.split(' ')[0]}` : 'Signed out',
+        }));
+      } catch {
+        // ignore
+      }
       // replace() so the back button doesn't dump the user back on the
       // page they were just signed out of.
       window.location.replace('/');
@@ -116,7 +127,16 @@ function attachAvatarMenu() {
       <button type="button" role="menuitem" data-logout>Log out</button>
     `;
     menu.querySelector<HTMLButtonElement>('[data-logout]')?.addEventListener('click', () => {
+      const name = store.auth.current()?.name;
       store.auth.signOut();
+      try {
+        sessionStorage.setItem('sl-toast-once', JSON.stringify({
+          variant: 'info',
+          title: name ? `Signed out — see you soon, ${name.split(' ')[0]}` : 'Signed out',
+        }));
+      } catch {
+        // ignore
+      }
       // replace() so the back button doesn't dump the user back on the
       // page they were just signed out of.
       window.location.replace('/');
@@ -146,4 +166,22 @@ function attachAvatarMenu() {
 export function mountSessionBar() {
   replaceNavCta();
   attachAvatarMenu();
+  // Surface any pending one-shot toast handed off from another page
+  // (e.g. "Signed out" after a logout). Read once and clear.
+  try {
+    const raw = sessionStorage.getItem('sl-toast-once');
+    if (raw) {
+      sessionStorage.removeItem('sl-toast-once');
+      const payload = JSON.parse(raw) as { variant?: 'info' | 'success' | 'error'; title: string; message?: string };
+      if (payload && payload.title) {
+        toast.show({
+          variant: payload.variant ?? 'info',
+          title: payload.title,
+          message: payload.message,
+        });
+      }
+    }
+  } catch {
+    // ignore
+  }
 }

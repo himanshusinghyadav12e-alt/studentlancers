@@ -13,6 +13,7 @@
 import '../styles/tokens.css';
 import '../styles/global.css';
 import '../styles/auth.css';
+import '../styles/toast.css';
 import ThemeBoot from '../components/ui/ThemeBoot.astro';
 import ThemeToggle from '../components/ui/ThemeToggle.astro';
 
@@ -34,19 +35,57 @@ const {
   heading,
   subheading,
 } = Astro.props as Props;
+
+// Auth pages are always guest-only — signed-in users should bounce to
+// their dashboard before the form ever paints.
+const pageAuth = 'guest-only';
 ---
 
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" />
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
     <title>{title}</title>
     <ThemeBoot />
+    <script is:inline define:vars={{ pageAuth }}>
+      (function () {
+        try {
+          if (pageAuth === 'public') return;
+          var raw = localStorage.getItem('sl-session');
+          var session = raw ? JSON.parse(raw) : null;
+          var path = window.location.pathname || '/';
+          function safeNext(n) {
+            if (!n || typeof n !== 'string') return null;
+            if (!n.startsWith('/') || n.startsWith('//')) return null;
+            return n;
+          }
+          var dash = function (role) {
+            return role === 'company' ? '/company/dashboard' : '/student/dashboard';
+          };
+          if (pageAuth === 'guest-only' && session) {
+            var params = new URLSearchParams(window.location.search);
+            var next = safeNext(params.get('next')) || dash(session.role);
+            window.location.replace(next);
+            return;
+          }
+          if ((pageAuth === 'student' || pageAuth === 'company') && !session) {
+            window.location.replace('/login?next=' + encodeURIComponent(path));
+            return;
+          }
+          if ((pageAuth === 'student' || pageAuth === 'company') && session && session.role !== pageAuth) {
+            window.location.replace(dash(session.role));
+            return;
+          }
+        } catch (e) {
+          // Fallback to client-side guard.
+        }
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -54,7 +93,7 @@ const {
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap"
     />
   </head>
-  <body class="auth-body" data-page-auth="guest-only">
+  <body class="auth-body" data-page-auth={pageAuth}>
     <a class="skip-link" href="#auth-main">Skip to content</a>
 
     <main id="auth-main" class="auth-shell">
@@ -142,6 +181,8 @@ const {
         </div>
       </section>
     </main>
+
+    <div class="sl-toast-root" data-toast-root role="region" aria-live="polite" aria-label="Notifications"></div>
 
     <script>
       import { mountThemeToggle } from '../scripts/theme-toggle';

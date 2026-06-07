@@ -16,6 +16,7 @@
 import '../styles/tokens.css';
 import '../styles/global.css';
 import '../styles/dashboard.css';
+import '../styles/toast.css';
 import ThemeBoot from '../components/ui/ThemeBoot.astro';
 import ThemeToggle from '../components/ui/ThemeToggle.astro';
 
@@ -54,19 +55,43 @@ const initials = name
   .slice(0, 2)
   .join('')
   .toUpperCase();
+
+const pageAuth = role.toLowerCase() === 'company' ? 'company' : 'student';
 ---
 
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" />
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
     <title>{title}</title>
     <ThemeBoot />
+    <script is:inline define:vars={{ pageAuth }}>
+      (function () {
+        try {
+          var raw = localStorage.getItem('sl-session');
+          var session = raw ? JSON.parse(raw) : null;
+          var path = window.location.pathname || '/';
+          var dash = function (role) {
+            return role === 'company' ? '/company/dashboard' : '/student/dashboard';
+          };
+          if (!session) {
+            window.location.replace('/login?next=' + encodeURIComponent(path));
+            return;
+          }
+          if (session.role !== pageAuth) {
+            window.location.replace(dash(session.role));
+            return;
+          }
+        } catch (e) {
+          // Storage unavailable — let the client-side guard handle it.
+        }
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -74,7 +99,7 @@ const initials = name
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap"
     />
   </head>
-  <body class="dash-body" data-page-auth={role.toLowerCase() === 'company' ? 'company' : 'student'}>
+  <body class="dash-body" data-page-auth={pageAuth}>
     <a class="skip-link" href="#dash-main">Skip to content</a>
 
     <header class="dash-top" data-dash-top>
@@ -190,6 +215,8 @@ const initials = name
       </main>
     </div>
 
+    <div class="sl-toast-root" data-toast-root role="region" aria-live="polite" aria-label="Notifications"></div>
+
     <script>
       import { mountThemeToggle } from '../scripts/theme-toggle';
       mountThemeToggle();
@@ -216,7 +243,16 @@ const initials = name
         a.addEventListener('click', async (event) => {
           event.preventDefault();
           const { store } = await import('../scripts/store');
+          const name = store.auth.current()?.name;
           store.auth.signOut();
+          try {
+            sessionStorage.setItem('sl-toast-once', JSON.stringify({
+              variant: 'info',
+              title: name ? `Signed out — see you soon, ${name.split(' ')[0]}` : 'Signed out',
+            }));
+          } catch {
+            // ignore
+          }
           window.location.href = '/login';
         });
       });

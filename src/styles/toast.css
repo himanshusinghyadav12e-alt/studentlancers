@@ -1,0 +1,114 @@
+/*
+ * Toast notifications
+ *
+ * Stacks at the bottom-right on desktop and full-width at the bottom
+ * on mobile. Variants: info (default), success, error. Each toast
+ * fades in, dwells for a few seconds, then fades out. Token-driven
+ * so dark/light mode flips automatically.
+ */
+
+.sl-toast-root {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  left: auto;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+  pointer-events: none;
+  max-width: min(360px, calc(100vw - 32px));
+}
+
+@media (max-width: 600px) {
+  .sl-toast-root {
+    left: 16px;
+    right: 16px;
+    max-width: none;
+    align-items: stretch;
+  }
+}
+
+.sl-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  border: 1px solid var(--color-hairline);
+  box-shadow: var(--shadow-level-3);
+  font-size: var(--text-body-sm);
+  line-height: var(--text-body-sm-line);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.sl-toast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.sl-toast__icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--color-mute);
+}
+
+.sl-toast--success .sl-toast__icon {
+  color: var(--color-success, #16a34a);
+}
+
+.sl-toast--error .sl-toast__icon {
+  color: var(--color-error);
+}
+
+.sl-toast__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sl-toast__title {
+  margin: 0;
+  font-weight: var(--text-body-sm-strong-weight);
+  color: var(--color-ink);
+}
+
+.sl-toast__msg {
+  margin: 0;
+  color: var(--color-body);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.sl-toast__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  border: 0;
+  color: var(--color-mute);
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.sl-toast__close:hover {
+  background: var(--color-canvas-soft);
+  color: var(--color-ink);
+}
+.sl-toast__close:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: 1px;
+}
