@@ -26,7 +26,6 @@ import Button from '../components/ui/Button.astro';
     aria-describedby="login-alert"
     data-auth-form="login"
   >
-    <div class="auth-demo-banner" data-demo-banner hidden></div>
     <div
       id="login-alert"
       class="auth-alert"
@@ -93,19 +92,20 @@ import Button from '../components/ui/Button.astro';
     </Field>
 
     <div class="auth-row">
-      <label class="auth-check">
-        <span class="auth-check__box" aria-hidden="true">
-          <svg viewBox="0 0 12 12" fill="none">
-            <path d="M2.5 6.5l2.5 2.5L9.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-        </span>
+      <label class="auth-check" for="login-remember">
         <input
           type="checkbox"
           class="auth-check__input"
           name="remember"
           id="login-remember"
+          value="30d"
         />
-        <span>Remember me for 30 days</span>
+        <span class="auth-check__box" aria-hidden="true">
+          <svg viewBox="0 0 12 12" fill="none">
+            <path d="M2.5 6.5l2.5 2.5L9.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </span>
+        <span class="auth-check__label">Remember me for 30 days</span>
       </label>
       <a class="auth-link" href="/forgot-password">Forgot password?</a>
     </div>

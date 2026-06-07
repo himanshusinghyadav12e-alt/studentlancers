@@ -27,7 +27,6 @@ import Button from '../components/ui/Button.astro';
     aria-describedby="signup-alert"
     data-auth-form="signup"
   >
-    <div class="auth-demo-banner" data-demo-banner hidden></div>
     <div
       id="signup-alert"
       class="auth-alert"
@@ -207,12 +206,7 @@ import Button from '../components/ui/Button.astro';
       </span>
     </Field>
 
-    <label class="auth-check" data-terms>
-      <span class="auth-check__box" aria-hidden="true">
-        <svg viewBox="0 0 12 12" fill="none">
-          <path d="M2.5 6.5l2.5 2.5L9.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-      </span>
+    <label class="auth-check" data-terms for="signup-terms">
       <input
         type="checkbox"
         class="auth-check__input"
@@ -221,7 +215,12 @@ import Button from '../components/ui/Button.astro';
         required
         data-field="terms"
       />
-      <span>
+      <span class="auth-check__box" aria-hidden="true">
+        <svg viewBox="0 0 12 12" fill="none">
+          <path d="M2.5 6.5l2.5 2.5L9.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </span>
+      <span class="auth-check__label">
         I agree to the
         <a class="auth-link" href="/terms">Terms of Service</a>
         and

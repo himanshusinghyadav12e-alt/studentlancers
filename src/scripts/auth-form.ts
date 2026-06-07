@@ -495,42 +495,12 @@ function describeNextPath(path: string): string {
   return path;
 }
 
-/** Pre-fill demo credentials on the auth pages to make testing painless. */
-function attachDemoFill(form: HTMLFormElement, kind: FormContext['kind']) {
-  if (kind === 'forgot') return;
-  const banner = form.querySelector<HTMLElement>('[data-demo-banner]');
-  if (!banner) return;
-  const accounts = store.demo.accounts();
-  if (!accounts.length) return;
-  banner.removeAttribute('hidden');
-  banner.innerHTML = `
-    <span class="auth-demo-banner__label">Try a demo account:</span>
-    <div class="auth-demo-banner__list">
-      ${accounts
-        .map(
-          (a, i) => `
-            <button type="button" class="auth-demo-banner__btn" data-demo-idx="${i}">
-              <strong>${a.role === 'student' ? 'Student' : 'Company'}</strong>
-              <span>${a.email}</span>
-            </button>
-          `,
-        )
-        .join('')}
-    </div>
-  `;
-  banner.querySelectorAll<HTMLButtonElement>('[data-demo-idx]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const idx = Number(btn.getAttribute('data-demo-idx') ?? '0');
-      const acc = accounts[idx];
-      if (!acc) return;
-      const email = form.querySelector<HTMLInputElement>('[data-field="email"]');
-      const password = form.querySelector<HTMLInputElement>('[data-field="password"]');
-      if (email) email.value = acc.email;
-      if (password) password.value = acc.password;
-      email?.dispatchEvent(new Event('input', { bubbles: true }));
-      password?.dispatchEvent(new Event('input', { bubbles: true }));
-    });
-  });
+/** Pre-fill demo credentials on the auth pages to make testing painless.
+ *  No-op: demo fill removed — the demo banner was deleted from login/signup
+ *  and we don't surface seeded accounts on the auth pages anymore.
+ */
+function attachDemoFill(_form: HTMLFormElement, _kind: FormContext['kind']) {
+  return;
 }
 
 export function mountAuthForms() {
@@ -554,7 +524,6 @@ export function mountAuthForms() {
     attachLiveValidation(form);
     attachGoogleStub(form);
     attachNextNotice(form, kind);
-    attachDemoFill(form, kind);
     if (kind === 'forgot') attachForgotFlow(form);
     attachSubmit(form, kind);
   });
