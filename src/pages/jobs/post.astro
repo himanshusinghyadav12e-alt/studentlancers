@@ -58,9 +58,23 @@ import ThemeToggle from '../../components/ui/ThemeToggle.astro';
         <span class="post-page__eyebrow">New brief</span>
         <h1 class="post-page__title">Post a brief</h1>
         <p class="post-page__lead">
-          Describe the work, set a budget, and pick the skills you need. Most
-          briefs go live in under five minutes.
+          StudentLancers helps skilled students showcase their talent, gain
+          real-world experience, and connect with companies looking for
+          ambitious talent.
         </p>
+        <ul class="post-page__fields" aria-label="Supported fields">
+          <li>Web Development</li>
+          <li>Full Stack Development</li>
+          <li>Mobile Development</li>
+          <li>UI/UX Design</li>
+          <li>Graphic Design</li>
+          <li>Video Editing</li>
+          <li>Content Writing</li>
+          <li>Marketing</li>
+          <li>Automation</li>
+          <li>AI</li>
+          <li>And more.</li>
+        </ul>
       </header>
 
       <div class="post-grid">
@@ -497,6 +511,25 @@ import ThemeToggle from '../../components/ui/ThemeToggle.astro';
     line-height: var(--text-body-md-line);
     color: var(--color-body);
     margin: 0;
+  }
+  .post-page__fields {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: var(--space-sm) 0 0;
+    padding: 0;
+  }
+  .post-page__fields li {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    background: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-full);
+    font-size: var(--text-caption);
+    color: var(--color-ink);
+    white-space: nowrap;
   }
 
   /* Two-column form + summary */

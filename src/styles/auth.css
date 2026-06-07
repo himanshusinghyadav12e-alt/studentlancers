@@ -159,6 +159,22 @@
   color: var(--inverted-fg);
   font-weight: var(--text-body-sm-strong-weight);
 }
+.auth-pane__value {
+  font-size: clamp(18px, 2.2vw, 22px);
+  line-height: 1.45;
+  font-weight: 500;
+  letter-spacing: -0.4px;
+  color: var(--inverted-fg);
+  margin: 0;
+}
+.auth-pane__field-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--inverted-fg-subtle);
+  margin: 0 0 var(--space-xs);
+}
 
 .auth-pane__bullets {
   list-style: none;

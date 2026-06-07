@@ -98,9 +98,23 @@ function hoursUpperBound(band: string): number {
         <span class="fw-page__eyebrow">Find work</span>
         <h1 class="fw-page__title">Open briefs across the marketplace.</h1>
         <p class="fw-page__lead">
-          Browse paid gigs from companies looking to hire college talent. Filter
-          by track, weekly hours, or pay type — or just scroll.
+          StudentLancers helps skilled students showcase their talent, gain
+          real-world experience, and connect with companies looking for
+          ambitious talent.
         </p>
+        <ul class="fw-page__fields" aria-label="Supported fields">
+          <li>Web Development</li>
+          <li>Full Stack Development</li>
+          <li>Mobile Development</li>
+          <li>UI/UX Design</li>
+          <li>Graphic Design</li>
+          <li>Video Editing</li>
+          <li>Content Writing</li>
+          <li>Marketing</li>
+          <li>Automation</li>
+          <li>AI</li>
+          <li>And more.</li>
+        </ul>
       </header>
 
       <nav class="fw-tracks" aria-label="Browse by category" data-fw-tracks>
@@ -598,6 +612,25 @@ function hoursUpperBound(band: string): number {
     line-height: var(--text-body-md-line);
     color: var(--color-body);
     margin: 0;
+  }
+  .fw-page__fields {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: var(--space-sm) 0 0;
+    padding: 0;
+  }
+  .fw-page__fields li {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    background: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-full);
+    font-size: var(--text-caption);
+    color: var(--color-ink);
+    white-space: nowrap;
   }
 
   .fw-tracks {
