@@ -4,8 +4,8 @@
  *
  * Chrome-style navigation bar for all student/company pages.
  * Renders:
- *   - Hamburger menu (mobile only) → slide-out drawer with nav items
- *   - Back/forward chevron buttons (desktop only)
+ *   - Hamburger menu → toggles side rail on desktop, opens
+ *     slide-out drawer on mobile
  *   - StudentLancers brand logo
  *
  * The drawer receives its items from the parent layout via the
@@ -19,21 +19,18 @@ export interface NavItem {
 }
 
 interface Props {
-  prevHref?: string;
-  nextHref?: string;
   /** Nav items for the mobile drawer (pass from DashboardLayout) */
   nav?: NavItem[];
 }
 
-const { prevHref, nextHref, nav = [] } = Astro.props as Props;
+const { nav = [] } = Astro.props as Props;
 ---
 
 <div class="student-nav">
-  {/* Hamburger — mobile only */}
   <button
     class="mn-hamburger"
     type="button"
-    aria-label="Open navigation menu"
+    aria-label="Toggle navigation menu"
     aria-expanded="false"
     aria-controls="mn-drawer"
     data-mn-toggle
@@ -42,30 +39,6 @@ const { prevHref, nextHref, nav = [] } = Astro.props as Props;
       <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
     </svg>
   </button>
-
-  {/* Prev / Next — desktop only */}
-  <nav class="student-nav__arrows" aria-label="Page navigation">
-    <a
-      href={prevHref}
-      class:list={['student-nav__btn', !prevHref && 'is-disabled']}
-      aria-disabled={!prevHref || undefined}
-      aria-label="Previous page"
-    >
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <path d="M10 4L6 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-      </svg>
-    </a>
-    <a
-      href={nextHref}
-      class:list={['student-nav__btn', !nextHref && 'is-disabled']}
-      aria-disabled={!nextHref || undefined}
-      aria-label="Next page"
-    >
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-      </svg>
-    </a>
-  </nav>
 
   <a href="/" class="nav__brand" aria-label="StudentLancers home">
     <span class="nav__logo" aria-hidden="true">
@@ -201,34 +174,39 @@ const { prevHref, nextHref, nav = [] } = Astro.props as Props;
 
 <script>
   /**
-   * Mobile navigation drawer.
-   *   - Toggle on hamburger click
+   * Navigation drawer.
+   *   - Desktop (≥769px): toggles the side rail via data-rail-collapsed
+   *   - Mobile (≤768px): opens a slide-out drawer
    *   - Close on backdrop click, item click, or Escape
    *   - Trap focus inside drawer when open
    *   - Return focus to hamburger on close
    */
+  function isMobile(): boolean {
+    return window.matchMedia('(max-width: 768px)').matches;
+  }
+
   function mount() {
     const toggle = document.querySelector<HTMLButtonElement>('[data-mn-toggle]');
     const drawer = document.querySelector<HTMLElement>('[data-mn-drawer]');
     const backdrop = document.querySelector<HTMLElement>('[data-mn-backdrop]');
     const closeBtn = document.querySelector<HTMLButtonElement>('[data-mn-close]');
     const items = document.querySelectorAll<HTMLElement>('[data-mn-item]');
+    const shell = document.querySelector<HTMLElement>('.dash-shell');
     if (!toggle || !drawer || !backdrop) return;
 
     let lastFocused: HTMLElement | null = null;
 
-    function open() {
+    function openMobile() {
       lastFocused = toggle;
       drawer.hidden = false;
       backdrop.hidden = false;
       toggle.setAttribute('aria-expanded', 'true');
       document.body.style.overflow = 'hidden';
-      // Focus first item or close button
       const first = drawer.querySelector<HTMLElement>('[data-mn-close]');
       first?.focus();
     }
 
-    function close() {
+    function closeMobile() {
       drawer.hidden = true;
       backdrop.hidden = true;
       toggle.setAttribute('aria-expanded', 'false');
@@ -236,28 +214,47 @@ const { prevHref, nextHref, nav = [] } = Astro.props as Props;
       lastFocused?.focus();
     }
 
+    function toggleDesktop() {
+      if (!shell) return;
+      const collapsed = shell.hasAttribute('data-rail-collapsed');
+      if (collapsed) {
+        shell.removeAttribute('data-rail-collapsed');
+        toggle.setAttribute('aria-expanded', 'false');
+      } else {
+        shell.setAttribute('data-rail-collapsed', '');
+        toggle.setAttribute('aria-expanded', 'true');
+      }
+    }
+
     function isOpen() {
       return toggle.getAttribute('aria-expanded') === 'true';
     }
 
+    function isMobileOpen() {
+      return !drawer.hidden;
+    }
+
     toggle.addEventListener('click', () => {
-      isOpen() ? close() : open();
+      if (isMobile()) {
+        isMobileOpen() ? closeMobile() : openMobile();
+      } else {
+        toggleDesktop();
+      }
     });
 
-    backdrop.addEventListener('click', close);
-    closeBtn?.addEventListener('click', close);
+    backdrop.addEventListener('click', closeMobile);
+    closeBtn?.addEventListener('click', closeMobile);
 
     items.forEach((item) => {
-      item.addEventListener('click', close);
+      item.addEventListener('click', closeMobile);
     });
 
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && isOpen()) {
-        close();
+      if (e.key === 'Escape' && isMobileOpen()) {
+        closeMobile();
         return;
       }
-      // Focus trap
-      if (e.key === 'Tab' && isOpen()) {
+      if (e.key === 'Tab' && isMobileOpen()) {
         const focusable = drawer.querySelectorAll<HTMLElement>(
           'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
         );
@@ -288,45 +285,10 @@ const { prevHref, nextHref, nav = [] } = Astro.props as Props;
     align-items: center;
     gap: var(--space-sm);
   }
-  .student-nav__arrows {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-  .student-nav__btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--color-hairline);
-    background: var(--color-canvas);
-    color: var(--color-ink);
-    text-decoration: none;
-    cursor: pointer;
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-  }
-  .student-nav__btn:hover:not(.is-disabled) {
-    background: var(--color-canvas-soft);
-    border-color: var(--color-hairline-strong);
-  }
-  .student-nav__btn:active:not(.is-disabled) {
-    background: var(--color-canvas-soft-2);
-  }
-  .student-nav__btn:focus-visible {
-    outline: 2px solid var(--color-link);
-    outline-offset: 2px;
-  }
-  .student-nav__btn.is-disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-    pointer-events: none;
-  }
 
-  /* ─── Hamburger — mobile only ──────────────────────────────── */
+  /* ─── Hamburger — always visible ───────────────────────────── */
   .mn-hamburger {
-    display: none;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 44px;
@@ -346,14 +308,5 @@ const { prevHref, nextHref, nav = [] } = Astro.props as Props;
   .mn-hamburger:focus-visible {
     outline: 2px solid var(--color-link);
     outline-offset: 2px;
-  }
-
-  @media (max-width: 768px) {
-    .student-nav__arrows {
-      display: none;
-    }
-    .mn-hamburger {
-      display: inline-flex;
-    }
   }
 </style>

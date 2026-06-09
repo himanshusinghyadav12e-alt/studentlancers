@@ -201,6 +201,16 @@
   color: var(--color-ink);
 }
 
+/* ─── Desktop rail collapsed (hamburger toggle) ──────────────── */
+@media (min-width: 901px) {
+  .dash-shell[data-rail-collapsed] .dash-rail {
+    display: none;
+  }
+  .dash-shell[data-rail-collapsed] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @media (max-width: 900px) {
   .dash-rail {
     position: static;

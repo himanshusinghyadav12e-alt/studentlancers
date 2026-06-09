@@ -59,9 +59,7 @@ const initials = name
 
 const pageAuth = role.toLowerCase() === 'company' ? 'company' : 'student';
 
-const currentIdx = nav.findIndex((n) => n.current);
-const prevItem = currentIdx > 0 ? nav[currentIdx - 1] : null;
-const nextItem = currentIdx >= 0 && currentIdx < nav.length - 1 ? nav[currentIdx + 1] : null;
+
 ---
 
 <!doctype html>
@@ -109,11 +107,7 @@ const nextItem = currentIdx >= 0 && currentIdx < nav.length - 1 ? nav[currentIdx
 
     <header class="dash-top" data-dash-top>
       <div class="ds-container dash-top__inner">
-        <StudentNav
-          prevHref={prevItem?.href}
-          nextHref={nextItem?.href}
-          nav={nav}
-        />
+        <StudentNav nav={nav} />
 
         <nav class="dash-top__center" aria-label="Role">
           <span class="dash-role-pill" data-role={role.toLowerCase()}>
