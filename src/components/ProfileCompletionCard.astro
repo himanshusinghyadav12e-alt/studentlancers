@@ -1,0 +1,181 @@
+---
+/**
+ * ProfileCompletionCard
+ *
+ * Dashboard card showing profile completion percentage, a progress
+ * bar, missing items checklist, suggestions, and a CTA button.
+ * Calculation runs server-side; the progress bar animates on the
+ * client via profile-completion.ts.
+ */
+import Button from './ui/Button.astro';
+import type { DbStudentProfile, DbUser } from '../lib/types';
+
+interface Props {
+  user: DbUser;
+  profile: DbStudentProfile | null;
+}
+
+const { user, profile } = Astro.props as Props;
+
+/* ─── Completion calculation ─────────────────────────────── */
+
+interface CheckItem {
+  label: string;
+  done: boolean;
+  /** Weight as a percentage of the total score */
+  weight: number;
+  /** Section anchor for the suggestion link */
+  href: string;
+  /** Suggestion text shown when not done */
+  suggestion: string;
+}
+
+const items: CheckItem[] = [
+  {
+    label: 'Profile photo',
+    done: Boolean(profile?.avatar_url),
+    weight: 15,
+    href: '/student/profile',
+    suggestion: 'Add a profile photo to look more professional',
+  },
+  {
+    label: 'Bio / About',
+    done: Boolean(profile?.bio && profile.bio.trim().length >= 40),
+    weight: 15,
+    href: '/student/profile',
+    suggestion: 'Write a 40+ character bio to introduce yourself',
+  },
+  {
+    label: 'Skills (3+)',
+    done: Boolean(profile?.skills && profile.skills.length >= 3),
+    weight: 15,
+    href: '/student/profile',
+    suggestion: 'Add at least 3 skills to power the matching engine',
+  },
+  {
+    label: 'Education',
+    done: Boolean(profile?.university && profile.major),
+    weight: 15,
+    href: '/student/profile',
+    suggestion: 'Add your university and major',
+  },
+  {
+    label: 'Portfolio link',
+    done: Boolean(profile?.portfolio_url),
+    weight: 10,
+    href: '/student/profile',
+    suggestion: 'Add a GitHub, Behance, or personal site link',
+  },
+  {
+    label: 'Contact info',
+    done: Boolean(user?.email),
+    weight: 10,
+    href: '/student/profile',
+    suggestion: 'Your email is already on file',
+  },
+  {
+    label: 'Resume upload',
+    done: false,
+    weight: 10,
+    href: '/student/profile',
+    suggestion: 'Upload a resume (coming soon)',
+  },
+  {
+    label: 'Social links',
+    done: false,
+    weight: 5,
+    href: '/student/profile',
+    suggestion: 'Add LinkedIn, GitHub, or Twitter (coming soon)',
+  },
+  {
+    label: 'Experience',
+    done: false,
+    weight: 5,
+    href: '/student/profile',
+    suggestion: 'Add work experience (coming soon)',
+  },
+];
+
+const completedWeight = items
+  .filter((i) => i.done)
+  .reduce((sum, i) => sum + i.weight, 0);
+
+const percentage = Math.round(completedWeight);
+
+const missing = items.filter((i) => !i.done);
+
+/** Pick the top 2 missing items by weight for suggestions. */
+const suggestions = missing
+  .slice()
+  .sort((a, b) => b.weight - a.weight)
+  .slice(0, 2);
+
+function progressColor(pct: number): string {
+  if (pct >= 80) return 'var(--color-link)';
+  if (pct >= 50) return 'var(--color-warning)';
+  return 'var(--color-body)';
+}
+---
+
+<div class="pc-card" aria-label="Profile completion">
+  <div class="pc-card__head">
+    <h2 class="pc-card__title">Profile completion</h2>
+    <span class="pc-card__pct" style={`color: ${progressColor(percentage)}`}>
+      {percentage}%
+    </span>
+  </div>
+
+  <div class="pc-progress" role="progressbar" aria-valuenow={percentage} aria-valuemin={0} aria-valuemax={100} aria-label={`${percentage}% complete`}>
+    <div
+      class="pc-progress__fill"
+      data-pc-fill={`${percentage}%`}
+      style={`background: ${progressColor(percentage)}`}
+    />
+  </div>
+
+  {suggestions.length > 0 && (
+    <div class="pc-suggestions">
+      {suggestions.map((s) => (
+        <p class="pc-suggestion">
+          <span class="pc-suggestion__arrow" aria-hidden="true">→</span>
+          {s.suggestion}
+        </p>
+      ))}
+    </div>
+  )}
+
+  <details class="pc-checklist">
+    <summary class="pc-checklist__toggle">
+      {missing.length === 0 ? 'All sections complete' : `${missing.length} section${missing.length === 1 ? '' : 's'} remaining`}
+    </summary>
+    <ul class="pc-checklist__list" role="list">
+      {items.map((item) => (
+        <li class:list={['pc-checklist__item', item.done && 'pc-checklist__item--done']}>
+          <span class="pc-checklist__icon" aria-hidden="true">
+            {item.done ? (
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M3 7l3 3 5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            ) : (
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.2" />
+              </svg>
+            )}
+          </span>
+          <span class="pc-checklist__label">{item.label}</span>
+        </li>
+      ))}
+    </ul>
+  </details>
+
+  <div class="pc-card__foot">
+    <Button variant="primary" size="md" href="/student/profile">
+      Complete profile
+    </Button>
+  </div>
+</div>
+
+<script>
+  import { mountProfileCompletion } from '../scripts/profile-completion';
+  mountProfileCompletion();
+</script>

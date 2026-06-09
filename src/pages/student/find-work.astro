@@ -154,12 +154,19 @@ const cardData = listedJobs.map((job) => {
 
   <header class="fw-top" data-fw-top>
     <div class="ds-container fw-top__inner">
-      <StudentNav prevHref="/student/dashboard" nextHref="/student/applications" />
-      <nav class="fw-top__nav" aria-label="Quick links">
-        <a class="fw-top__link" href="/student/dashboard">Dashboard</a>
-        <a class="fw-top__link" href="/student/find-work" aria-current="page">Find work</a>
-        <a class="fw-top__link" href="/student/applications">My applications</a>
-      </nav>
+      <StudentNav
+        prevHref="/student/dashboard"
+        nextHref="/student/applications"
+        nav={[
+          { href: '/student/dashboard', label: 'Overview', icon: 'home' },
+          { href: '/student/find-work', label: 'Find work', icon: 'brief', current: true },
+          { href: '/student/applications', label: 'My applications', icon: 'inbox' },
+          { href: '/student/earnings', label: 'Earnings', icon: 'wallet' },
+          { href: '/student/reviews', label: 'Reviews', icon: 'reviews' },
+          { href: '/student/profile', label: 'Profile', icon: 'profile' },
+          { href: '/student/settings', label: 'Settings', icon: 'settings' },
+        ]}
+      />
       <div class="fw-top__right">
         <ThemeToggle size="md" />
         <Button variant="secondary-sm" size="md" href="/student/dashboard">Switch account</Button>
@@ -1058,37 +1065,10 @@ const cardData = listedJobs.map((job) => {
     gap: var(--space-lg);
     height: 64px;
   }
-  .fw-top__nav {
-    display: flex;
-    align-items: center;
-    gap: var(--space-xs);
-  }
-  .fw-top__link {
-    display: inline-flex;
-    padding: var(--space-xs) var(--space-sm);
-    border-radius: var(--radius-full);
-    color: var(--color-body);
-    font-size: var(--text-body-sm);
-    text-decoration: none;
-    transition: color 0.15s ease, background-color 0.15s ease;
-  }
-  .fw-top__link:hover {
-    color: var(--color-ink);
-    background: var(--color-canvas-soft);
-  }
-  .fw-top__link[aria-current='page'] {
-    color: var(--color-ink);
-    background: var(--color-canvas-soft);
-  }
   .fw-top__right {
     display: flex;
     align-items: center;
     gap: var(--space-xs);
-  }
-  @media (max-width: 700px) {
-    .fw-top__nav {
-      display: none;
-    }
   }
 
   .fw-page {

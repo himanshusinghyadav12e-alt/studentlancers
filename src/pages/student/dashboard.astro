@@ -2,6 +2,7 @@
 import DashboardLayout, { type NavItem } from '../../layouts/DashboardLayout.astro';
 import Button from '../../components/ui/Button.astro';
 import Badge from '../../components/ui/Badge.astro';
+import ProfileCompletionCard from '../../components/ProfileCompletionCard.astro';
 import { listApplicationsForApplicant } from '../../lib/api';
 import type { ApplicationWithJob } from '../../lib/types';
 
@@ -25,6 +26,7 @@ const studentNav: NavItem[] = [
 ];
 
 const user = Astro.locals.user;
+const profile = Astro.locals.studentProfile;
 const studentName = user?.name ?? 'there';
 const greeting = user ? `Welcome back, ${studentName.split(' ')[0]}` : 'Welcome';
 
@@ -81,13 +83,12 @@ const recent = myApps.slice(0, 3);
         <span class="dash-stat__value dash-stat__value--placeholder">$0.00</span>
         <span class="dash-stat__hint">Available after first payout</span>
       </div>
-      <div class="dash-stat">
-        <span class="dash-stat__label">Profile completeness</span>
-        <span class="dash-stat__value">3 of 5</span>
-        <span class="dash-stat__hint">Add 2 more sections to be searchable</span>
-      </div>
     </div>
   </section>
+
+  {user && user.role === 'student' && (
+    <ProfileCompletionCard user={user} profile={profile} />
+  )}
 
   <section class="dash-row" aria-label="Applications and recommendations">
     <div class="dash-card">
