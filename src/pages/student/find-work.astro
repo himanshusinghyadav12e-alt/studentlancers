@@ -1,9 +1,7 @@
 ---
-import Layout from '../../layouts/Layout.astro';
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
 import Button from '../../components/ui/Button.astro';
 import Badge from '../../components/ui/Badge.astro';
-import ThemeToggle from '../../components/ui/ThemeToggle.astro';
-import StudentNav from '../../components/StudentNav.astro';
 import {
   JOB_CATEGORIES,
   EXP_LEVELS,
@@ -48,6 +46,19 @@ import { listOpenJobs, type ListedJob } from '../../lib/api';
  *   - Connect flow: each card links to /jobs/[id] which exposes the
  *     Apply CTA.
  */
+
+const user = Astro.locals.user;
+const studentName = user?.name ?? 'there';
+
+const studentNav = [
+  { href: '/student/dashboard', label: 'Overview', icon: 'home' as const },
+  { href: '/student/find-work', label: 'Find work', icon: 'brief' as const, current: true },
+  { href: '/student/applications', label: 'My applications', icon: 'inbox' as const },
+  { href: '/student/earnings', label: 'Earnings', icon: 'wallet' as const },
+  { href: '/student/reviews', label: 'Reviews', icon: 'reviews' as const },
+  { href: '/student/profile', label: 'Profile', icon: 'profile' as const },
+  { href: '/student/settings', label: 'Settings', icon: 'settings' as const },
+];
 
 let listedJobs: ListedJob[] = [];
 let loadError: string | null = null;
@@ -145,35 +156,15 @@ const cardData = listedJobs.map((job) => {
 });
 ---
 
-<Layout
+<DashboardLayout
   title="Find work · StudentLancers"
   description="Browse open briefs by category, hours, and rate. Apply with a single click."
-  pageAuth="student"
+  name={studentName}
+  role="Student"
+  nav={studentNav}
 >
-  <a class="skip-link" href="#fw-main">Skip to content</a>
-
-  <header class="fw-top" data-fw-top>
-    <div class="ds-container fw-top__inner">
-      <StudentNav
-        nav={[
-          { href: '/student/dashboard', label: 'Overview', icon: 'home' },
-          { href: '/student/find-work', label: 'Find work', icon: 'brief', current: true },
-          { href: '/student/applications', label: 'My applications', icon: 'inbox' },
-          { href: '/student/earnings', label: 'Earnings', icon: 'wallet' },
-          { href: '/student/reviews', label: 'Reviews', icon: 'reviews' },
-          { href: '/student/profile', label: 'Profile', icon: 'profile' },
-          { href: '/student/settings', label: 'Settings', icon: 'settings' },
-        ]}
-      />
-      <div class="fw-top__right">
-        <ThemeToggle size="md" />
-        <Button variant="secondary-sm" size="md" href="/student/dashboard">Switch account</Button>
-      </div>
-    </div>
-  </header>
-
   <main id="fw-main" class="fw-page">
-    <div class="ds-container fw-page__inner">
+    <div class="fw-page__inner">
       <header class="fw-page__head">
         <span class="fw-page__eyebrow">Find work</span>
         <h1 class="fw-page__title">Open briefs across the marketplace.</h1>
@@ -1028,47 +1019,9 @@ const cardData = listedJobs.map((job) => {
     // Clear buttons navigate to the bare URL; nothing to do here since
     // the anchor href is the source of truth.
   </script>
-</Layout>
+</DashboardLayout>
 
 <style>
-  .skip-link {
-    position: absolute;
-    top: -40px;
-    left: 16px;
-    background: var(--color-primary);
-    color: var(--color-on-primary);
-    padding: 8px 12px;
-    border-radius: var(--radius-sm);
-    font-size: var(--text-body-sm);
-    z-index: 100;
-    transition: top 0.15s ease;
-  }
-  .skip-link:focus {
-    top: 16px;
-  }
-
-  .fw-top {
-    position: sticky;
-    top: 0;
-    z-index: 30;
-    background: color-mix(in srgb, var(--color-canvas) 86%, transparent);
-    backdrop-filter: saturate(180%) blur(12px);
-    -webkit-backdrop-filter: saturate(180%) blur(12px);
-    border-bottom: 1px solid var(--color-hairline);
-  }
-  .fw-top__inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-lg);
-    height: 64px;
-  }
-  .fw-top__right {
-    display: flex;
-    align-items: center;
-    gap: var(--space-xs);
-  }
-
   .fw-page {
     padding-block: var(--space-3xl) var(--space-5xl);
   }
