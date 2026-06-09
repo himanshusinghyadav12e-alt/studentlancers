@@ -117,9 +117,20 @@ const pageAuth = role.toLowerCase() === 'company' ? 'company' : 'student';
 
         <div class="dash-top__right">
           <ThemeToggle size="md" />
+          <button class="dash-notif-btn" type="button" aria-label="Notifications" data-notif-bell>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+              <path d="M13.5 6.75a4.5 4.5 0 1 0-9 0c0 5.25-2.25 6.75-2.25 6.75h13.5s-2.25-1.5-2.25-6.75" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M10.3 15.75a1.5 1.5 0 0 1-2.6 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="dash-notif-badge" data-notif-badge hidden>0</span>
+          </button>
           <button class="dash-avatar" type="button" aria-label="Account menu" data-avatar>
             <span class="dash-avatar__initials" aria-hidden="true">{initials || '·'}</span>
           </button>
+          <div class="dash-user-pill" data-user-pill>
+            <span class="dash-user-pill__name">{name.split(' ')[0]}</span>
+            <span class="dash-user-pill__role">{role}</span>
+          </div>
         </div>
       </div>
     </header>
@@ -188,7 +199,7 @@ const pageAuth = role.toLowerCase() === 'company' ? 'company' : 'student';
         </nav>
 
         <div class="dash-rail__foot">
-          <a href="/login" class="dash-rail__signout">Switch account</a>
+          <button type="button" class="dash-rail__signout" data-rail-logout>Log out</button>
         </div>
       </aside>
 
@@ -221,15 +232,23 @@ const pageAuth = role.toLowerCase() === 'company' ? 'company' : 'student';
         window.addEventListener('scroll', onScroll, { passive: true });
       }
 
-      // "Switch account" is shorthand for sign out + go to the login page.
-      const signoutLinks = document.querySelectorAll<HTMLAnchorElement>('.dash-rail__signout');
-      signoutLinks.forEach((a) => {
-        a.addEventListener('click', async (event) => {
-          event.preventDefault();
+      // Rail logout button
+      const railLogout = document.querySelector<HTMLButtonElement>('[data-rail-logout]');
+      if (railLogout) {
+        railLogout.addEventListener('click', async () => {
           const { signOut } = await import('../scripts/session-bar');
           void signOut();
         });
-      });
+      }
+
+      // Notification bell mock (shows badge demo)
+      const notifBell = document.querySelector<HTMLButtonElement>('[data-notif-bell]');
+      const notifBadge = document.querySelector<HTMLElement>('[data-notif-badge]');
+      if (notifBell && notifBadge) {
+        notifBell.addEventListener('click', () => {
+          notifBadge.hidden = !notifBadge.hidden;
+        });
+      }
     </script>
   </body>
 </html>

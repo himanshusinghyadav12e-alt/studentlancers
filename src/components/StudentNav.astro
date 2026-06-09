@@ -106,6 +106,14 @@ const { nav = [] } = Astro.props as Props;
     </button>
   </div>
 
+  <div class="mn-drawer__user" data-mn-user-info hidden>
+    <div class="mn-drawer__user-avatar" data-mn-user-avatar></div>
+    <div class="mn-drawer__user-info">
+      <span class="mn-drawer__user-name" data-mn-user-name></span>
+      <span class="mn-drawer__user-role" data-mn-user-role></span>
+    </div>
+  </div>
+
   <nav class="mn-drawer__nav" aria-label="Primary">
     {nav.map((item) => (
       <a
@@ -168,7 +176,7 @@ const { nav = [] } = Astro.props as Props;
   </nav>
 
   <div class="mn-drawer__foot">
-    <a href="/login" class="mn-drawer__signout" data-mn-item>Switch account</a>
+    <button type="button" class="mn-drawer__signout" data-mn-item data-mn-logout>Log out</button>
   </div>
 </aside>
 
@@ -204,6 +212,8 @@ const { nav = [] } = Astro.props as Props;
       document.body.style.overflow = 'hidden';
       const first = drawer.querySelector<HTMLElement>('[data-mn-close]');
       first?.focus();
+      // Populate user info in drawer
+      populateDrawerUser();
     }
 
     function closeMobile() {
@@ -234,6 +244,36 @@ const { nav = [] } = Astro.props as Props;
       return !drawer.hidden;
     }
 
+    function populateDrawerUser() {
+      try {
+        const raw = localStorage.getItem('sl-session');
+        const session = raw ? JSON.parse(raw) : null;
+        if (!session) return;
+
+        const userInfo = drawer.querySelector<HTMLElement>('[data-mn-user-info]');
+        const avatar = drawer.querySelector<HTMLElement>('[data-mn-user-avatar]');
+        const nameEl = drawer.querySelector<HTMLElement>('[data-mn-user-name]');
+        const roleEl = drawer.querySelector<HTMLElement>('[data-mn-user-role]');
+
+        if (userInfo && avatar && nameEl && roleEl) {
+          userInfo.hidden = false;
+          nameEl.textContent = session.name || 'User';
+          roleEl.textContent = session.role === 'company' ? 'Company' : 'Student';
+          // Generate initials
+          const initials = (session.name || 'U')
+            .split(' ')
+            .map((p: string) => p[0])
+            .filter(Boolean)
+            .slice(0, 2)
+            .join('')
+            .toUpperCase();
+          avatar.textContent = initials;
+        }
+      } catch {
+        // ignore
+      }
+    }
+
     toggle.addEventListener('click', () => {
       if (isMobile()) {
         isMobileOpen() ? closeMobile() : openMobile();
@@ -248,6 +288,17 @@ const { nav = [] } = Astro.props as Props;
     items.forEach((item) => {
       item.addEventListener('click', closeMobile);
     });
+
+    // Handle logout button in drawer
+    const logoutBtn = drawer.querySelector<HTMLButtonElement>('[data-mn-logout]');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        closeMobile();
+        const { signOut } = await import('../scripts/session-bar');
+        void signOut();
+      });
+    }
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && isMobileOpen()) {

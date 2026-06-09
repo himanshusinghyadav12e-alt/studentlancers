@@ -189,24 +189,31 @@ code {
   position: absolute;
   right: 0;
   top: calc(100% + 8px);
-  min-width: 220px;
+  min-width: 240px;
   background: var(--color-canvas);
   border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-level-4);
-  padding: 8px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-level-5);
+  padding: 6px;
   z-index: 60;
   display: flex;
   flex-direction: column;
   gap: 2px;
   font-size: var(--text-body-sm);
+  animation: avatarMenuIn 0.15s ease-out;
+}
+@keyframes avatarMenuIn {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 .ds-avatar-menu__pop[hidden] {
   display: none;
 }
 .ds-avatar-menu__pop a,
 .ds-avatar-menu__pop button {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   width: 100%;
   text-align: left;
   padding: 8px 10px;
@@ -224,27 +231,84 @@ code {
 .ds-avatar-menu__pop button:hover {
   background: var(--color-canvas-soft);
 }
+.ds-avatar-menu__pop a svg,
+.ds-avatar-menu__pop button svg {
+  flex-shrink: 0;
+  color: var(--color-mute);
+}
 .ds-avatar-menu__pop hr {
   border: 0;
   border-top: 1px solid var(--color-hairline);
   margin: 4px 0;
 }
 .ds-avatar-menu__head {
-  padding: 8px 10px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
 }
-.ds-avatar-menu__head strong {
+.ds-avatar-menu__user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ds-avatar-menu__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+.ds-avatar-menu__info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.ds-avatar-menu__info strong {
   color: var(--color-ink);
-  font-size: var(--text-body-sm-strong);
+  font-size: var(--text-body-sm);
   font-weight: var(--text-body-sm-strong-weight);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.ds-avatar-menu__head span {
+.ds-avatar-menu__role {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-mute);
+}
+.ds-avatar-menu__email {
   color: var(--color-mute);
   font-size: var(--text-caption);
   font-family: var(--font-mono);
   word-break: break-all;
+  padding-left: 46px;
+}
+.ds-avatar-menu__notif-link {
+  position: relative;
+}
+.ds-avatar-menu__badge {
+  margin-left: auto;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-full);
+  background: var(--color-error);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
 }
 
 /* ─── Inline status messages (CTA email form) ───────────────────── */
