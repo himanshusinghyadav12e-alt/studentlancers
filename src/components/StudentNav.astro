@@ -1,0 +1,102 @@
+---
+/**
+ * StudentNav
+ *
+ * Shared Chrome-style navigation bar for all student pages.
+ * Renders back/forward chevron buttons + the StudentLancers brand logo.
+ */
+export interface Props {
+  prevHref?: string;
+  nextHref?: string;
+}
+
+const { prevHref, nextHref } = Astro.props as Props;
+---
+
+<div class="student-nav">
+  <nav class="student-nav__arrows" aria-label="Page navigation">
+    <a
+      href={prevHref}
+      class:list={['student-nav__btn', !prevHref && 'is-disabled']}
+      aria-disabled={!prevHref || undefined}
+      aria-label="Previous page"
+    >
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M10 4L6 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </a>
+    <a
+      href={nextHref}
+      class:list={['student-nav__btn', !nextHref && 'is-disabled']}
+      aria-disabled={!nextHref || undefined}
+      aria-label="Next page"
+    >
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </a>
+  </nav>
+  <a href="/" class="nav__brand" aria-label="StudentLancers home">
+    <span class="nav__logo" aria-hidden="true">
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+        <rect x="0.5" y="0.5" width="21" height="21" rx="5.5" fill="var(--color-primary)" />
+        <path
+          d="M6 7.5L11 4.5L16 7.5V14.5L11 17.5L6 14.5V7.5Z"
+          stroke="var(--color-on-primary)"
+          stroke-width="1.4"
+          stroke-linejoin="round"
+        />
+        <path
+          d="M11 4.5V11M11 11L16 7.5M11 11L6 7.5M11 11V17.5"
+          stroke="var(--color-on-primary)"
+          stroke-width="1.4"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </span>
+    <span class="nav__brand-text">StudentLancers</span>
+  </a>
+</div>
+
+<style>
+  .student-nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+  .student-nav__arrows {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .student-nav__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-hairline);
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+  .student-nav__btn:hover:not(.is-disabled) {
+    background: var(--color-canvas-soft);
+    border-color: var(--color-hairline-strong);
+  }
+  .student-nav__btn:active:not(.is-disabled) {
+    background: var(--color-canvas-soft-2);
+  }
+  .student-nav__btn:focus-visible {
+    outline: 2px solid var(--color-link);
+    outline-offset: 2px;
+  }
+  .student-nav__btn.is-disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+</style>
