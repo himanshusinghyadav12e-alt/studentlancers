@@ -1627,11 +1627,119 @@ export const MOCK_CERTIFICATES: Certificate[] = [
   },
 ];
 
+/* ─── Generate additional leaderboard entries (ranks 6-100) ── */
+const FIRST_NAMES = [
+  'Aarav','Vivaan','Aditya','Vihaan','Arjun','Sai','Reyansh','Krishna','Ishaan','Shaurya',
+  'Atharv','Advik','Pranav','Advaith','Aarush','Virat','Anirudh','Kabir','Rudra','Vedant',
+  'Saanvi','Ananya','Diya','Aadhya','Myra','Sara','Aarna','Aanya','Prisha','Navya',
+  'Saanvika','Anvi','Tvisha','Riya','Ira','Meera','Nisha','Pooja','Roshni','Simran',
+  'Omar','Liam','Noah','Ethan','Lucas','Mason','Logan','Alexander','Elijah','James',
+  'William','Benjamin','Theodore','Henry','Sebastian','Jack','Daniel','Michael','Owen','Samuel',
+  'Isabella','Olivia','Charlotte','Amelia','Harper','Evelyn','Abigail','Emily','Ella','Elizabeth',
+  'Camila','Luna','Sofia','Aria','Scarlett','Penelope','Layla','Chloe','Victoria','Madison',
+  'Fatima','Aisha','Zara','Noor','Layla','Yasmin','Maryam','Hana','Leila','Amira',
+  'Diego','Carlos','Mateo','Santiago','Sebastian','Gabriel','Adrian','Leo','Andres','Marco',
+  'Chen','Wei','Jun','Hiroshi','Yuki','Sakura','Akira','Haruto','Ren','Sora',
+  'Kim','Park','Jung','Min','Sung','Ho','Young','Soo','Hyun','Jin',
+];
+const LAST_NAMES = [
+  'Sharma','Gupta','Patel','Kumar','Singh','Reddy','Nair','Iyer','Joshi','Mehta',
+  'Verma','Chopra','Kapoor','Malhotra','Bhatia','Khanna','Sinha','Rao','Das','Banerjee',
+  'Mukherjee','Chatterjee','Bose','Sen','Ghosh','Dutta','Roy','Sarkar','Mitra','Pal',
+  'O\'Brien','Morrison','Collins','Murray','Fitzgerald','Walsh','Ryan','Kelly','Murphy','Doyle',
+  'Rossi','Ferrari','Romano','Colombo','Ricci','Marino','Greco','Bruno','Gallo','Conti',
+  'Mueller','Schmidt','Schneider','Fischer','Weber','Meyer','Wagner','Becker','Schulz','Koch',
+  'Tanaka','Yamamoto','Watanabe','Ito','Takahashi','Suzuki','Nakamura','Kobayashi','Saito','Kato',
+  'Kim','Lee','Park','Choi','Jung','Kang','Cho','Yoon','Jang','Lim',
+  'Silva','Santos','Oliveira','Souza','Costa','Pereira','Almeida','Ribeiro','Lima','Carvalho',
+  'Andersson','Eriksson','Nilsson','Olsson','Persson','Larsson','Johansson','Berg','Lund','Lindberg',
+  'Cohen','Levy','Mizrachi','Dayan','Peretz','Ben-David','Goldstein','Friedman','Katz','Rosenberg',
+  'Adeyemi','Okafor','Nkosi','Mensah','Owusu','Ansah','Boateng','Mensah','Agyeman','Koomson',
+];
+const COLLEGES = [
+  'Stanford University','MIT','UC Berkeley','Carnegie Mellon','Georgia Tech','Caltech',
+  'Harvard University','Princeton University','Yale University','Columbia University',
+  'University of Pennsylvania','Duke University','Northwestern University','Johns Hopkins',
+  'Rice University','Vanderbilt University','Notre Dame','Emory University','Georgetown',
+  'Carnegie Mellon','University of Michigan','UCLA','USC','NYU','Boston University',
+  'University of Illinois','Purdue University','University of Washington','UT Austin','Penn State',
+  'IIT Bombay','IIT Delhi','IIT Madras','NIT Trichy','BITS Pilani','IIM Ahmedabad',
+  'University of Tokyo','Kyoto University','Tsinghua University','Peking University','NUS',
+  'ETH Zurich','TU Munich','University of Oxford','University of Cambridge','Imperial College',
+  'RISD','Parsons','ArtCenter','UAL','Hongik University','NID Ahmedabad',
+  'Wharton','INSEAD','LBS','HEC Paris','Bocconi University','IE Business School',
+  'University of Melbourne','University of Sydney','McGill University','University of Toronto',
+  'KTH Royal Institute','University of Copenhagen','University of Helsinki','Leiden University',
+];
+
+const COLLEGES_ARR = COLLEGES;
+
+function seededRandom(seed: number): () => number {
+  let s = seed;
+  return () => {
+    s = (s * 16807 + 0) % 2147483647;
+    return (s - 1) / 2147483646;
+  };
+}
+
+function generateExtraEntries(category: LeaderboardCategory, baseSeed: number): LeaderboardEntry[] {
+  const rand = seededRandom(baseSeed);
+  const entries: LeaderboardEntry[] = [];
+  for (let rank = 6; rank <= 100; rank++) {
+    const fn = FIRST_NAMES[Math.floor(rand() * FIRST_NAMES.length)];
+    const ln = LAST_NAMES[Math.floor(rand() * LAST_NAMES.length)];
+    const college = COLLEGES_ARR[Math.floor(rand() * COLLEGES_ARR.length)];
+    const initials = (fn[0] + ln[0]).toUpperCase();
+    const score = Math.round(82 - (rank - 6) * 0.35 + (rand() - 0.5) * 6);
+    const clientRating = Math.round((5.0 - (rank - 6) * 0.008 + (rand() - 0.5) * 0.3) * 10) / 10;
+    const projectsCompleted = Math.max(2, Math.round(14 - (rank - 6) * 0.1 + (rand() - 0.5) * 4));
+    const onTimeDelivery = Math.max(70, Math.round(100 - (rank - 6) * 0.2 + (rand() - 0.5) * 8));
+    const repeatClients = Math.max(0, Math.round(5 - (rank - 6) * 0.04 + (rand() - 0.5) * 2));
+    const qualityScore = Math.max(60, Math.round(98 - (rank - 6) * 0.35 + (rand() - 0.5) * 6));
+    entries.push({
+      rank,
+      userId: `gen-${category}-${rank}`,
+      name: `${fn} ${ln}`,
+      college,
+      avatarUrl: null,
+      initials,
+      score: Math.min(97, Math.max(60, score)),
+      badge: null,
+      category,
+      month: '2026-06',
+      clientRating: Math.min(5.0, Math.max(4.0, clientRating)),
+      projectsCompleted,
+      onTimeDelivery: Math.min(100, Math.max(70, onTimeDelivery)),
+      repeatClients: Math.min(7, Math.max(0, repeatClients)),
+      qualityScore: Math.min(98, Math.max(60, qualityScore)),
+    });
+  }
+  return entries;
+}
+
+const EXTRA_ENTRIES: LeaderboardEntry[] = [
+  ...generateExtraEntries('web-development', 1001),
+  ...generateExtraEntries('mobile-development', 2002),
+  ...generateExtraEntries('ui-ux-design', 3003),
+  ...generateExtraEntries('graphic-design', 4004),
+  ...generateExtraEntries('video-editing', 5005),
+  ...generateExtraEntries('content-writing', 6006),
+  ...generateExtraEntries('digital-marketing', 7007),
+  ...generateExtraEntries('seo', 8008),
+  ...generateExtraEntries('ai-automation', 9009),
+  ...generateExtraEntries('data-analysis', 10010),
+];
+
+export const FULL_MOCK_LEADERBOARD: LeaderboardEntry[] = [
+  ...MOCK_LEADERBOARD,
+  ...EXTRA_ENTRIES,
+];
+
 export function getLeaderboardByCategory(
   category: LeaderboardCategory,
   month?: string
 ): LeaderboardEntry[] {
-  return MOCK_LEADERBOARD.filter(
+  return FULL_MOCK_LEADERBOARD.filter(
     (e) =>
       e.category === category && (month ? e.month === month : true)
   ).sort((a, b) => a.rank - b.rank);

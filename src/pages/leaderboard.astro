@@ -5,6 +5,7 @@ import {
   CATEGORIES,
   ACHIEVEMENTS,
   MOCK_REPUTATION,
+  FULL_MOCK_LEADERBOARD,
   getLeaderboardByCategory,
 } from '../data/leaderboard';
 import type { LeaderboardCategory } from '../lib/types';
@@ -13,6 +14,9 @@ const currentMonth = '2026-06';
 const currentCategory: LeaderboardCategory = 'web-development';
 const topThree = getLeaderboardByCategory(currentCategory, currentMonth).slice(0, 3);
 const allRankings = getLeaderboardByCategory(currentCategory, currentMonth);
+
+const leaderboardJson = JSON.stringify(FULL_MOCK_LEADERBOARD);
+const categoriesJson = JSON.stringify(CATEGORIES);
 ---
 
 <Layout title="Leaderboard · StudentLancers" description="See the top-performing student freelancers on StudentLancers. Monthly rankings by category.">
@@ -93,8 +97,8 @@ const allRankings = getLeaderboardByCategory(currentCategory, currentMonth);
     </section>
 
     {/* Top 3 Podium */}
-    <section class="lb-podium" aria-label="Top 3 performers">
-      <div class="ds-container lb-podium__inner">
+    <section class="lb-podium" aria-label="Top 3 performers" data-lb-podium>
+      <div class="ds-container lb-podium__inner" data-lb-podium-grid>
         {topThree.map((entry) => (
           <div class={`lb-podium__card lb-podium__card--${entry.badge}`} data-rank={entry.rank}>
             <div class={`lb-medal lb-medal--${entry.badge}`} aria-label={`${entry.rank === 1 ? 'Gold' : entry.rank === 2 ? 'Silver' : 'Bronze'} medal`}>
@@ -153,6 +157,7 @@ const allRankings = getLeaderboardByCategory(currentCategory, currentMonth);
         <div class="lb-rankings__head">
           <h2 class="lb-rankings__title">All Rankings</h2>
           <p class="lb-rankings__subtitle">Top performers in this category this month</p>
+          <span class="lb-rankings__count" data-lb-count>{allRankings.length} students</span>
         </div>
 
         <div class="lb-table-wrap">
@@ -168,7 +173,7 @@ const allRankings = getLeaderboardByCategory(currentCategory, currentMonth);
                 <th class="lb-th lb-th--badge">Badge</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody data-lb-table-body>
               {allRankings.map((entry) => (
                 <tr class={`lb-tr ${entry.rank <= 3 ? 'lb-tr--top' : ''}`}>
                   <td class="lb-td lb-td--rank">
@@ -390,6 +395,8 @@ const allRankings = getLeaderboardByCategory(currentCategory, currentMonth);
       </ul>
     </div>
   </footer>
+
+  <script set:html={`window.__LB_DATA = ${leaderboardJson}; window.__LB_CATS = ${categoriesJson};`} />
 </Layout>
 
 <style>
@@ -745,13 +752,28 @@ const allRankings = getLeaderboardByCategory(currentCategory, currentMonth);
     color: var(--color-body);
     margin: 0;
   }
+  .lb-rankings__count {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    background: var(--color-canvas-soft);
+    border: 1px solid var(--color-hairline);
+    font-size: var(--text-caption);
+    font-weight: 500;
+    color: var(--color-body);
+    margin-top: var(--space-sm);
+  }
 
   .lb-table-wrap {
     overflow-x: auto;
+    max-height: 720px;
+    overflow-y: auto;
     border-radius: var(--radius-lg);
     border: 1px solid var(--color-hairline);
     background: var(--color-canvas);
     box-shadow: var(--shadow-level-2);
+    position: relative;
   }
   .lb-table {
     width: 100%;
@@ -769,6 +791,9 @@ const allRankings = getLeaderboardByCategory(currentCategory, currentMonth);
     border-bottom: 1px solid var(--color-hairline);
     background: var(--color-canvas-soft);
     white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 2;
   }
   .lb-td {
     padding: var(--space-sm) var(--space-md);
@@ -1186,16 +1211,91 @@ const allRankings = getLeaderboardByCategory(currentCategory, currentMonth);
     });
   }
 
-  // Category tab switching
+  // Leaderboard data
+  const LB_DATA = (window as any).__LB_DATA || [];
+  const medalSvgs: Record<number, string> = {
+    1: '<svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="15" fill="#FFD700" stroke="#DAA520" stroke-width="1.5"/><path d="M16 6L19 12L26 13L21 18L22 25L16 22L10 25L11 18L6 13L13 12L16 6Z" fill="#FFF8DC" stroke="#DAA520" stroke-width="0.8"/></svg>',
+    2: '<svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="15" fill="#C0C0C0" stroke="#A0A0A0" stroke-width="1.5"/><path d="M16 6L19 12L26 13L21 18L22 25L16 22L10 25L11 18L6 13L13 12L16 6Z" fill="#F0F0F0" stroke="#A0A0A0" stroke-width="0.8"/></svg>',
+    3: '<svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="15" fill="#CD7F32" stroke="#A0522D" stroke-width="1.5"/><path d="M16 6L19 12L26 13L21 18L22 25L16 22L10 25L11 18L6 13L13 12L16 6Z" fill="#DEB887" stroke="#A0522D" stroke-width="0.8"/></svg>',
+  };
+
+  function getEntries(catId: string) {
+    return LB_DATA.filter((e: any) => e.category === catId).sort((a: any, b: any) => a.rank - b.rank);
+  }
+
+  function renderPodium(entries: any[]) {
+    const grid = document.querySelector('[data-lb-podium-grid]') as HTMLElement;
+    if (!grid) return;
+    const top3 = entries.slice(0, 3);
+    if (top3.length < 3) { grid.innerHTML = '<p style="text-align:center;color:var(--color-mute);grid-column:1/-1;padding:2rem 0;">No rankings available for this category.</p>'; return; }
+    grid.innerHTML = top3.map((e: any) => {
+      const colorAttr = e.badge === 'gold' ? 'violet' : e.badge === 'silver' ? 'cyan' : 'pink';
+      return '<div class="lb-podium__card lb-podium__card--' + e.badge + '" data-rank="' + e.rank + '">'
+        + '<div class="lb-medal lb-medal--' + e.badge + '">' + medalSvgs[e.rank] + '</div>'
+        + '<div class="lb-podium__avatar" data-color="' + colorAttr + '">' + e.initials + '</div>'
+        + '<div class="lb-podium__info"><h3 class="lb-podium__name">' + e.name + '</h3>'
+        + '<p class="lb-podium__college">' + e.college + '</p></div>'
+        + '<div class="lb-podium__score"><span class="lb-podium__score-value">' + e.score + '</span>'
+        + '<span class="lb-podium__score-label">score</span></div>'
+        + '<div class="lb-podium__stats">'
+        + '<div class="lb-podium__stat"><span class="lb-podium__stat-val">' + e.clientRating + '</span><span class="lb-podium__stat-label">Rating</span></div>'
+        + '<div class="lb-podium__stat"><span class="lb-podium__stat-val">' + e.projectsCompleted + '</span><span class="lb-podium__stat-label">Projects</span></div>'
+        + '<div class="lb-podium__stat"><span class="lb-podium__stat-val">' + e.onTimeDelivery + '%</span><span class="lb-podium__stat-label">On-Time</span></div>'
+        + '</div></div>';
+    }).join('');
+  }
+
+  function renderTable(entries: any[]) {
+    const tbody = document.querySelector('[data-lb-table-body]') as HTMLElement;
+    const countEl = document.querySelector('[data-lb-count]');
+    if (countEl) countEl.textContent = entries.length + ' students';
+    if (!tbody) return;
+    if (entries.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--color-mute);">No rankings found for this category.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = entries.map((e: any) => {
+      const rowClass = 'lb-tr' + (e.rank <= 3 ? ' lb-tr--top' : '');
+      const rankClass = e.rank <= 3 ? 'lb-rank-num--' + e.rank : 'lb-rank-num--normal';
+      const avatarClass = 'lb-student__avatar--' + (e.badge || 'default');
+      const badgeEmoji = e.badge === 'gold' ? '<span class="lb-badge lb-badge--gold">\u{1F947}</span>'
+        : e.badge === 'silver' ? '<span class="lb-badge lb-badge--silver">\u{1F948}</span>'
+        : e.badge === 'bronze' ? '<span class="lb-badge lb-badge--bronze">\u{1F949}</span>' : '';
+      return '<tr class="' + rowClass + '">'
+        + '<td class="lb-td lb-td--rank"><span class="lb-rank-num ' + rankClass + '">' + e.rank + '</span></td>'
+        + '<td class="lb-td lb-td--student"><div class="lb-student">'
+        + '<span class="lb-student__avatar ' + avatarClass + '">' + e.initials + '</span>'
+        + '<div class="lb-student__info"><span class="lb-student__name">' + e.name + '</span>'
+        + '<span class="lb-student__college">' + e.college + '</span></div></div></td>'
+        + '<td class="lb-td lb-td--score"><span class="lb-score-pill">' + e.score + '</span></td>'
+        + '<td class="lb-td lb-td--rating"><span class="lb-rating">'
+        + '<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M6 0.5L7.4 3.7L11 4.2L8.4 6.8L9 10.4L6 8.8L3 10.4L3.6 6.8L1 4.2L4.6 3.7L6 0.5Z"/></svg>'
+        + e.clientRating + '</span></td>'
+        + '<td class="lb-td lb-td--projects">' + e.projectsCompleted + '</td>'
+        + '<td class="lb-td lb-td--ontime"><div class="lb-on-time"><div class="lb-on-time__bar"><div class="lb-on-time__fill" style="width:' + e.onTimeDelivery + '%"></div></div><span>' + e.onTimeDelivery + '%</span></div></td>'
+        + '<td class="lb-td lb-td--badge">' + badgeEmoji + '</td></tr>';
+    }).join('');
+  }
+
+  function updateLeaderboard(catId: string) {
+    const entries = getEntries(catId);
+    renderPodium(entries);
+    renderTable(entries);
+    // Update tab active states
+    document.querySelectorAll('.lb-tab').forEach((t) => {
+      const btn = t as HTMLButtonElement;
+      const isActive = btn.getAttribute('data-category') === catId;
+      btn.classList.toggle('lb-tab--active', isActive);
+      btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+  }
+
+  // Tab switching
   const tabs = document.querySelectorAll('.lb-tab') as NodeListOf<HTMLButtonElement>;
   tabs.forEach((tab) => {
     tab.addEventListener('click', () => {
-      tabs.forEach((t) => {
-        t.classList.remove('lb-tab--active');
-        t.setAttribute('aria-selected', 'false');
-      });
-      tab.classList.add('lb-tab--active');
-      tab.setAttribute('aria-selected', 'true');
+      const catId = tab.getAttribute('data-category');
+      if (catId) updateLeaderboard(catId);
     });
   });
 

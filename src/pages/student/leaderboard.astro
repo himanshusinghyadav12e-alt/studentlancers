@@ -5,7 +5,7 @@ import {
   SKILL_CATEGORIES,
   SKILL_DATABASE,
   ACHIEVEMENTS,
-  MOCK_LEADERBOARD,
+  FULL_MOCK_LEADERBOARD,
   MOCK_REPUTATION,
   getLeaderboardByCategory,
 } from '../../data/leaderboard';
@@ -28,12 +28,12 @@ const studentName = user?.name ?? 'there';
 const activeCategory: LeaderboardCategory = 'web-development';
 const entries = getLeaderboardByCategory(activeCategory);
 const top3 = entries.slice(0, 3);
-const rest = entries.slice(3);
+const allEntries = entries;
 
 const rep = MOCK_REPUTATION;
 const earned = ACHIEVEMENTS.filter((a) => a.earnedAt);
 
-const leaderboardJson = JSON.stringify(MOCK_LEADERBOARD);
+const leaderboardJson = JSON.stringify(FULL_MOCK_LEADERBOARD);
 const skillsJson = JSON.stringify(SKILL_DATABASE);
 const categoriesJson = JSON.stringify(SKILL_CATEGORIES);
 ---
@@ -130,7 +130,7 @@ const categoriesJson = JSON.stringify(SKILL_CATEGORIES);
   <section class="dash-card" aria-label="Rankings">
     <div class="dash-card__head">
       <h2 class="dash-card__title">Full Rankings</h2>
-      <Badge mono variant="secondary" data-lb-count>{entries.length} students</Badge>
+      <Badge mono variant="secondary" data-lb-count>{allEntries.length} students</Badge>
     </div>
     <div class="dash-card__body lb-table-wrap">
       <table class="lb-table" aria-label="Leaderboard rankings">
@@ -145,7 +145,7 @@ const categoriesJson = JSON.stringify(SKILL_CATEGORIES);
           </tr>
         </thead>
         <tbody data-lb-table-body>
-          {rest.map((e) => (
+          {allEntries.map((e) => (
             <tr>
               <td class="lb-table__rank">{e.rank}</td>
               <td class="lb-table__name">
@@ -161,7 +161,7 @@ const categoriesJson = JSON.stringify(SKILL_CATEGORIES);
               <td class="lb-table__stat">{e.onTimeDelivery}%</td>
             </tr>
           ))}
-          {rest.length === 0 && (
+          {allEntries.length === 0 && (
             <tr>
               <td colspan="6" class="lb-table__empty">
                 <div class="lb-empty-state">
@@ -318,7 +318,6 @@ const categoriesJson = JSON.stringify(SKILL_CATEGORIES);
 
         const entries = window.__LB_DATA.filter(e => e.category === category);
         const top3 = entries.slice(0, 3);
-        const rest = entries.slice(3);
 
         // Update count badge
         const countEl = document.querySelector('[data-lb-count]');
@@ -355,10 +354,10 @@ const categoriesJson = JSON.stringify(SKILL_CATEGORIES);
           podium.innerHTML = '';
         }
 
-        // Re-render table body
+        // Re-render table body - show ALL entries
         const tbody = document.querySelector('[data-lb-table-body]');
         if (tbody) {
-          if (rest.length === 0) {
+          if (entries.length === 0) {
             tbody.innerHTML = `
               <tr>
                 <td colspan="6" class="lb-table__empty">
@@ -370,7 +369,7 @@ const categoriesJson = JSON.stringify(SKILL_CATEGORIES);
               </tr>
             `;
           } else {
-            tbody.innerHTML = rest.map(e => `
+            tbody.innerHTML = entries.map(e => `
               <tr>
                 <td class="lb-table__rank">${e.rank}</td>
                 <td class="lb-table__name">
@@ -736,7 +735,10 @@ const categoriesJson = JSON.stringify(SKILL_CATEGORIES);
   /* ─── Rankings Table ──────────────────────────────────── */
   .lb-table-wrap {
     overflow-x: auto;
+    max-height: 720px;
+    overflow-y: auto;
     padding: 0;
+    position: relative;
   }
   .lb-table {
     width: 100%;
@@ -752,6 +754,10 @@ const categoriesJson = JSON.stringify(SKILL_CATEGORIES);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     border-bottom: 1px solid var(--color-hairline);
+    background: var(--color-canvas-soft);
+    position: sticky;
+    top: 0;
+    z-index: 2;
   }
   .lb-table tbody td {
     padding: 10px 14px;
