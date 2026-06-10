@@ -1,0 +1,1217 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Badge from '../components/ui/Badge.astro';
+import {
+  CATEGORIES,
+  ACHIEVEMENTS,
+  MOCK_REPUTATION,
+  getLeaderboardByCategory,
+} from '../data/leaderboard';
+
+const currentMonth = '2026-06';
+const currentCategory = 'web-development';
+const topThree = getLeaderboardByCategory(currentCategory as any, currentMonth).slice(0, 3);
+const allRankings = getLeaderboardByCategory(currentCategory as any, currentMonth);
+---
+
+<Layout title="Leaderboard · StudentLancers" description="See the top-performing student freelancers on StudentLancers. Monthly rankings by category.">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  {/* Navbar */}
+  <header class="nav">
+    <div class="ds-container nav__inner">
+      <a href="/" class="nav__brand" aria-label="StudentLancers home">
+        <span class="nav__logo" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <rect x="0.5" y="0.5" width="21" height="21" rx="5.5" fill="var(--color-primary)" class="nav__logo-sq" />
+            <path d="M6 7.5L11 4.5L16 7.5V14.5L11 17.5L6 14.5V7.5Z" stroke="var(--color-on-primary)" stroke-width="1.4" stroke-linejoin="round" />
+            <path d="M11 4.5V11M11 11L16 7.5M11 11L6 7.5M11 11V17.5" stroke="var(--color-on-primary)" stroke-width="1.4" stroke-linejoin="round" />
+          </svg>
+        </span>
+        <span class="nav__brand-text">StudentLancers</span>
+      </a>
+      <nav class="nav__links" aria-label="Primary">
+        <a class="nav__link" href="/">Home</a>
+        <a class="nav__link" href="/student/find-work">Find work</a>
+        <a class="nav__link" href="/jobs/post">Post a brief</a>
+        <a class="nav__link nav__link--active" href="/leaderboard">Leaderboard</a>
+      </nav>
+      <div class="nav__cta">
+        <a class="nav__link" href="/login">Log in</a>
+        <a class="ds-btn ds-btn--primary-sm ds-btn--md" href="/signup">Sign up</a>
+      </div>
+      <button class="nav__burger" type="button" aria-label="Open menu" aria-expanded="false" data-nav-burger>
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <div class="nav__mobile" data-nav-mobile hidden>
+      <a class="nav__link nav__link--mobile" href="/">Home</a>
+      <a class="nav__link nav__link--mobile" href="/student/find-work">Find work</a>
+      <a class="nav__link nav__link--mobile" href="/jobs/post">Post a brief</a>
+      <a class="nav__link nav__link--mobile nav__link--active" href="/leaderboard">Leaderboard</a>
+      <div class="nav__mobile-cta">
+        <a class="ds-btn ds-btn--secondary-sm ds-btn--md" href="/login">Log in</a>
+        <a class="ds-btn ds-btn--primary-sm ds-btn--md" href="/signup">Sign up</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="lb-page">
+    {/* Hero Header */}
+    <section class="lb-hero">
+      <div class="lb-hero__mesh" aria-hidden="true"></div>
+      <div class="ds-container lb-hero__inner">
+        <Badge variant="violet" mono dot>June 2026 Rankings</Badge>
+        <h1 class="lb-hero__title">Student Leaderboard</h1>
+        <p class="lb-hero__lead">
+          Recognizing top-performing student freelancers across every category.
+          Rankings update monthly based on client ratings, project completion,
+          on-time delivery, repeat clients, and quality score.
+        </p>
+      </div>
+    </section>
+
+    {/* Category Tabs */}
+    <section class="lb-tabs-section">
+      <div class="ds-container">
+        <div class="lb-tabs" role="tablist" aria-label="Category filters">
+          {CATEGORIES.map((cat, i) => (
+            <button
+              class={`lb-tab ${i === 0 ? 'lb-tab--active' : ''}`}
+              role="tab"
+              aria-selected={i === 0 ? 'true' : 'false'}
+              aria-controls={`panel-${cat.id}`}
+              data-category={cat.id}
+              type="button"
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    {/* Top 3 Podium */}
+    <section class="lb-podium" aria-label="Top 3 performers">
+      <div class="ds-container lb-podium__inner">
+        {topThree.map((entry) => (
+          <div class={`lb-podium__card lb-podium__card--${entry.badge}`} data-rank={entry.rank}>
+            <div class={`lb-medal lb-medal--${entry.badge}`} aria-label={`${entry.rank === 1 ? 'Gold' : entry.rank === 2 ? 'Silver' : 'Bronze'} medal`}>
+              {entry.rank === 1 && (
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                  <circle cx="16" cy="16" r="15" fill="#FFD700" stroke="#DAA520" stroke-width="1.5"/>
+                  <path d="M16 6L19 12L26 13L21 18L22 25L16 22L10 25L11 18L6 13L13 12L16 6Z" fill="#FFF8DC" stroke="#DAA520" stroke-width="0.8"/>
+                </svg>
+              )}
+              {entry.rank === 2 && (
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                  <circle cx="16" cy="16" r="15" fill="#C0C0C0" stroke="#A0A0A0" stroke-width="1.5"/>
+                  <path d="M16 6L19 12L26 13L21 18L22 25L16 22L10 25L11 18L6 13L13 12L16 6Z" fill="#F0F0F0" stroke="#A0A0A0" stroke-width="0.8"/>
+                </svg>
+              )}
+              {entry.rank === 3 && (
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                  <circle cx="16" cy="16" r="15" fill="#CD7F32" stroke="#A0522D" stroke-width="1.5"/>
+                  <path d="M16 6L19 12L26 13L21 18L22 25L16 22L10 25L11 18L6 13L13 12L16 6Z" fill="#DEB887" stroke="#A0522D" stroke-width="0.8"/>
+                </svg>
+              )}
+            </div>
+            <div class="lb-podium__avatar" data-color={entry.badge === 'gold' ? 'violet' : entry.badge === 'silver' ? 'cyan' : 'pink'}>
+              {entry.initials}
+            </div>
+            <div class="lb-podium__info">
+              <h3 class="lb-podium__name">{entry.name}</h3>
+              <p class="lb-podium__college">{entry.college}</p>
+            </div>
+            <div class="lb-podium__score">
+              <span class="lb-podium__score-value">{entry.score}</span>
+              <span class="lb-podium__score-label">score</span>
+            </div>
+            <div class="lb-podium__stats">
+              <div class="lb-podium__stat">
+                <span class="lb-podium__stat-val">{entry.clientRating}</span>
+                <span class="lb-podium__stat-label">Rating</span>
+              </div>
+              <div class="lb-podium__stat">
+                <span class="lb-podium__stat-val">{entry.projectsCompleted}</span>
+                <span class="lb-podium__stat-label">Projects</span>
+              </div>
+              <div class="lb-podium__stat">
+                <span class="lb-podium__stat-val">{entry.onTimeDelivery}%</span>
+                <span class="lb-podium__stat-label">On-Time</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    {/* Full Rankings Table */}
+    <section class="lb-rankings" aria-label="Full rankings">
+      <div class="ds-container">
+        <div class="lb-rankings__head">
+          <h2 class="lb-rankings__title">All Rankings</h2>
+          <p class="lb-rankings__subtitle">Top performers in this category this month</p>
+        </div>
+
+        <div class="lb-table-wrap">
+          <table class="lb-table" aria-label="Leaderboard rankings">
+            <thead>
+              <tr>
+                <th class="lb-th lb-th--rank">Rank</th>
+                <th class="lb-th lb-th--student">Student</th>
+                <th class="lb-th lb-th--score">Score</th>
+                <th class="lb-th lb-th--rating">Rating</th>
+                <th class="lb-th lb-th--projects">Projects</th>
+                <th class="lb-th lb-th--ontime">On-Time</th>
+                <th class="lb-th lb-th--badge">Badge</th>
+              </tr>
+            </thead>
+            <tbody>
+              {allRankings.map((entry) => (
+                <tr class={`lb-tr ${entry.rank <= 3 ? 'lb-tr--top' : ''}`}>
+                  <td class="lb-td lb-td--rank">
+                    <span class={`lb-rank-num lb-rank-num--${entry.rank <= 3 ? entry.rank : 'normal'}`}>
+                      {entry.rank}
+                    </span>
+                  </td>
+                  <td class="lb-td lb-td--student">
+                    <div class="lb-student">
+                      <span class={`lb-student__avatar lb-student__avatar--${entry.badge || 'default'}`}>
+                        {entry.initials}
+                      </span>
+                      <div class="lb-student__info">
+                        <span class="lb-student__name">{entry.name}</span>
+                        <span class="lb-student__college">{entry.college}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="lb-td lb-td--score">
+                    <span class="lb-score-pill">{entry.score}</span>
+                  </td>
+                  <td class="lb-td lb-td--rating">
+                    <span class="lb-rating">
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                        <path d="M6 0.5L7.4 3.7L11 4.2L8.4 6.8L9 10.4L6 8.8L3 10.4L3.6 6.8L1 4.2L4.6 3.7L6 0.5Z"/>
+                      </svg>
+                      {entry.clientRating}
+                    </span>
+                  </td>
+                  <td class="lb-td lb-td--projects">{entry.projectsCompleted}</td>
+                  <td class="lb-td lb-td--ontime">
+                    <div class="lb-on-time">
+                      <div class="lb-on-time__bar">
+                        <div class="lb-on-time__fill" style={`width: ${entry.onTimeDelivery}%`}></div>
+                      </div>
+                      <span>{entry.onTimeDelivery}%</span>
+                    </div>
+                  </td>
+                  <td class="lb-td lb-td--badge">
+                    {entry.badge && (
+                      <span class={`lb-badge lb-badge--${entry.badge}`}>
+                        {entry.badge === 'gold' ? '🥇' : entry.badge === 'silver' ? '🥈' : '🥉'}
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    {/* Reputation Score Section */}
+    <section class="lb-reputation" aria-label="Your reputation score">
+      <div class="ds-container">
+        <div class="lb-reputation__grid">
+          <div class="lb-reputation__header">
+            <Badge variant="success" mono>Your Reputation</Badge>
+            <h2 class="lb-reputation__title">Reputation Score</h2>
+            <p class="lb-reputation__lead">
+              Your overall reputation is calculated from client ratings, project
+              completion rate, on-time delivery, repeat clients, and quality score.
+            </p>
+          </div>
+
+          <div class="lb-reputation__card">
+            <div class="lb-reputation__score-ring">
+              <svg viewBox="0 0 120 120" class="lb-ring">
+                <circle cx="60" cy="60" r="52" class="lb-ring__track"/>
+                <circle cx="60" cy="60" r="52" class="lb-ring__fill" style={`stroke-dasharray: ${MOCK_REPUTATION.overall * 3.267} 326.7`}/>
+              </svg>
+              <div class="lb-reputation__score-val">
+                <span class="lb-reputation__score-num">{MOCK_REPUTATION.overall}</span>
+                <span class="lb-reputation__score-max">/100</span>
+              </div>
+            </div>
+
+            <div class="lb-reputation__breakdown">
+              <div class="lb-metric">
+                <div class="lb-metric__head">
+                  <span class="lb-metric__label">Client Rating</span>
+                  <span class="lb-metric__value">{MOCK_REPUTATION.clientRating}/5.0</span>
+                </div>
+                <div class="lb-metric__bar">
+                  <div class="lb-metric__fill" style={`width: ${(MOCK_REPUTATION.clientRating / 5) * 100}%`}></div>
+                </div>
+              </div>
+              <div class="lb-metric">
+                <div class="lb-metric__head">
+                  <span class="lb-metric__label">Project Completion</span>
+                  <span class="lb-metric__value">{MOCK_REPUTATION.projectCompletion}%</span>
+                </div>
+                <div class="lb-metric__bar">
+                  <div class="lb-metric__fill" style={`width: ${MOCK_REPUTATION.projectCompletion}%`}></div>
+                </div>
+              </div>
+              <div class="lb-metric">
+                <div class="lb-metric__head">
+                  <span class="lb-metric__label">On-Time Delivery</span>
+                  <span class="lb-metric__value">{MOCK_REPUTATION.onTimeDelivery}%</span>
+                </div>
+                <div class="lb-metric__bar">
+                  <div class="lb-metric__fill" style={`width: ${MOCK_REPUTATION.onTimeDelivery}%`}></div>
+                </div>
+              </div>
+              <div class="lb-metric">
+                <div class="lb-metric__head">
+                  <span class="lb-metric__label">Repeat Client Rate</span>
+                  <span class="lb-metric__value">{MOCK_REPUTATION.repeatClientRate}%</span>
+                </div>
+                <div class="lb-metric__bar">
+                  <div class="lb-metric__fill" style={`width: ${MOCK_REPUTATION.repeatClientRate}%`}></div>
+                </div>
+              </div>
+              <div class="lb-metric">
+                <div class="lb-metric__head">
+                  <span class="lb-metric__label">Quality Score</span>
+                  <span class="lb-metric__value">{MOCK_REPUTATION.qualityScore}/100</span>
+                </div>
+                <div class="lb-metric__bar">
+                  <div class="lb-metric__fill" style={`width: ${MOCK_REPUTATION.qualityScore}%`}></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {/* Achievement Badges */}
+    <section class="lb-achievements" aria-label="Achievement badges">
+      <div class="ds-container">
+        <div class="lb-achievements__head">
+          <Badge variant="violet" mono>Achievements</Badge>
+          <h2 class="lb-achievements__title">Achievement Badges</h2>
+          <p class="lb-achievements__lead">
+            Earn badges by completing milestones, maintaining quality, and
+            building your reputation on the platform.
+          </p>
+        </div>
+
+        <div class="lb-achievements__grid">
+          {ACHIEVEMENTS.map((badge) => (
+            <div class={`lb-badge-card ${badge.earnedAt ? 'lb-badge-card--earned' : ''}`}>
+              <div class="lb-badge-card__icon">{badge.icon}</div>
+              <div class="lb-badge-card__content">
+                <h3 class="lb-badge-card__name">{badge.name}</h3>
+                <p class="lb-badge-card__desc">{badge.description}</p>
+                <div class="lb-badge-card__meta">
+                  <Badge variant={badge.earnedAt ? 'success' : 'secondary'} mono>
+                    {badge.earnedAt ? 'Earned' : 'In Progress'}
+                  </Badge>
+                  <span class="lb-badge-card__category">{badge.category}</span>
+                </div>
+              </div>
+              {!badge.earnedAt && (
+                <div class="lb-badge-card__progress">
+                  <div class="lb-badge-card__progress-bar">
+                    <div class="lb-badge-card__progress-fill" style={`width: ${badge.progress}%`}></div>
+                  </div>
+                  <span class="lb-badge-card__progress-text">{badge.progress}%</span>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  </main>
+
+  {/* Footer */}
+  <footer class="footer">
+    <div class="ds-container footer__inner">
+      <div class="footer__brand">
+        <a href="/" class="nav__brand" aria-label="StudentLancers home">
+          <span class="nav__logo" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+              <rect x="0.5" y="0.5" width="21" height="21" rx="5.5" fill="var(--color-primary)" />
+              <path d="M6 7.5L11 4.5L16 7.5V14.5L11 17.5L6 14.5V7.5Z" stroke="var(--color-on-primary)" stroke-width="1.4" stroke-linejoin="round" />
+              <path d="M11 4.5V11M11 11L16 7.5M11 11L6 7.5M11 11V17.5" stroke="var(--color-on-primary)" stroke-width="1.4" stroke-linejoin="round" />
+            </svg>
+          </span>
+          <span class="nav__brand-text">StudentLancers</span>
+        </a>
+        <p class="footer__tagline">The marketplace where students earn and companies hire.</p>
+      </div>
+      <div class="footer__cols">
+        <div class="footer__col">
+          <h4>Product</h4>
+          <ul role="list">
+            <li><a href="/#features">Features</a></li>
+            <li><a href="/pricing">Pricing</a></li>
+            <li><a href="/leaderboard">Leaderboard</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h4>For students</h4>
+          <ul role="list">
+            <li><a href="/student/find-work">Find work</a></li>
+            <li><a href="/student/dashboard">Dashboard</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h4>Company</h4>
+          <ul role="list">
+            <li><a href="/about">About</a></li>
+            <li><a href="/contact">Contact</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="ds-container footer__bottom">
+      <p>&copy; {new Date().getFullYear()} StudentLancers, Inc. All rights reserved.</p>
+      <ul role="list" class="footer__legal">
+        <li><a href="/privacy">Privacy</a></li>
+        <li><a href="/terms">Terms</a></li>
+        <li><a href="/security">Security</a></li>
+      </ul>
+    </div>
+  </footer>
+</Layout>
+
+<style>
+  /* ─── Skip Link ──────────────────────────────────────── */
+  .skip-link {
+    position: absolute;
+    top: -40px;
+    left: 16px;
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-body-sm);
+    z-index: 100;
+    transition: top 0.15s ease;
+  }
+  .skip-link:focus { top: 16px; }
+
+  /* ─── Navbar ─────────────────────────────────────────── */
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background-color: color-mix(in srgb, var(--color-canvas) 86%, transparent);
+    backdrop-filter: saturate(180%) blur(12px);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid var(--color-hairline);
+  }
+  .nav__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    gap: var(--space-lg);
+  }
+  .nav__brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    text-decoration: none;
+    color: var(--color-ink);
+  }
+  .nav__brand-text {
+    font-size: var(--text-body-md-strong);
+    font-weight: var(--text-body-md-strong-weight);
+    letter-spacing: -0.4px;
+  }
+  .nav__links {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+  .nav__link {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-xs) var(--space-sm);
+    font-size: var(--text-body-sm);
+    line-height: var(--text-body-sm-line);
+    color: var(--color-body);
+    border-radius: var(--radius-full);
+    transition: color 0.15s ease, background-color 0.15s ease;
+    text-decoration: none;
+  }
+  .nav__link:hover { color: var(--color-ink); background-color: var(--color-canvas-soft); }
+  .nav__link--active { color: var(--color-ink); font-weight: 500; }
+  .nav__cta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+  .nav__burger {
+    display: none;
+    width: 36px; height: 36px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-hairline);
+    background: var(--color-canvas);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    cursor: pointer;
+  }
+  .nav__burger span {
+    display: block; width: 16px; height: 1.5px;
+    background: var(--color-ink); border-radius: 2px;
+  }
+  .nav__mobile {
+    display: none; flex-direction: column;
+    gap: var(--space-xs);
+    padding: var(--space-md) var(--space-lg) var(--space-lg);
+    background: var(--color-canvas);
+    border-top: 1px solid var(--color-hairline);
+  }
+  .nav__mobile[hidden] { display: none; }
+  .nav__link--mobile { width: 100%; padding: var(--space-sm); border-radius: var(--radius-sm); }
+  .nav__mobile-cta { display: flex; gap: var(--space-xs); margin-top: var(--space-sm); }
+
+  /* Button styles */
+  .ds-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs);
+    border: 1px solid transparent;
+    cursor: pointer;
+    text-decoration: none;
+    font-family: var(--font-sans);
+    transition: all 0.15s ease;
+  }
+  .ds-btn--primary-sm {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    border-radius: var(--radius-full);
+    padding: 6px 14px;
+    font-size: var(--text-body-sm);
+    font-weight: 500;
+  }
+  .ds-btn--secondary-sm {
+    background: transparent;
+    color: var(--color-ink);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-full);
+    padding: 6px 14px;
+    font-size: var(--text-body-sm);
+    font-weight: 500;
+  }
+
+  @media (max-width: 900px) {
+    .nav__links, .nav__cta { display: none; }
+    .nav__burger { display: inline-flex; }
+    .nav__mobile { display: flex; }
+  }
+
+  /* ─── Hero ───────────────────────────────────────────── */
+  .lb-hero {
+    position: relative;
+    padding: var(--space-4xl) 0 var(--space-3xl);
+    overflow: hidden;
+    background: var(--color-canvas);
+  }
+  .lb-hero__mesh {
+    position: absolute;
+    inset: -10% -5% 30% -5%;
+    background: var(--gradient-brand);
+    filter: blur(40px) saturate(110%);
+    opacity: 0.55;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .lb-hero__mesh::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 0%, var(--color-canvas) 92%);
+  }
+  .lb-hero__inner {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md);
+  }
+  .lb-hero__title {
+    font-size: clamp(32px, 5vw, var(--text-display-xl));
+    line-height: 1.08;
+    font-weight: var(--text-display-xl-weight);
+    letter-spacing: -2px;
+    color: var(--color-ink);
+    margin: 0;
+  }
+  .lb-hero__lead {
+    font-size: var(--text-body-lg);
+    line-height: var(--text-body-lg-line);
+    color: var(--color-body);
+    max-width: 600px;
+    margin: 0;
+  }
+
+  /* ─── Category Tabs ──────────────────────────────────── */
+  .lb-tabs-section {
+    position: sticky;
+    top: 64px;
+    z-index: 40;
+    background: color-mix(in srgb, var(--color-canvas) 86%, transparent);
+    backdrop-filter: saturate(180%) blur(12px);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid var(--color-hairline);
+    padding: var(--space-sm) 0;
+  }
+  .lb-tabs {
+    display: flex;
+    gap: var(--space-xs);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 0 var(--space-xs);
+  }
+  .lb-tabs::-webkit-scrollbar { display: none; }
+  .lb-tab {
+    flex-shrink: 0;
+    padding: 8px 16px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--color-hairline);
+    background: var(--color-canvas);
+    color: var(--color-body);
+    font-size: var(--text-body-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+  .lb-tab:hover { border-color: var(--color-hairline-strong); color: var(--color-ink); }
+  .lb-tab--active {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    border-color: var(--color-primary);
+  }
+
+  /* ─── Podium ─────────────────────────────────────────── */
+  .lb-podium {
+    padding: var(--space-3xl) 0;
+    background: var(--color-canvas);
+  }
+  .lb-podium__inner {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-lg);
+    align-items: end;
+  }
+  .lb-podium__card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: var(--space-xl);
+    border-radius: var(--radius-lg);
+    background: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+    box-shadow: var(--shadow-level-3);
+    position: relative;
+  }
+  .lb-podium__card--gold {
+    border-color: #FFD700;
+    background: linear-gradient(180deg, #FFFBEB 0%, var(--color-canvas) 100%);
+    box-shadow: 0 4px 24px rgba(255, 215, 0, 0.15), var(--shadow-level-3);
+  }
+  .lb-podium__card--silver {
+    border-color: #C0C0C0;
+    background: linear-gradient(180deg, #F9FAFB 0%, var(--color-canvas) 100%);
+  }
+  .lb-podium__card--bronze {
+    border-color: #CD7F32;
+    background: linear-gradient(180deg, #FFF7ED 0%, var(--color-canvas) 100%);
+  }
+  .lb-podium__card--gold .lb-podium__card { transform: translateY(-8px); }
+
+  .lb-medal { margin-bottom: var(--space-md); }
+  .lb-podium__avatar {
+    width: 56px; height: 56px;
+    border-radius: var(--radius-full);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--text-body-md);
+    font-weight: 600;
+    color: var(--color-on-primary);
+    background: var(--color-primary);
+    margin-bottom: var(--space-sm);
+  }
+  .lb-podium__avatar[data-color="violet"] { background: var(--color-violet); }
+  .lb-podium__avatar[data-color="cyan"] { background: var(--color-cyan-deep); }
+  .lb-podium__avatar[data-color="pink"] { background: var(--color-highlight-magenta); }
+
+  .lb-podium__info { margin-bottom: var(--space-md); }
+  .lb-podium__name {
+    font-size: var(--text-body-md);
+    font-weight: var(--text-body-md-strong-weight);
+    color: var(--color-ink);
+    margin: 0;
+  }
+  .lb-podium__college {
+    font-size: var(--text-caption);
+    color: var(--color-mute);
+    margin: 2px 0 0;
+  }
+
+  .lb-podium__score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: var(--space-md);
+  }
+  .lb-podium__score-value {
+    font-size: var(--text-display-md);
+    font-weight: var(--text-display-md-weight);
+    color: var(--color-ink);
+    line-height: 1;
+  }
+  .lb-podium__score-label {
+    font-size: var(--text-caption);
+    color: var(--color-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .lb-podium__stats {
+    display: flex;
+    gap: var(--space-lg);
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--color-hairline);
+    width: 100%;
+    justify-content: center;
+  }
+  .lb-podium__stat { text-align: center; }
+  .lb-podium__stat-val {
+    display: block;
+    font-size: var(--text-body-sm);
+    font-weight: var(--text-body-sm-strong-weight);
+    color: var(--color-ink);
+  }
+  .lb-podium__stat-label {
+    font-size: var(--text-caption);
+    color: var(--color-mute);
+  }
+
+  @media (max-width: 768px) {
+    .lb-podium__inner {
+      grid-template-columns: 1fr;
+      gap: var(--space-md);
+    }
+    .lb-podium__card { padding: var(--space-lg); }
+    .lb-podium__stats { gap: var(--space-md); }
+  }
+
+  /* ─── Rankings Table ─────────────────────────────────── */
+  .lb-rankings {
+    padding: var(--space-4xl) 0;
+    background: var(--color-canvas-soft);
+  }
+  .lb-rankings__head {
+    margin-bottom: var(--space-xl);
+  }
+  .lb-rankings__title {
+    font-size: var(--text-display-sm);
+    font-weight: var(--text-display-sm-weight);
+    color: var(--color-ink);
+    margin: 0 0 var(--space-xs);
+  }
+  .lb-rankings__subtitle {
+    font-size: var(--text-body-md);
+    color: var(--color-body);
+    margin: 0;
+  }
+
+  .lb-table-wrap {
+    overflow-x: auto;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-hairline);
+    background: var(--color-canvas);
+    box-shadow: var(--shadow-level-2);
+  }
+  .lb-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-body-sm);
+  }
+  .lb-th {
+    text-align: left;
+    padding: var(--space-sm) var(--space-md);
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-mute);
+    border-bottom: 1px solid var(--color-hairline);
+    background: var(--color-canvas-soft);
+    white-space: nowrap;
+  }
+  .lb-td {
+    padding: var(--space-sm) var(--space-md);
+    border-bottom: 1px solid var(--color-hairline);
+    vertical-align: middle;
+  }
+  .lb-tr:last-child .lb-td { border-bottom: none; }
+  .lb-tr--top { background: var(--color-canvas-soft); }
+
+  .lb-rank-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px; height: 28px;
+    border-radius: var(--radius-full);
+    font-weight: 600;
+    font-size: var(--text-body-sm);
+  }
+  .lb-rank-num--1 { background: #FEF3C7; color: #92400E; }
+  .lb-rank-num--2 { background: #F3F4F6; color: #374151; }
+  .lb-rank-num--3 { background: #FED7AA; color: #9A3412; }
+  .lb-rank-num--normal { background: var(--color-canvas-soft); color: var(--color-body); }
+
+  .lb-student {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+  .lb-student__avatar {
+    width: 36px; height: 36px;
+    border-radius: var(--radius-full);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--text-caption);
+    font-weight: 600;
+    color: var(--color-on-primary);
+    background: var(--color-primary);
+    flex-shrink: 0;
+  }
+  .lb-student__avatar--gold { background: #FFD700; color: #78350F; }
+  .lb-student__avatar--silver { background: #C0C0C0; color: #374151; }
+  .lb-student__avatar--bronze { background: #CD7F32; color: #fff; }
+  .lb-student__avatar--default { background: var(--color-primary); }
+  .lb-student__info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .lb-student__name {
+    font-weight: var(--text-body-sm-strong-weight);
+    color: var(--color-ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .lb-student__college {
+    font-size: var(--text-caption);
+    color: var(--color-mute);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .lb-score-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 10px;
+    border-radius: var(--radius-full);
+    background: var(--color-canvas-soft);
+    border: 1px solid var(--color-hairline);
+    font-weight: 600;
+    font-size: var(--text-body-sm);
+    color: var(--color-ink);
+  }
+
+  .lb-rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #F59E0B;
+    font-weight: 500;
+  }
+
+  .lb-on-time {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+  .lb-on-time__bar {
+    width: 60px; height: 6px;
+    border-radius: var(--radius-full);
+    background: var(--color-canvas-soft-2);
+    overflow: hidden;
+  }
+  .lb-on-time__fill {
+    height: 100%;
+    border-radius: var(--radius-full);
+    background: var(--color-success);
+  }
+
+  .lb-badge {
+    display: inline-flex;
+    font-size: 18px;
+  }
+
+  /* Hide columns on small screens */
+  @media (max-width: 768px) {
+    .lb-th--projects, .lb-td--projects,
+    .lb-th--ontime, .lb-td--ontime,
+    .lb-th--badge, .lb-td--badge { display: none; }
+    .lb-th--student, .lb-td--student { min-width: 140px; }
+  }
+
+  /* ─── Reputation ─────────────────────────────────────── */
+  .lb-reputation {
+    padding: var(--space-4xl) 0;
+    background: var(--color-canvas);
+  }
+  .lb-reputation__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3xl);
+    align-items: start;
+  }
+  .lb-reputation__header { max-width: 480px; }
+  .lb-reputation__header :global(.ds-badge) { margin-bottom: var(--space-md); }
+  .lb-reputation__title {
+    font-size: var(--text-display-sm);
+    font-weight: var(--text-display-sm-weight);
+    color: var(--color-ink);
+    margin: 0 0 var(--space-md);
+  }
+  .lb-reputation__lead {
+    font-size: var(--text-body-md);
+    line-height: var(--text-body-md-line);
+    color: var(--color-body);
+    margin: 0;
+  }
+
+  .lb-reputation__card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--space-xl);
+    border-radius: var(--radius-lg);
+    background: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+    box-shadow: var(--shadow-level-3);
+  }
+
+  .lb-reputation__score-ring {
+    position: relative;
+    width: 120px; height: 120px;
+    margin-bottom: var(--space-lg);
+  }
+  .lb-ring { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .lb-ring__track {
+    fill: none;
+    stroke: var(--color-canvas-soft-2);
+    stroke-width: 8;
+  }
+  .lb-ring__fill {
+    fill: none;
+    stroke: var(--color-success);
+    stroke-width: 8;
+    stroke-linecap: round;
+    transition: stroke-dasharray 0.6s ease;
+  }
+  .lb-reputation__score-val {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .lb-reputation__score-num {
+    font-size: var(--text-display-md);
+    font-weight: var(--text-display-md-weight);
+    color: var(--color-ink);
+  }
+  .lb-reputation__score-max {
+    font-size: var(--text-body-sm);
+    color: var(--color-mute);
+    margin-top: 4px;
+  }
+
+  .lb-reputation__breakdown {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .lb-metric__head {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .lb-metric__label {
+    font-size: var(--text-body-sm);
+    color: var(--color-body);
+  }
+  .lb-metric__value {
+    font-size: var(--text-body-sm);
+    font-weight: var(--text-body-sm-strong-weight);
+    color: var(--color-ink);
+  }
+  .lb-metric__bar {
+    height: 6px;
+    border-radius: var(--radius-full);
+    background: var(--color-canvas-soft-2);
+    overflow: hidden;
+  }
+  .lb-metric__fill {
+    height: 100%;
+    border-radius: var(--radius-full);
+    background: linear-gradient(90deg, var(--color-success), var(--color-link));
+    transition: width 0.6s ease;
+  }
+
+  @media (max-width: 768px) {
+    .lb-reputation__grid {
+      grid-template-columns: 1fr;
+      gap: var(--space-xl);
+    }
+    .lb-reputation__header { max-width: 100%; }
+  }
+
+  /* ─── Achievements ───────────────────────────────────── */
+  .lb-achievements {
+    padding: var(--space-4xl) 0 var(--space-5xl);
+    background: var(--color-canvas-soft);
+  }
+  .lb-achievements__head {
+    max-width: 600px;
+    margin-bottom: var(--space-xl);
+  }
+  .lb-achievements__head :global(.ds-badge) { margin-bottom: var(--space-md); }
+  .lb-achievements__title {
+    font-size: var(--text-display-sm);
+    font-weight: var(--text-display-sm-weight);
+    color: var(--color-ink);
+    margin: 0 0 var(--space-md);
+  }
+  .lb-achievements__lead {
+    font-size: var(--text-body-md);
+    line-height: var(--text-body-md-line);
+    color: var(--color-body);
+    margin: 0;
+  }
+
+  .lb-achievements__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-md);
+  }
+
+  .lb-badge-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    padding: var(--space-lg);
+    border-radius: var(--radius-lg);
+    background: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+    box-shadow: var(--shadow-level-2);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .lb-badge-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-level-3);
+  }
+  .lb-badge-card--earned {
+    border-color: color-mix(in srgb, var(--color-success) 30%, var(--color-hairline));
+    background: linear-gradient(180deg, color-mix(in srgb, var(--color-success) 4%, var(--color-canvas)) 0%, var(--color-canvas) 100%);
+  }
+
+  .lb-badge-card__icon {
+    font-size: 32px;
+    line-height: 1;
+  }
+  .lb-badge-card__name {
+    font-size: var(--text-body-md);
+    font-weight: var(--text-body-md-strong-weight);
+    color: var(--color-ink);
+    margin: 0;
+  }
+  .lb-badge-card__desc {
+    font-size: var(--text-body-sm);
+    color: var(--color-body);
+    margin: 0;
+  }
+  .lb-badge-card__meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+  .lb-badge-card__category {
+    font-size: var(--text-caption);
+    color: var(--color-mute);
+  }
+
+  .lb-badge-card__progress {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-top: var(--space-xs);
+  }
+  .lb-badge-card__progress-bar {
+    flex: 1;
+    height: 6px;
+    border-radius: var(--radius-full);
+    background: var(--color-canvas-soft-2);
+    overflow: hidden;
+  }
+  .lb-badge-card__progress-fill {
+    height: 100%;
+    border-radius: var(--radius-full);
+    background: var(--color-link);
+    transition: width 0.6s ease;
+  }
+  .lb-badge-card__progress-text {
+    font-size: var(--text-caption);
+    font-weight: 500;
+    color: var(--color-body);
+    min-width: 32px;
+  }
+
+  /* ─── Footer ─────────────────────────────────────────── */
+  .footer {
+    background: var(--inverted-bg);
+    color: var(--inverted-fg);
+    padding: var(--space-3xl) 0 0;
+  }
+  .footer__inner {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: var(--space-3xl);
+    padding-bottom: var(--space-2xl);
+    border-bottom: 1px solid var(--inverted-border);
+  }
+  .footer__tagline {
+    font-size: var(--text-body-sm);
+    color: var(--inverted-fg-muted);
+    margin: var(--space-md) 0 0;
+    max-width: 280px;
+  }
+  .footer__cols {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-xl);
+  }
+  .footer__col h4 {
+    font-size: var(--text-body-sm);
+    font-weight: var(--text-body-sm-strong-weight);
+    color: var(--inverted-fg);
+    margin: 0 0 var(--space-md);
+  }
+  .footer__col ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--space-xs); }
+  .footer__col a {
+    font-size: var(--text-body-sm);
+    color: var(--inverted-fg-muted);
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+  .footer__col a:hover { color: var(--inverted-fg); }
+
+  .footer__bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-lg) 0;
+    font-size: var(--text-caption);
+    color: var(--inverted-fg-muted);
+  }
+  .footer__legal {
+    display: flex;
+    gap: var(--space-md);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .footer__legal a {
+    color: var(--inverted-fg-muted);
+    text-decoration: none;
+  }
+  .footer__legal a:hover { color: var(--inverted-fg); }
+
+  @media (max-width: 768px) {
+    .footer__inner { grid-template-columns: 1fr; gap: var(--space-xl); }
+    .footer__cols { grid-template-columns: repeat(2, 1fr); }
+    .footer__bottom { flex-direction: column; gap: var(--space-sm); text-align: center; }
+  }
+  @media (max-width: 480px) {
+    .footer__cols { grid-template-columns: 1fr; }
+  }
+
+  /* ─── Mobile Nav Script Support ──────────────────────── */
+  .nav__burger[aria-expanded="true"] span:nth-child(1) { transform: rotate(45deg) translate(3px, 3px); }
+  .nav__burger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+  .nav__burger[aria-expanded="true"] span:nth-child(3) { transform: rotate(-45deg) translate(3px, -3px); }
+</style>
+
+<script>
+  // Mobile nav toggle
+  const burger = document.querySelector('[data-nav-burger]') as HTMLButtonElement;
+  const mobileNav = document.querySelector('[data-nav-mobile]') as HTMLElement;
+  if (burger && mobileNav) {
+    burger.addEventListener('click', () => {
+      const expanded = burger.getAttribute('aria-expanded') === 'true';
+      burger.setAttribute('aria-expanded', String(!expanded));
+      mobileNav.hidden = expanded;
+    });
+  }
+
+  // Category tab switching
+  const tabs = document.querySelectorAll('.lb-tab') as NodeListOf<HTMLButtonElement>;
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      tabs.forEach((t) => {
+        t.classList.remove('lb-tab--active');
+        t.setAttribute('aria-selected', 'false');
+      });
+      tab.classList.add('lb-tab--active');
+      tab.setAttribute('aria-selected', 'true');
+    });
+  });
+
+  // Scroll reveal animation
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+        }
+      });
+    },
+    { threshold: 0.1 }
+  );
+
+  document.querySelectorAll('.lb-podium__card, .lb-badge-card, .lb-reputation__card').forEach((el) => {
+    el.classList.add('reveal');
+    observer.observe(el);
+  });
+</script>

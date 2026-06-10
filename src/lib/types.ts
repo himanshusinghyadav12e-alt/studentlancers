@@ -102,3 +102,66 @@ export interface AppSession {
 }
 
 export const SESSION_STORAGE_KEY = 'sl-session';
+
+/* ─── Leaderboard & Reputation ──────────────────────────────── */
+
+export type LeaderboardCategory =
+  | 'web-development'
+  | 'mobile-development'
+  | 'ui-ux-design'
+  | 'content-writing'
+  | 'video-editing'
+  | 'ai-automation'
+  | 'marketing';
+
+export interface LeaderboardEntry {
+  rank: number;
+  userId: string;
+  name: string;
+  college: string;
+  avatarUrl: string | null;
+  initials: string;
+  score: number;
+  badge: 'gold' | 'silver' | 'bronze' | null;
+  category: LeaderboardCategory;
+  month: string; // YYYY-MM
+  clientRating: number;
+  projectsCompleted: number;
+  onTimeDelivery: number; // percentage 0-100
+  repeatClients: number;
+  qualityScore: number; // 0-100
+}
+
+export interface ReputationScore {
+  userId: string;
+  overall: number; // 0-100
+  clientRating: number;
+  projectCompletion: number;
+  onTimeDelivery: number;
+  repeatClientRate: number;
+  qualityScore: number;
+  updatedAt: string;
+}
+
+export interface AchievementBadge {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: string;
+  requirement: string;
+  earnedAt: string | null;
+  progress: number; // 0-100
+}
+
+export interface Certificate {
+  id: string;
+  userId: string;
+  title: string;
+  category: LeaderboardCategory;
+  issuedAt: string;
+  expiresAt: string | null;
+  credentialId: string;
+  verificationUrl: string;
+  issuer: string;
+}
