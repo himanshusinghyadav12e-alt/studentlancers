@@ -1,0 +1,599 @@
+---
+import DashboardLayout, { type NavItem } from '../../layouts/DashboardLayout.astro';
+import Badge from '../../components/ui/Badge.astro';
+import {
+  CATEGORIES,
+  ACHIEVEMENTS,
+  MOCK_LEADERBOARD,
+  MOCK_REPUTATION,
+  getLeaderboardByCategory,
+} from '../../data/leaderboard';
+import type { LeaderboardCategory } from '../../lib/types';
+
+/**
+ * /student/leaderboard
+ *
+ * Shows the student leaderboard with:
+ * - Top 3 podium
+ * - Full rankings table
+ * - Reputation scores
+ * - Achievement badges
+ */
+
+const nav: NavItem[] = [
+  { href: '/student/dashboard', label: 'Overview', icon: 'home' },
+  { href: '/student/find-work', label: 'Find work', icon: 'brief' },
+  { href: '/student/applications', label: 'My applications', icon: 'inbox' },
+  { href: '/student/earnings', label: 'Earnings', icon: 'wallet' },
+  { href: '/student/leaderboard', label: 'Leaderboard', icon: 'leaderboard', current: true },
+  { href: '/student/reviews', label: 'Reviews', icon: 'reviews' },
+  { href: '/student/profile', label: 'Profile', icon: 'profile' },
+  { href: '/student/settings', label: 'Settings', icon: 'settings' },
+];
+
+const user = Astro.locals.user;
+const studentName = user?.name ?? 'there';
+
+const activeCategory: LeaderboardCategory = 'web-development';
+const entries = getLeaderboardByCategory(activeCategory);
+const top3 = entries.slice(0, 3);
+const rest = entries.slice(3);
+
+const rep = MOCK_REPUTATION;
+const earned = ACHIEVEMENTS.filter((a) => a.earnedAt);
+const inProgress = ACHIEVEMENTS.filter((a) => !a.earnedAt);
+---
+
+<DashboardLayout
+  title="Leaderboard · StudentLancers"
+  description="See how you rank against other students."
+  name={studentName}
+  role="Student"
+  nav={nav}
+>
+  <header class="dash-page-head">
+    <div class="dash-page-head__copy">
+      <span class="dash-page-head__eyebrow">Rankings</span>
+      <h1 class="dash-page-head__title">Leaderboard</h1>
+      <p class="dash-page-head__lead">
+        See where you stand among your peers. Rankings update monthly based on
+        client ratings, project completion, and on-time delivery.
+      </p>
+    </div>
+    <div class="dash-page-head__actions">
+      <Badge mono variant="cyan">June 2026</Badge>
+    </div>
+  </header>
+
+  {/* ─── Category Tabs ─────────────────────────────────────────── */}
+  <nav class="lb-tabs" aria-label="Category">
+    {CATEGORIES.map((cat) => (
+      <button
+        class:list={['lb-tab', cat.id === activeCategory && 'is-active']}
+        data-category={cat.id}
+        type="button"
+      >
+        {cat.label}
+      </button>
+    ))}
+  </nav>
+
+  {/* ─── Top 3 Podium ──────────────────────────────────────────── */}
+  {top3.length >= 3 && (
+    <section class="lb-podium" aria-label="Top 3">
+      {/* 2nd place */}
+      <div class="lb-podium__item lb-podium__item--2">
+        <div class="lb-podium__avatar" data-color="silver">{top3[1].initials}</div>
+        <span class="lb-podium__name">{top3[1].name}</span>
+        <span class="lb-podium__college">{top3[1].college}</span>
+        <span class="lb-podium__score">{top3[1].score}</span>
+        <span class="lb-podium__rank">2nd</span>
+      </div>
+      {/* 1st place */}
+      <div class="lb-podium__item lb-podium__item--1">
+        <div class="lb-podium__avatar" data-color="gold">{top3[0].initials}</div>
+        <span class="lb-podium__name">{top3[0].name}</span>
+        <span class="lb-podium__college">{top3[0].college}</span>
+        <span class="lb-podium__score">{top3[0].score}</span>
+        <span class="lb-podium__rank">1st</span>
+      </div>
+      {/* 3rd place */}
+      <div class="lb-podium__item lb-podium__item--3">
+        <div class="lb-podium__avatar" data-color="bronze">{top3[2].initials}</div>
+        <span class="lb-podium__name">{top3[2].name}</span>
+        <span class="lb-podium__college">{top3[2].college}</span>
+        <span class="lb-podium__score">{top3[2].score}</span>
+        <span class="lb-podium__rank">3rd</span>
+      </div>
+    </section>
+  )}
+
+  {/* ─── Rankings Table ─────────────────────────────────────────── */}
+  <section class="dash-card" aria-label="Rankings">
+    <div class="dash-card__head">
+      <h2 class="dash-card__title">Full Rankings</h2>
+      <Badge mono variant="secondary">{entries.length} students</Badge>
+    </div>
+    <div class="dash-card__body lb-table-wrap">
+      <table class="lb-table" aria-label="Leaderboard rankings">
+        <thead>
+          <tr>
+            <th class="lb-table__rank">#</th>
+            <th class="lb-table__name">Student</th>
+            <th class="lb-table__stat">Score</th>
+            <th class="lb-table__stat lb-table__stat--hide-mobile">Rating</th>
+            <th class="lb-table__stat lb-table__stat--hide-mobile">Projects</th>
+            <th class="lb-table__stat">On-time</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rest.map((e) => (
+            <tr>
+              <td class="lb-table__rank">{e.rank}</td>
+              <td class="lb-table__name">
+                <span class="lb-table__avatar" data-color="cyan">{e.initials}</span>
+                <span class="lb-table__info">
+                  <span class="lb-table__student">{e.name}</span>
+                  <span class="lb-table__college">{e.college}</span>
+                </span>
+              </td>
+              <td class="lb-table__stat">{e.score}</td>
+              <td class="lb-table__stat lb-table__stat--hide-mobile">{e.clientRating}</td>
+              <td class="lb-table__stat lb-table__stat--hide-mobile">{e.projectsCompleted}</td>
+              <td class="lb-table__stat">{e.onTimeDelivery}%</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  {/* ─── Reputation Score ────────────────────────────────────────── */}
+  <section class="dash-card" aria-label="Your reputation score">
+    <div class="dash-card__head">
+      <h2 class="dash-card__title">Your Reputation</h2>
+      <Badge mono variant="cyan">Updated {rep.updatedAt}</Badge>
+    </div>
+    <div class="dash-card__body">
+      <div class="lb-rep">
+        <div class="lb-rep__score-ring">
+          <span class="lb-rep__overall">{rep.overall}</span>
+          <span class="lb-rep__label">Overall</span>
+        </div>
+        <div class="lb-rep__breakdown">
+          <div class="lb-rep__bar">
+            <span class="lb-rep__bar-label">Client Rating</span>
+            <div class="lb-rep__bar-track">
+              <div class="lb-rep__bar-fill" style={`width: ${(rep.clientRating / 5) * 100}%`}></div>
+            </div>
+            <span class="lb-rep__bar-value">{rep.clientRating}/5</span>
+          </div>
+          <div class="lb-rep__bar">
+            <span class="lb-rep__bar-label">Project Completion</span>
+            <div class="lb-rep__bar-track">
+              <div class="lb-rep__bar-fill" style={`width: ${rep.projectCompletion}%`}></div>
+            </div>
+            <span class="lb-rep__bar-value">{rep.projectCompletion}%</span>
+          </div>
+          <div class="lb-rep__bar">
+            <span class="lb-rep__bar-label">On-Time Delivery</span>
+            <div class="lb-rep__bar-track">
+              <div class="lb-rep__bar-fill" style={`width: ${rep.onTimeDelivery}%`}></div>
+            </div>
+            <span class="lb-rep__bar-value">{rep.onTimeDelivery}%</span>
+          </div>
+          <div class="lb-rep__bar">
+            <span class="lb-rep__bar-label">Repeat Clients</span>
+            <div class="lb-rep__bar-track">
+              <div class="lb-rep__bar-fill" style={`width: ${rep.repeatClientRate}%`}></div>
+            </div>
+            <span class="lb-rep__bar-value">{rep.repeatClientRate}%</span>
+          </div>
+          <div class="lb-rep__bar">
+            <span class="lb-rep__bar-label">Quality Score</span>
+            <div class="lb-rep__bar-track">
+              <div class="lb-rep__bar-fill" style={`width: ${rep.qualityScore}%`}></div>
+            </div>
+            <span class="lb-rep__bar-value">{rep.qualityScore}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* ─── Achievement Badges ──────────────────────────────────────── */}
+  <section class="dash-card" aria-label="Achievement badges">
+    <div class="dash-card__head">
+      <h2 class="dash-card__title">Achievements</h2>
+      <Badge mono variant="success">{earned.length}/{ACHIEVEMENTS.length} earned</Badge>
+    </div>
+    <div class="dash-card__body">
+      <div class="lb-badges">
+        {ACHIEVEMENTS.map((a) => (
+          <div class:list={['lb-badge', a.earnedAt ? 'lb-badge--earned' : 'lb-badge--locked']}>
+            <span class="lb-badge__icon" aria-hidden="true">{a.icon}</span>
+            <span class="lb-badge__name">{a.name}</span>
+            <span class="lb-badge__desc">{a.description}</span>
+            {!a.earnedAt && (
+              <div class="lb-badge__progress">
+                <div class="lb-badge__progress-track">
+                  <div class="lb-badge__progress-fill" style={`width: ${a.progress}%`}></div>
+                </div>
+                <span class="lb-badge__progress-text">{a.progress}%</span>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+</DashboardLayout>
+
+<style>
+  /* ─── Category Tabs ──────────────────────────────────────── */
+  .lb-tabs {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: var(--space-sm);
+    margin-bottom: var(--space-md);
+    -webkit-overflow-scrolling: touch;
+  }
+  .lb-tab {
+    flex-shrink: 0;
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--color-hairline);
+    background: var(--color-canvas);
+    color: var(--color-body-muted);
+    font-size: var(--text-body-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    white-space: nowrap;
+  }
+  .lb-tab:hover {
+    background: var(--color-canvas-soft);
+    border-color: var(--color-hairline-strong);
+  }
+  .lb-tab.is-active {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    border-color: var(--color-primary);
+  }
+  .lb-tab:focus-visible {
+    outline: 2px solid var(--color-link);
+    outline-offset: 2px;
+  }
+
+  /* ─── Podium ─────────────────────────────────────────────── */
+  .lb-podium {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+    align-items: end;
+  }
+  .lb-podium__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: var(--space-md) var(--space-sm);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    border: 1px solid var(--color-hairline);
+    text-align: center;
+  }
+  .lb-podium__item--1 {
+    padding-top: var(--space-lg);
+    border-color: #f59e0b;
+    background: linear-gradient(180deg, rgba(245, 158, 11, 0.06) 0%, var(--color-surface) 100%);
+  }
+  .lb-podium__item--2 {
+    padding-bottom: var(--space-md);
+  }
+  .lb-podium__item--3 {
+    padding-bottom: var(--space-md);
+  }
+  .lb-podium__avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: var(--text-body-sm);
+    color: #fff;
+    background: var(--color-muted);
+  }
+  .lb-podium__avatar[data-color="gold"] { background: #f59e0b; }
+  .lb-podium__avatar[data-color="silver"] { background: #94a3b8; }
+  .lb-podium__avatar[data-color="bronze"] { background: #d97706; }
+  .lb-podium__name {
+    font-weight: 600;
+    font-size: var(--text-body-sm);
+    color: var(--color-ink);
+  }
+  .lb-podium__college {
+    font-size: 0.75rem;
+    color: var(--color-body-muted);
+  }
+  .lb-podium__score {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    font-family: var(--font-mono);
+  }
+  .lb-podium__rank {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-body-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* ─── Rankings Table ─────────────────────────────────────── */
+  .lb-table-wrap {
+    overflow-x: auto;
+    padding: 0;
+  }
+  .lb-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-body-sm);
+  }
+  .lb-table thead th {
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: var(--color-body-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--color-hairline);
+  }
+  .lb-table tbody td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--color-hairline);
+    vertical-align: middle;
+  }
+  .lb-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+  .lb-table tbody tr:hover {
+    background: var(--color-canvas-soft);
+  }
+  .lb-table__rank {
+    width: 40px;
+    font-weight: 600;
+    color: var(--color-body-muted);
+    font-family: var(--font-mono);
+  }
+  .lb-table__name {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .lb-table__avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.7rem;
+    color: #fff;
+    background: var(--color-muted);
+    flex-shrink: 0;
+  }
+  .lb-table__info {
+    display: flex;
+    flex-direction: column;
+  }
+  .lb-table__student {
+    font-weight: 500;
+    color: var(--color-ink);
+  }
+  .lb-table__college {
+    font-size: 0.75rem;
+    color: var(--color-body-muted);
+  }
+  .lb-table__stat {
+    font-family: var(--font-mono);
+    font-size: var(--text-body-sm);
+    color: var(--color-body);
+    text-align: right;
+  }
+  .lb-table thead .lb-table__stat {
+    text-align: right;
+  }
+
+  /* ─── Reputation ─────────────────────────────────────────── */
+  .lb-rep {
+    display: flex;
+    gap: var(--space-lg);
+    align-items: flex-start;
+  }
+  .lb-rep__score-ring {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 3px solid var(--color-primary);
+    flex-shrink: 0;
+  }
+  .lb-rep__overall {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    font-family: var(--font-mono);
+    line-height: 1;
+  }
+  .lb-rep__label {
+    font-size: 0.65rem;
+    color: var(--color-body-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .lb-rep__breakdown {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .lb-rep__bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .lb-rep__bar-label {
+    width: 120px;
+    font-size: 0.8rem;
+    color: var(--color-body-muted);
+    flex-shrink: 0;
+  }
+  .lb-rep__bar-track {
+    flex: 1;
+    height: 6px;
+    background: var(--color-hairline);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .lb-rep__bar-fill {
+    height: 100%;
+    background: var(--color-primary);
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+  .lb-rep__bar-value {
+    width: 48px;
+    text-align: right;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-body);
+    font-family: var(--font-mono);
+  }
+
+  /* ─── Achievement Badges ─────────────────────────────────── */
+  .lb-badges {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: var(--space-sm);
+  }
+  .lb-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-hairline);
+    background: var(--color-surface);
+    text-align: center;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .lb-badge--earned {
+    border-color: var(--color-primary);
+    background: linear-gradient(180deg, rgba(var(--color-primary-rgb, 99, 102, 241), 0.04) 0%, var(--color-surface) 100%);
+  }
+  .lb-badge--locked {
+    opacity: 0.65;
+  }
+  .lb-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  }
+  .lb-badge__icon {
+    font-size: 1.5rem;
+    line-height: 1;
+  }
+  .lb-badge__name {
+    font-weight: 600;
+    font-size: var(--text-body-sm);
+    color: var(--color-ink);
+  }
+  .lb-badge__desc {
+    font-size: 0.75rem;
+    color: var(--color-body-muted);
+  }
+  .lb-badge__progress {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    margin-top: 4px;
+  }
+  .lb-badge__progress-track {
+    flex: 1;
+    height: 4px;
+    background: var(--color-hairline);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .lb-badge__progress-fill {
+    height: 100%;
+    background: var(--color-primary);
+    border-radius: 2px;
+  }
+  .lb-badge__progress-text {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--color-body-muted);
+    font-family: var(--font-mono);
+    flex-shrink: 0;
+  }
+
+  /* ─── Responsive ─────────────────────────────────────────── */
+  @media (max-width: 640px) {
+    .lb-podium {
+      gap: 6px;
+    }
+    .lb-podium__item {
+      padding: var(--space-sm);
+    }
+    .lb-podium__item--1 {
+      padding-top: var(--space-md);
+    }
+    .lb-podium__avatar {
+      width: 40px;
+      height: 40px;
+      font-size: 0.7rem;
+    }
+    .lb-podium__score {
+      font-size: 1rem;
+    }
+    .lb-rep {
+      flex-direction: column;
+      align-items: center;
+    }
+    .lb-rep__bar {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+    .lb-rep__bar-label {
+      width: auto;
+    }
+    .lb-rep__bar-track {
+      width: 100%;
+    }
+    .lb-table__stat--hide-mobile {
+      display: none;
+    }
+    .lb-badges {
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    }
+  }
+
+  @media (max-width: 900px) {
+    .lb-table__stat--hide-mobile {
+      display: none;
+    }
+  }
+</style>
