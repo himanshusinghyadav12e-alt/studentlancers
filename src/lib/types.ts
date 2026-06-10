@@ -112,7 +112,32 @@ export type LeaderboardCategory =
   | 'content-writing'
   | 'video-editing'
   | 'ai-automation'
-  | 'marketing';
+  | 'marketing'
+  | 'react'
+  | 'nextjs'
+  | 'javascript'
+  | 'python'
+  | 'java'
+  | 'cpp'
+  | 'dsa'
+  | 'graphic-design'
+  | 'seo';
+
+export interface SkillRanking {
+  skill: string;
+  category: LeaderboardCategory;
+  totalStudents: number;
+  topPerformer: string;
+  topScore: number;
+  averageRating: number;
+  highestReputation: number;
+  totalProjects: number;
+  userRank: number;
+  userScore: number;
+  userPercentile: string;
+  rankMovement: 'up' | 'down' | 'same';
+  movementAmount: number;
+}
 
 export interface LeaderboardEntry {
   rank: number;
