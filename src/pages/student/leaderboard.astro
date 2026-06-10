@@ -384,13 +384,22 @@ const categoriesJson = JSON.stringify(SKILL_CATEGORIES);
       searchInput.addEventListener('input', () => {
         const val = searchInput.value;
         clearBtn.hidden = !val;
-        filtered = getFiltered(val);
-        renderSuggestions(filtered);
+        if (val.trim()) {
+          filtered = getFiltered(val);
+          renderSuggestions(filtered);
+        } else {
+          dropdown.hidden = true;
+          suggestionsEl.innerHTML = '';
+          filtered = [];
+        }
       });
 
       searchInput.addEventListener('focus', () => {
-        filtered = getFiltered(searchInput.value);
-        renderSuggestions(filtered);
+        const val = searchInput.value.trim();
+        if (val) {
+          filtered = getFiltered(val);
+          renderSuggestions(filtered);
+        }
       });
 
       searchInput.addEventListener('keydown', (e) => {
