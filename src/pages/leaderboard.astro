@@ -7,11 +7,12 @@ import {
   MOCK_REPUTATION,
   getLeaderboardByCategory,
 } from '../data/leaderboard';
+import type { LeaderboardCategory } from '../lib/types';
 
 const currentMonth = '2026-06';
-const currentCategory = 'web-development';
-const topThree = getLeaderboardByCategory(currentCategory as any, currentMonth).slice(0, 3);
-const allRankings = getLeaderboardByCategory(currentCategory as any, currentMonth);
+const currentCategory: LeaderboardCategory = 'web-development';
+const topThree = getLeaderboardByCategory(currentCategory, currentMonth).slice(0, 3);
+const allRankings = getLeaderboardByCategory(currentCategory, currentMonth);
 ---
 
 <Layout title="Leaderboard · StudentLancers" description="See the top-performing student freelancers on StudentLancers. Monthly rankings by category.">

@@ -109,19 +109,13 @@ export type LeaderboardCategory =
   | 'web-development'
   | 'mobile-development'
   | 'ui-ux-design'
-  | 'content-writing'
-  | 'video-editing'
-  | 'ai-automation'
-  | 'marketing'
-  | 'react'
-  | 'nextjs'
-  | 'javascript'
-  | 'python'
-  | 'java'
-  | 'cpp'
-  | 'dsa'
   | 'graphic-design'
-  | 'seo';
+  | 'video-editing'
+  | 'content-writing'
+  | 'digital-marketing'
+  | 'seo'
+  | 'ai-automation'
+  | 'data-analysis';
 
 export interface SkillRanking {
   skill: string;

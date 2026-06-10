@@ -3,6 +3,7 @@ import DashboardLayout, { type NavItem } from '../../layouts/DashboardLayout.ast
 import Badge from '../../components/ui/Badge.astro';
 import {
   SKILL_CATEGORIES,
+  SKILL_DATABASE,
   ACHIEVEMENTS,
   MOCK_LEADERBOARD,
   MOCK_REPUTATION,
@@ -24,7 +25,7 @@ const nav: NavItem[] = [
 const user = Astro.locals.user;
 const studentName = user?.name ?? 'there';
 
-const activeCategory: LeaderboardCategory = 'react';
+const activeCategory: LeaderboardCategory = 'web-development';
 const entries = getLeaderboardByCategory(activeCategory);
 const top3 = entries.slice(0, 3);
 const rest = entries.slice(3);
@@ -33,7 +34,7 @@ const rep = MOCK_REPUTATION;
 const earned = ACHIEVEMENTS.filter((a) => a.earnedAt);
 
 const leaderboardJson = JSON.stringify(MOCK_LEADERBOARD);
-const skillsJson = JSON.stringify(SKILL_CATEGORIES);
+const skillsJson = JSON.stringify(SKILL_DATABASE);
 const categoriesJson = JSON.stringify(SKILL_CATEGORIES);
 ---
 
@@ -67,7 +68,7 @@ const categoriesJson = JSON.stringify(SKILL_CATEGORIES);
       <input
         type="text"
         class="lb-search__input"
-        placeholder="Search skills (React, Python, Java, UI Design, SEO...)"
+        placeholder="Search 400+ skills (React, Flutter, Figma, Premiere Pro, SEO...)"
         data-lb-search
         autocomplete="off"
         aria-label="Search skills"
@@ -270,9 +271,14 @@ const categoriesJson = JSON.stringify(SKILL_CATEGORIES);
       let activeIdx = -1;
       let filtered = [];
 
+      function getSkillCategory(skillId) {
+        const skill = SKILL_DATA.find(s => s.id === skillId);
+        return skill ? skill.category : null;
+      }
+
       function getFiltered(q) {
         const query = q.toLowerCase().trim();
-        if (!query) return SKILL_DATA;
+        if (!query) return [];
         return SKILL_DATA.filter(s => s.label.toLowerCase().includes(query));
       }
 
@@ -294,12 +300,13 @@ const categoriesJson = JSON.stringify(SKILL_CATEGORIES);
       }
 
       function selectSkill(skillId) {
-        const cat = CAT_DATA.find(c => c.id === skillId);
-        if (cat) {
-          searchInput.value = cat.label;
+        const catId = getSkillCategory(skillId);
+        if (catId) {
+          const skill = SKILL_DATA.find(s => s.id === skillId);
+          searchInput.value = skill ? skill.label : '';
           dropdown.hidden = true;
           clearBtn.hidden = false;
-          updateLeaderboard(skillId);
+          updateLeaderboard(catId);
         }
       }
 
@@ -344,6 +351,8 @@ const categoriesJson = JSON.stringify(SKILL_CATEGORIES);
               <span class="lb-podium__rank">3rd</span>
             </div>
           `;
+        } else if (podium) {
+          podium.innerHTML = '';
         }
 
         // Re-render table body
@@ -434,7 +443,7 @@ const categoriesJson = JSON.stringify(SKILL_CATEGORIES);
         clearBtn.hidden = true;
         dropdown.hidden = true;
         searchInput.focus();
-        updateLeaderboard('react');
+        updateLeaderboard('web-development');
       });
 
       document.addEventListener('click', (e) => {
